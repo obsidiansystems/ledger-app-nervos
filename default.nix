@@ -187,6 +187,8 @@ let
     x = mk targets.x;
   };
 in rec {
+  inherit pkgs;
+
   nano = mkTargets build;
 
   wallet = {
@@ -228,7 +230,7 @@ in rec {
     config = { allowUnsupportedSystem = true; };
     overlays = [
       (self: super: {
-        speculos = speculosPkgs.callPackage ({ stdenv, cmake, ninja, perl, pkg-config, openssl }: stdenv.mkDerivation {
+        speculos = speculosPkgs.callPackage ({ stdenv, cmake, ninja, perl, pkg-config, openssl, cmocka }: stdenv.mkDerivation {
           name = "speculos";
 
           src = fetchThunk ./nix/dep/speculos;
@@ -242,6 +244,7 @@ in rec {
 
           buildInputs = [
             openssl
+            cmocka
           ];
 
           makeFlags = [ "emu" "launcher" ];
