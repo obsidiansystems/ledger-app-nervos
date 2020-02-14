@@ -37,7 +37,7 @@ let
       };
     };
 
-  src = pkgs.lib.sources.sourceFilesBySuffices (pkgs.lib.sources.cleanSource ./.) [".c" ".h" ".gif" "Makefile" ".sh" ".json"];
+  src = pkgs.lib.sources.sourceFilesBySuffices (pkgs.lib.sources.cleanSource ./.) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt"];
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
 
@@ -53,6 +53,7 @@ let
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
           pkgs.jq
           speculos.speculos
+          pkgs.bats
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
