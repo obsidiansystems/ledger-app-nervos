@@ -39,6 +39,8 @@ let
 
   src = pkgs.lib.sources.sourceFilesBySuffices (pkgs.lib.sources.cleanSource ./.) [".c" ".h" ".gif" "Makefile" ".sh" ".json"];
 
+  speculos = pkgs.callPackage ./nix/dep/speculos { };
+
   build = bolos:
     let
       app = pkgs.stdenv.mkDerivation {
@@ -50,6 +52,7 @@ let
         nativeBuildInputs = [
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
           pkgs.jq
+          speculos.speculos
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
@@ -215,5 +218,5 @@ in rec {
     inherit (bolos.env) clang gcc;
     inherit (bolos) sdk;
   });
-  speculos = pkgs.callPackage ./nix/dep/speculos { };
+  inherit speculos;
 }
