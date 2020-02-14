@@ -24,12 +24,12 @@ APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
 #  endif
 #endif
 
-#COMMIT ?= $(shell echo "$(GIT_DESCRIBE)" | awk -F'-g' '{print $$2}' | sed 's/-dirty/*/')
-#ifeq ($(COMMIT),)
-#  $(warning COMMIT not specified and could not be determined with git from "$(GIT_DESCRIBE)")
-#else
-#  $(info COMMIT=$(COMMIT))
-#endif
+COMMIT ?= $(shell echo "$(GIT_DESCRIBE)" | awk -F'-g' '{print $$2}' | sed 's/-dirty/*/')
+ifeq ($(COMMIT),)
+  $(warning COMMIT not specified and could not be determined with git from "$(GIT_DESCRIBE)")
+else
+  $(info COMMIT=$(COMMIT))
+endif
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 ICONNAME=icons/nano-x-nervos.gif
@@ -151,3 +151,6 @@ include $(BOLOS_SDK)/Makefile.rules
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
 
+.phony: test
+test: testdriver.sh
+	testdriver.sh

@@ -67,6 +67,12 @@ let
           echo ">>>> Application size: <<<<"
           size $out/bin/app.elf
         '';
+
+        doCheck = true;
+        checkPhase = ''
+          echo ">>>> TESTING <<<<"
+          . ./test.sh
+        '';
       };
       nvramDataSize = appDir: pkgs.runCommand "nvram-data-size" {} ''
         envram_data="$(grep _envram_data '${appDir + /debug/app.map}' | tr -s ' ' | cut -f2 -d' ')"
