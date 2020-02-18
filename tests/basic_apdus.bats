@@ -13,9 +13,12 @@ apdu_fixed () {
   diff tests/version_apdu_stdout.txt <(echo "$output")
 }
 
+COMMIT="$(echo "$GIT_DESCRIBE" | sed 's/-dirty/*/')"
+HEXCOMMIT="$(echo -n ${COMMIT}|xxd -ps -g0)"
+
 @test "Ledger app git hash returns current hash" {
   run apdu_fixed "8009000000"
   [ "$status" -eq 0 ]
-  diff tests/git_apdu_stdout.txt <(echo "$output")
+  diff <(sed "s/HEXHASH/${HEXCOMMIT}/; s/HASH/${COMMIT}/" tests/git_apdu_stdout.txt) <(echo "$output")
 }
 

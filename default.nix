@@ -54,6 +54,7 @@ let
           pkgs.jq
           speculos.speculos
           pkgs.bats
+          pkgs.xxd
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
