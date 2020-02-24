@@ -23,7 +23,7 @@
 
 // Instruction codes
 #define INS_VERSION 0x00
-#define INS_AUTHORIZE_BAKING 0x01
+#define INS_GET_WALLET_ID 0x01
 #define INS_GET_PUBLIC_KEY 0x02
 #define INS_PROMPT_PUBLIC_KEY 0x03
 #define INS_SIGN 0x04
@@ -72,3 +72,4 @@ size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *cons
 size_t handle_apdu_error(uint8_t instruction);
 size_t handle_apdu_version(uint8_t instruction);
 size_t handle_apdu_git(uint8_t instruction);
+size_t handle_apdu_get_wallet_id(uint8_t instruction);

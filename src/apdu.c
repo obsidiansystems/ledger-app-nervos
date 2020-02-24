@@ -34,6 +34,51 @@ size_t handle_apdu_git(uint8_t __attribute__((unused)) instruction) {
     return finalize_successful_send(tx);
 }
 
+size_t handle_apdu_get_wallet_id(uint8_t __attribute__((unused)) instruction) {
+  // blake2b hash of "nervos-ledger-id"
+  static const uint8_t token[] = {
+    0xc1, 0x30, 0xae, 0x5b, 0xf2, 0xfb, 0x61, 0xe3,
+    0x9e, 0x41, 0x9d, 0xc5, 0x8a, 0x45, 0x4f, 0x4a,
+    0xb4, 0xb6, 0xe4, 0xb6, 0xdb, 0x0b, 0x4b, 0x34,
+    0x60, 0xc3, 0xed, 0x12, 0x8e, 0xd5, 0x5f, 0xd2,
+    0x3d, 0x0a, 0x37, 0xc3, 0x75, 0x0b, 0xb2, 0xb4,
+    0xd8, 0x0a, 0x74, 0x11, 0xe3, 0x68, 0x3b, 0x91,
+    0x80, 0x62, 0xab, 0x98, 0xfd, 0x4d, 0x2c, 0x6d,
+    0x05, 0x95, 0xbb, 0x03, 0x30, 0x81, 0x78, 0xb6
+  };
+  uint8_t signedToken[100];
+  uint32_t id_path[] = {0x8000002C, 0x80000135};
+  uint8_t key_data[32];
+  cx_ecfp_public_key_t pubkey;
+  cx_ecfp_private_key_t key;
+  int rv=0;
+  BEGIN_TRY {
+    TRY {
+      unsigned int info;
+      os_perso_derive_node_bip32(CX_CURVE_SECP256K1, id_path, 4, key_data, NULL);
+      cx_ecfp_init_private_key(CX_CURVE_SECP256K1, key_data, sizeof(key_data), &key);
+      cx_ecfp_generate_pair(CX_CURVE_SECP256K1, &pubkey, &key, 1);
+
+      // This isn't working properly deterministically, so stubbing it to unblock development.
+      //cx_ecdsa_sign(&key, CX_LAST | CX_RND_RFC6979, CX_BLAKE2B, token, sizeof(token), signedToken, 100, &info);
+
+      cx_blake2b_t hashState;
+      cx_blake2b_init(&hashState, 512);
+
+      // Stubbed until we have the sign step working.
+      //rv = cx_hash((cx_hash_t*) &hashState, CX_LAST, signedToken, sizeof(signedToken), G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
+      rv = cx_hash((cx_hash_t*) &hashState, CX_LAST, (uint8_t*) pubkey.W, pubkey.W_len, G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
+    } FINALLY {
+      explicit_bzero(&key, sizeof(key));
+      explicit_bzero(&key_data, sizeof(key_data));
+      explicit_bzero(&signedToken, sizeof(signedToken));
+    }
+  }
+  END_TRY;
+
+  return finalize_successful_send(rv);
+}
+
 #define CLA 0x80
 
 __attribute__((noreturn))
