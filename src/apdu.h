@@ -1,7 +1,6 @@
 #pragma once
 
 #include "exception.h"
-#include "keys.h"
 #include "types.h"
 #include "ui.h"
 
@@ -9,6 +8,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
+#include "apdu_pubkey.h"
 
 #if CX_APILEVEL < 8
 #error "May only compile with API level 8 or higher; requires newer firmware"
@@ -24,8 +25,7 @@
 // Instruction codes
 #define INS_VERSION 0x00
 #define INS_GET_WALLET_ID 0x01
-#define INS_GET_PUBLIC_KEY 0x02
-#define INS_PROMPT_PUBLIC_KEY 0x03
+#define INS_PROMPT_PUBLIC_KEY 0x02
 #define INS_SIGN 0x04
 #define INS_SIGN_UNSAFE 0x05 // Data that is already hashed.
 #define INS_RESET 0x06
