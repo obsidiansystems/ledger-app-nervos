@@ -4,6 +4,7 @@
 #include "keys.h"
 #include "types.h"
 #include "ui.h"
+#include "apdu_sign.h"
 
 #include "os.h"
 
