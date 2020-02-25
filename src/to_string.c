@@ -12,17 +12,16 @@
 
 void pkh_to_string(
     char *const buff, size_t const buff_size,
-    signature_type_t const signature_type,
-    uint8_t const hash[HASH_SIZE]
+    uint8_t const hash[KEY_HASH_SIZE]
 );
 
 // These functions output terminating null bytes, and return the ending offset.
 static size_t microtez_to_string(char *dest, uint64_t number);
-
-void parsed_contract_to_string(
+/*
+void public_key_hash_to_string(
     char *const buff,
     size_t const buff_size,
-    parsed_contract_t const *const contract
+    public_key_hash_t const *const contract
 ) {
     // If hash_ptr exists, show it to us now. Otherwise, we unpack the
     // packed hash.
@@ -40,6 +39,7 @@ void parsed_contract_to_string(
         pkh_to_string(buff, buff_size, signature_type, contract->hash);
     }
 }
+*/
 
 
 void compute_hash_checksum(uint8_t out[TEZOS_HASH_CHECKSUM_SIZE], void const *const data, size_t size) {
@@ -54,18 +54,6 @@ void compute_hash_checksum(uint8_t out[TEZOS_HASH_CHECKSUM_SIZE], void const *co
     if (size < sizeof(x)) THROW(exc); \
     strcpy(buff, x); \
 })
-
-void chain_id_to_string_with_aliases(char *const out, size_t const out_size, chain_id_t const *const chain_id) {
-    check_null(out);
-    check_null(chain_id);
-    if (chain_id->v == 0) {
-        STRCPY_OR_THROW(out, out_size, "any", EXC_WRONG_LENGTH);
-    } else if (chain_id->v == mainnet_chain_id.v) {
-        STRCPY_OR_THROW(out, out_size, "mainnet", EXC_WRONG_LENGTH);
-    } else {
-        chain_id_to_string(out, out_size, *chain_id);
-    }
-}
 
 // These functions do not output terminating null bytes.
 

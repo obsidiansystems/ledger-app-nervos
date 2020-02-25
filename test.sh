@@ -1,5 +1,5 @@
 
-speculos --display headless bin/app.elf --button-port 5667 &
+speculos --display headless bin/app.elf --button-port 5667 --deterministic-rng 42 &
 appPid=$!
 
 sleep 1

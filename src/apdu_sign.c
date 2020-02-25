@@ -87,21 +87,7 @@ static bool sign_reject(void) {
     return true; // Return to idle
 }
 
-/*static bool parse_allowed_operation_packet(
-    struct parsed_operation_group *const out,
-    uint8_t const *const in,
-    size_t const in_size
-) {
-    return true; //parse_operations_packet(out, in, in_size, &is_operation_allowed);
-}*/
-
-static bool sign_unsafe_ok(void) {
-    delayed_send(perform_signature(false, false));
-    return true;
-}
-
 #define MAX_NUMBER_CHARS (MAX_INT_DIGITS + 2) // include decimal point and terminating null
-
 
 static size_t sign_complete(uint8_t instruction) {
     static size_t const TYPE_INDEX = 0;
@@ -117,13 +103,17 @@ static size_t sign_complete(uint8_t instruction) {
 
     ui_callback_t const ok_c = instruction == INS_SIGN_WITH_HASH ? sign_with_hash_ok : sign_without_hash_ok;
 
-unsafe:
+//unsafe:
     G.message_data_as_buffer.bytes = (uint8_t *)&G.final_hash;
     G.message_data_as_buffer.size = sizeof(G.final_hash);
     G.message_data_as_buffer.length = sizeof(G.final_hash);
     // Base58 encoding of 32-byte hash is 43 bytes long.
-    register_ui_callback(HASH_INDEX, buffer_to_base58, &G.message_data_as_buffer);
+    register_ui_callback(HASH_INDEX, buffer_to_hex, &G.message_data_as_buffer);
     ui_prompt(parse_fail_prompts, ok_c, sign_reject);
+}
+
+void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const _U_ buff, uint8_t const _U_ buff_size) {
+
 }
 
 #define P1_FIRST 0x00
@@ -141,11 +131,11 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
     switch (p1 & ~P1_LAST_MARKER) {
     case P1_FIRST:
         clear_data();
-        read_bip32_path(&G.key.bip32_path, buff, buff_size);
+        read_bip32_path(&G.key, buff, buff_size);
         return finalize_successful_send(0);
-    
+
     case P1_NEXT:
-        if (G.key.bip32_path.length == 0) THROW(EXC_WRONG_LENGTH_FOR_INS);
+        if (G.key.length == 0) THROW(EXC_WRONG_LENGTH_FOR_INS);
 
         // Guard against overflow
         if (G.packet_index >= 0xFF) PARSE_ERROR();
@@ -158,11 +148,9 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
 
     if (enable_parsing) {
 	    if (G.packet_index == 1) {
-	        G.maybe_ops.is_valid = false;
-		//parse_operations_init(&G.maybe_ops.v, G.key.derivation_type, &G.key.bip32_path, &G.parse_state);
+	        G.maybe_transaction.is_valid = false;
+		parse_operation(&G.maybe_transaction, &G.key, buff, buff_size);
 	    }
-
-	    //parse_allowed_operation_packet(&G.maybe_ops.v, buff, buff_size);
     }
 
     if (enable_hashing) {
@@ -192,8 +180,6 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
                 &G.hash_state);
         }
 
-	// G.maybe_ops.is_valid = parse_operations_final(&G.parse_state, &G.maybe_ops.v);
-
         return
 		sign_complete(instruction);
     } else {
@@ -214,15 +200,12 @@ size_t handle_apdu_sign_with_hash(uint8_t instruction) {
 }
 
 static int perform_signature(bool const on_hash, bool const send_hash) {
-#   ifdef BAKING_APP
-        write_high_water_mark(&G.parsed_baking_data);
-#   else
-        if (on_hash && G.hash_only) {
-            memcpy(G_io_apdu_buffer, G.final_hash, sizeof(G.final_hash));
-            clear_data();
-            return finalize_successful_send(sizeof(G.final_hash));
-        }
-#   endif
+    if (on_hash && G.hash_only) {
+        memcpy(G_io_apdu_buffer, G.final_hash, sizeof(G.final_hash));
+        clear_data();
+        return finalize_successful_send(sizeof(G.final_hash));
+    }
+
 
     size_t tx = 0;
     if (send_hash && on_hash) {
@@ -236,7 +219,6 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
         sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, data, data_length);
     }));
 
-    PRINTF("Signed message, signature length: %d\n", tx);
 
     clear_data();
     return finalize_successful_send(tx);

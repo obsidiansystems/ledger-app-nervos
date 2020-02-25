@@ -30,15 +30,17 @@ typedef struct {
     bool initialized;
 } blake2b_hash_state_t;
 
+struct maybe_transaction {
+	bool is_valid;
+	struct parsed_transaction v;
+};
+
 typedef struct {
-    bip32_path_with_curve_t key;
+    bip32_path_t key;
 
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
 
-    struct {
-      bool is_valid;
-      struct parsed_operation_group v;
-    } maybe_ops;
+    struct maybe_transaction maybe_transaction;
 
     uint8_t message_data[NERVOS_BUFSIZE];
     uint32_t message_data_length;
@@ -88,7 +90,7 @@ typedef struct {
   struct {
       union {
           struct {
-              bip32_path_with_curve_t key;
+              bip32_path_t key;
               cx_ecfp_public_key_t public_key;
           } pubkey;
 
@@ -127,7 +129,6 @@ static inline void throw_stack_size() {
 
 void calculate_baking_idle_screens_data(void);
 void update_baking_idle_screens(void);
-high_watermark_t volatile *select_hwm_by_chain(chain_id_t const chain_id, nvram_data volatile *const ram);
 
 // Properly updates NVRAM data to prevent any clobbering of data.
 // 'out_param' defines the name of a pointer to the nvram_data struct

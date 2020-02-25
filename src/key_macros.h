@@ -12,7 +12,7 @@
     bip32_path_t volatile const *const MACROVAR(vname, key) = &(bip32_path); \
     key_pair_t *const MACROVAR(vname, generated_pair) = \
         generate_key_pair_return_global( \
-            (bip32_path_t const *const /* cast away volatile! */)&MACROVAR(vname, key)->bip32_path); \
+            (bip32_path_t const *const /* cast away volatile! */)MACROVAR(vname, key)); \
     volatile type MACROVAR(vname, retval); \
     BEGIN_TRY { \
         TRY { \
