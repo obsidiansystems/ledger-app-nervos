@@ -4,8 +4,6 @@
 
 #include "types.h"
 
-#include "keys.h"
-
 #define BAGL_STATIC_ELEMENT 0
 #define BAGL_SCROLLING_ELEMENT 100 // Arbitrary value chosen to connect data structures with prepro func
 

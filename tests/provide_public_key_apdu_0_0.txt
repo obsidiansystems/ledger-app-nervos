@@ -1,0 +1,3 @@
+=> b'8002000011048000002c800001358000000080000000'
+<= b'4104d066dbe5603004dc4c83e27106b098f5e9b9b17b6bdec965810cd0921193b1c87206518153a0b44c7ae6b0be92a60d515d454e71ab27943bbb323273b8bdd46a'9000
+<= Clear bytearray(b"A\x04\xd0f\xdb\xe5`0\x04\xdcL\x83\xe2q\x06\xb0\x98\xf5\xe9\xb9\xb1{k\xde\xc9e\x81\x0c\xd0\x92\x11\x93\xb1\xc8r\x06Q\x81S\xa0\xb4Lz\xe6\xb0\xbe\x92\xa6\rQ]ENq\xab\'\x94;\xbb22s\xb8\xbd\xd4j")
