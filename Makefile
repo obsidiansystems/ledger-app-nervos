@@ -152,5 +152,5 @@ include $(BOLOS_SDK)/Makefile.rules
 dep/%.d: %.c Makefile
 
 .phony: test
-test: testdriver.sh
-	testdriver.sh
+test: test.sh bin/app.elf
+	./test.sh

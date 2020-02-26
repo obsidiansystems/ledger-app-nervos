@@ -1,4 +1,3 @@
-
 speculos --display headless bin/app.elf --button-port 5667 &
 appPid=$!
 
@@ -7,4 +6,4 @@ echo "Starting bats"
 bats -p tests
 echo "Done with bats"
 
-kill $appPid
+kill $appPid 2> /dev/null || :
