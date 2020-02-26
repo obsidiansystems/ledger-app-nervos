@@ -69,12 +69,25 @@ Now, make sure the Ledger is:
 - unlocked
 - has the “Nervos” app open (shows “Use wallet to view accounts”)
 
+### List Ledger Wallets ###
+
+List the wallets:
+
+``` sh
+$ ckb-cli account list
+- "#": 0
+  account_source: ledger hardware wallet
+  ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
+```
+
+Remember the ledger_id given above for the latest commands.
+
 ### Get Public Key ###
 
 Get the public key:
 
 ``` sh
-$ ckb-cli account extended-address-ledger --path "m/44'/309'/0'/0/0"
+$ ckb-cli account extended-address --path "m/44'/309'/0'/0/0" --account-id 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
 ```
 
 This should show up on the ledger as “Provide Public Key” for
@@ -87,15 +100,4 @@ address:
   mainnet: ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
   testnet: ckt1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsa64fqt
 lock_arg: 0x632c444199275d00b7c1fb65bf001d70bc609599
-```
-
-### List Ledger Wallets ###
-
-List the wallets:
-
-``` sh
-$ ckb-cli account list
-- "#": 0
-  account_source: ledger hardware wallet
-  ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
 ```
