@@ -30,20 +30,62 @@ Testing need to be done through Ledger Live.
 
 # Testing #
 
-No automated tests exist yet. Here is how to set up an environment to
-test the Ledger app on Nano S using the ckb command line:
 
-Load the latest version of th Nervos app:
+## Automated Testing ##
+
+You can run automated tests via the ./test.sh script. To do this,
+first load the wallet app:
 
 ``` sh
 $ nix-shell -A wallet.s --run 'make SHELL=sh load'
 ```
+
+You have to accept a few prompts on the Ledger. Then you must select
+and load the Nervos app.
+
+Now, make sure the Ledger is:
+
+- connected
+- unlocked
+- has the “Nervos” app open (shows “Use wallet to view accounts”)
+
+Then, just run this:
+
+``` sh
+$ nix-shell -A wallet.s --run 'make SHELL=sh test'
+```
+
+## Manual Testing ##
+
+Not everything is coverd by the automated tests, so manual testing is
+also necessary. This enables end-to-end testing of the ckb 
+
+Here is how to set up an environment to test the Ledger app on Nano S
+using the ckb command line:
+
+Load the latest version of the Nervos app, confirming the unsafe
+prompt:
+
+``` sh
+$ nix-shell -A wallet.s --run 'make SHELL=sh load'
+```
+
+You have to accept a few prompts on the Ledger. Then you must select
+and load the Nervos app, confirming the unsafe prompt.
 
 Build a version of the ckb-cli:
 
 ``` sh
 $ nix-shell -p '(import ./nix/dep/ckb-cli {})'
 ```
+
+Now, make sure the Ledger is:
+
+- connected
+- unlocked
+- has the “Nervos” app open (shows “Use wallet to view accounts”)
+
+### Get Public Key ###
 
 Get the public key:
 
@@ -61,4 +103,15 @@ address:
   mainnet: ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
   testnet: ckt1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsa64fqt
 lock_arg: 0x632c444199275d00b7c1fb65bf001d70bc609599
+```
+
+### List Ledger Wallets ###
+
+List the wallets:
+
+``` sh
+$ ckb-cli account list
+- "#": 0
+  account_source: ledger hardware wallet
+  ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
 ```
