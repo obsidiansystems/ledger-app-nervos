@@ -33,23 +33,7 @@ Testing need to be done through Ledger Live.
 
 ## Automated Testing ##
 
-You can run automated tests via the ./test.sh script. To do this,
-first load the wallet app:
-
-``` sh
-$ nix-shell -A wallet.s --run 'make SHELL=sh load'
-```
-
-You have to accept a few prompts on the Ledger. Then you must select
-and load the Nervos app.
-
-Now, make sure the Ledger is:
-
-- connected
-- unlocked
-- has the “Nervos” app open (shows “Use wallet to view accounts”)
-
-Then, just run this:
+You can run automated tests via the ./test.sh script. Just run this:
 
 ``` sh
 $ nix-shell -A wallet.s --run 'make SHELL=sh test'
@@ -67,7 +51,7 @@ Load the latest version of the Nervos app, confirming the unsafe
 prompt:
 
 ``` sh
-$ nix-shell -A wallet.s --run 'make SHELL=sh load'
+$ ./nix/install.sh s
 ```
 
 You have to accept a few prompts on the Ledger. Then you must select
