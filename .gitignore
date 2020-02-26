@@ -2,3 +2,7 @@
 /debug
 /dep
 /obj
+
+src/glyphs.h
+src/glyphs.c
+result*
