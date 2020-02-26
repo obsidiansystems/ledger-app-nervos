@@ -29,7 +29,7 @@ python -m ledgerblue.loadApp \
     --curve prime256r1 \
     --targetId "${TARGET_ID:-0x31100004}" \
     --delete \
-    --path 44"'"/1729"'" \
+    --path 44"'"/309"'" \
     --fileName "$app_dir/bin/app.hex" \
     --appName "$app_name" \
     --appVersion "$version" \
