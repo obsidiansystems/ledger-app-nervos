@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "to_string.h"
 #include "version.h"
+#include "key_macros.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -36,6 +37,7 @@ size_t handle_apdu_git(uint8_t __attribute__((unused)) instruction) {
 
 size_t handle_apdu_get_wallet_id(uint8_t __attribute__((unused)) instruction) {
   // blake2b hash of "nervos-ledger-id"
+  static const uint8_t test[] = "nervos-ledger-id";
   static const uint8_t _U_ token[] = {
     0xc1, 0x30, 0xae, 0x5b, 0xf2, 0xfb, 0x61, 0xe3,
     0x9e, 0x41, 0x9d, 0xc5, 0x8a, 0x45, 0x4f, 0x4a,
@@ -47,35 +49,28 @@ size_t handle_apdu_get_wallet_id(uint8_t __attribute__((unused)) instruction) {
     0x05, 0x95, 0xbb, 0x03, 0x30, 0x81, 0x78, 0xb6
   };
   uint8_t signedToken[100];
-  uint32_t id_path[] = {0x8000002C, 0x80000135};
+  //uint32_t id_path[] = {0x8000002C, 0x80000135};
+  bip32_path_t id_path = {
+    2,
+    {0x8000002C, 0x80000135}
+  };
+
   uint8_t key_data[32];
   cx_ecfp_public_key_t pubkey;
   cx_ecfp_private_key_t key;
   int rv=0;
-  BEGIN_TRY {
-    TRY {
-      unsigned int _U_ info;
-      os_perso_derive_node_bip32(CX_CURVE_SECP256K1, id_path, 4, key_data, NULL);
-      cx_ecfp_init_private_key(CX_CURVE_SECP256K1, key_data, sizeof(key_data), &key);
-      cx_ecfp_generate_pair(CX_CURVE_SECP256K1, &pubkey, &key, 1);
+  cx_blake2b_t hashState;
+  cx_blake2b_init(&hashState, 512);
 
-      // This isn't working properly deterministically, so stubbing it to unblock development.
-      //cx_ecdsa_sign(&key, CX_LAST | CX_RND_RFC6979, CX_BLAKE2B, token, sizeof(token), signedToken, 100, &info);
-
-      cx_blake2b_t hashState;
-      cx_blake2b_init(&hashState, 512);
-
-      // Stubbed until we have the sign step working.
-      //rv = cx_hash((cx_hash_t*) &hashState, CX_LAST, signedToken, sizeof(signedToken), G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
-      rv = cx_hash((cx_hash_t*) &hashState, CX_LAST, (uint8_t*) pubkey.W, pubkey.W_len, G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
-    } FINALLY {
-      explicit_bzero(&key, sizeof(key));
-      explicit_bzero(&key_data, sizeof(key_data));
-      explicit_bzero(&signedToken, sizeof(signedToken));
-    }
-  }
-  END_TRY;
-
+  WITH_KEY_PAIR(id_path, key_pair, size_t, ({
+    PRINTF("\nPublic Key: %.*h\n", key_pair->public_key.W_len, key_pair->public_key.W);
+    // unsigned int _U_ info;
+    // This isn't working properly deterministically, so stubbing it to unblock development.
+    //cx_ecdsa_sign(&key, CX_LAST | CX_RND_RFC6979, CX_BLAKE2B, token, sizeof(token), signedToken, 100, &info);
+    // Stubbed until we have the sign step working.
+    //rv = cx_hash((cx_hash_t*) &hashState, CX_LAST, signedToken, sizeof(signedToken), G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
+    rv = cx_hash((cx_hash_t*) &hashState, CX_LAST, (uint8_t*) key_pair->public_key.W, key_pair->public_key.W_len, G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
+  }));
   return finalize_successful_send(rv);
 }
 

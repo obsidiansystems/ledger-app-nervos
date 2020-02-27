@@ -55,6 +55,8 @@ let
           speculos.speculos
           pkgs.bats
           pkgs.xxd
+          pkgs.b2sum
+          pkgs.openssl
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;

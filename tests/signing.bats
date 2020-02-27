@@ -13,6 +13,9 @@ apdu_with_clicks () {
   echo "$2" > /dev/tcp/localhost/5667
 }
 
+check_signature () {
+  xxd -r -ps <<<"$1" | b2sum -l 256 | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
+}
 
 @test "Signing APDU returns something when given something to sign and clickthrough happens." {
   run apdu_fixed "8003000011048000002c800001358000000080000000"
@@ -24,5 +27,6 @@ apdu_with_clicks () {
   echo $rv
   # 142 characters of hexadecimal der-encoded signature, one newline.
   # TODO: use openssl to verify the signature.
-  diff <(wc -c <<<"$rv") - <<<"141"
+  run check_signature "00001111" "$rv"
+  diff <(echo $output) - <<<"Signature Verified Successfully"
  } 
