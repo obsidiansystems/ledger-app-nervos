@@ -1,17 +1,5 @@
 
-apdu() {
-	LEDGER_PROXY_ADDRESS=127.0.0.1 LEDGER_PROXY_PORT=9999 python -m ledgerblue.runScript --apdu
-}
-
-apdu_fixed () {
-  echo "$*" | apdu
-}
-
-apdu_with_clicks () {
-  echo "$1" | apdu &
-  sleep 1
-  echo "$2" > /dev/tcp/localhost/5667
-}
+. ./tests/lib.sh
 
 check_signature () {
   xxd -r -ps <<<"$1" | b2sum -l 256 | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
