@@ -54,6 +54,11 @@ prompt:
 $ ./nix/install.sh s
 ```
 
+If you get a “permission denied” error, you’re computer is not
+detecting the Ledger device correctly. Make sure the Ledger is
+connected properly and then try it again with sudo: “sudo
+./nix-install.sh s”.
+
 You have to accept a few prompts on the Ledger. Then you must select
 and load the Nervos app, confirming the unsafe prompt.
 
