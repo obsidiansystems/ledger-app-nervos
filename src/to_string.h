@@ -11,18 +11,15 @@
 
 void pubkey_to_pkh_string(
     char *const out, size_t const out_size,
-    derivation_type_t const derivation_type,
     cx_ecfp_public_key_t const *const public_key
 );
-void bip32_path_with_curve_to_pkh_string(
+void bip32_path_to_pkh_string(
     char *const out, size_t const out_size,
-    bip32_path_with_curve_t const *const key
+    bip32_path_t const *const key
 );
 void protocol_hash_to_string(char *const buff, size_t const buff_size, uint8_t const hash[PROTOCOL_HASH_SIZE]);
-void parsed_contract_to_string(char *const buff, size_t const buff_size, parsed_contract_t const *const contract);
-void lookup_parsed_contract_name(char *const buff, size_t const buff_size, parsed_contract_t const *const contract);
-void chain_id_to_string(char *const buff, size_t const buff_size, chain_id_t const chain_id);
-void chain_id_to_string_with_aliases(char *const out, size_t const out_size, chain_id_t const *const chain_id);
+void parsed_contract_to_string(char *const buff, size_t const buff_size, public_key_hash_t const *const contract);
+void lookup_parsed_contract_name(char *const buff, size_t const buff_size, public_key_hash_t const *const contract);
 
 // dest must be at least MAX_INT_DIGITS
 size_t number_to_string(char *const dest, uint64_t number);

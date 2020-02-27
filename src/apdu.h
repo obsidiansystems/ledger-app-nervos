@@ -3,6 +3,7 @@
 #include "exception.h"
 #include "types.h"
 #include "ui.h"
+#include "apdu_sign.h"
 
 #include "os.h"
 
@@ -26,7 +27,7 @@
 #define INS_VERSION 0x00
 #define INS_GET_WALLET_ID 0x01
 #define INS_PROMPT_PUBLIC_KEY 0x02
-#define INS_SIGN 0x04
+#define INS_SIGN 0x03
 #define INS_SIGN_UNSAFE 0x05 // Data that is already hashed.
 #define INS_RESET 0x06
 #define INS_QUERY_AUTH_KEY 0x07

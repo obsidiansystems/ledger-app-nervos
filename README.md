@@ -33,16 +33,34 @@ Testing need to be done through Ledger Live.
 
 ## Automated Testing ##
 
-You can run automated tests via the ./test.sh script. Just run this:
+You can run automated tests through speculos via the ./test.sh script. Just run
+this:
 
 ``` sh
 $ nix-shell -A wallet.s --run 'make SHELL=sh test'
 ```
 
+Running the same test suite on a live ledger currently requires that the ledger
+be configured with the recovery phrase
+
+```
+glory promote mansion idle axis finger extra february uncover one trip resource
+lawn turtle enact monster seven myth punch hobby comfort wild raise skin
+```
+
+and then you can (with the ledger connected) run
+
+```
+nix-shell -A wallet.s --run 'make; ./test.sh -h'
+```
+
+The test suite currently does not test any rejections, so just accept every
+prompt that happens.
+
 ## Manual Testing ##
 
 Not everything is coverd by the automated tests, so manual testing is
-also necessary. This enables end-to-end testing of the ckb 
+also necessary. This enables end-to-end testing of the ckb
 
 Here is how to set up an environment to test the Ledger app on Nano S
 using the ckb command line:

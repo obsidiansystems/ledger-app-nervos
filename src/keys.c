@@ -91,7 +91,7 @@ cx_ecfp_public_key_t const *public_key_hash_return_global(
 {
     check_null(out);
     check_null(public_key);
-    if (out_size < HASH_SIZE) THROW(EXC_WRONG_LENGTH);
+    if (out_size < KEY_HASH_SIZE) THROW(EXC_WRONG_LENGTH);
 
     cx_ecfp_public_key_t *const compressed = &global.apdu.priv.public_key_hash.compressed;
     memcpy(compressed->W, public_key->W, public_key->W_len);
@@ -99,8 +99,8 @@ cx_ecfp_public_key_t const *public_key_hash_return_global(
     compressed->W_len = 33;
 
     cx_blake2b_t hash_state;
-    cx_blake2b_init(&hash_state, HASH_SIZE*8); // cx_blake2b_init takes size in bits.
-    cx_hash((cx_hash_t *) &hash_state, CX_LAST, compressed->W, compressed->W_len, out, HASH_SIZE);
+    cx_blake2b_init(&hash_state, KEY_HASH_SIZE*8); // cx_blake2b_init takes size in bits.
+    cx_hash((cx_hash_t *) &hash_state, CX_LAST, compressed->W, compressed->W_len, out, KEY_HASH_SIZE);
     return compressed;
 }
 

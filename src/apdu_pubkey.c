@@ -60,15 +60,15 @@ static void prompt_path(
   ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
-size_t handle_apdu_get_public_key(uint8_t instruction) {
+size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
   uint8_t *dataBuffer = G_io_apdu_buffer + OFFSET_CDATA;
 
   if (READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]) != 0) THROW(EXC_WRONG_PARAM);
 
   size_t const cdata_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
 
-  read_bip32_path(&G.key.bip32_path, dataBuffer, cdata_size);
-  generate_public_key(&G.public_key, &G.key.bip32_path);
+  read_bip32_path(&G.key, dataBuffer, cdata_size);
+  generate_public_key(&G.public_key, &G.key);
 
   // instruction == INS_PROMPT_PUBLIC_KEY || instruction == INS_AUTHORIZE_BAKING
   ui_callback_t cb;

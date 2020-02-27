@@ -8,12 +8,11 @@
 #define CONCAT(a, b) CONCAT_(a, b)
 #define MACROVAR(a, b) CONCAT(____ ## _ ## a ## _ ## b, __LINE__)
 
-#define WITH_KEY_PAIR(bip32_path_with_curve, vname, type, body) ({ \
-    bip32_path_with_curve_t volatile const *const MACROVAR(vname, key) = &(bip32_path_with_curve); \
+#define WITH_KEY_PAIR(bip32_path, vname, type, body) ({ \
+    bip32_path_t volatile const *const MACROVAR(vname, key) = &(bip32_path); \
     key_pair_t *const MACROVAR(vname, generated_pair) = \
         generate_key_pair_return_global( \
-            (derivation_type_t const /* cast away volatile! */)MACROVAR(vname, key)->derivation_type, \
-            (bip32_path_t const *const /* cast away volatile! */)&MACROVAR(vname, key)->bip32_path); \
+            (bip32_path_t const *const /* cast away volatile! */)MACROVAR(vname, key)); \
     volatile type MACROVAR(vname, retval); \
     BEGIN_TRY { \
         TRY { \
