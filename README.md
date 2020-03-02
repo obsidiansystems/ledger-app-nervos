@@ -131,11 +131,22 @@ The “testnet” address is the one you need to save. Keep it for later.
 
 #### Starting a node ####
 
-Clone and run ckb:
+Get ckb in your shell:
 
 ``` sh
-$ git clone https://github.com/obsidiansystems/ckb.git
-$ cd ckb/
+$ nix-shell -p '(import ./nix/dep/ckb {})'
+```
+
+Get aggron.toml:
+
+``` sh
+$ curl -O aggron.toml https://gist.githubusercontent.com/doitian/573513c345165c0fe4f3504ebc1c8f9f/raw/3032bed68550e0a50e91df2c706481e80b579c70/aggron.toml
+```
+
+Init the testnet toml:
+
+``` sh
+$ ckb init --import-spec ./aggron.toml --chain testnet
 ```
 
 Next, you must setup the test network following this guide:
@@ -156,7 +167,7 @@ spec = { bundled = "specs/testnet.toml" }
 Run the node with:
 
 ```
-$ nix-shell --run 'cargo run run'
+$ ckb run
 ```
 
 Leave this open in a separate terminal as you continue on the next steps.
