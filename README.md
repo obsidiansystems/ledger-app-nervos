@@ -138,6 +138,9 @@ $ git clone https://github.com/obsidiansystems/ckb.git
 $ cd ckb/
 ```
 
+Next, you must setup the test network following this guide:
+https://docs.nervos.org/dev-guide/testnet.html
+
 Edit ckb.toml in ckb/, changing:
 
 ```
