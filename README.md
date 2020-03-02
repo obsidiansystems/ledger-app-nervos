@@ -110,12 +110,12 @@ Remember the ledger_id given above for the latest commands.
 Get the public key:
 
 ``` sh
-$ ckb-cli account extended-address --path "m/44'/309'/0'/0/0" --account-id 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
+$ ckb-cli account extended-address --path "m/44'/309'/0'/1/0" --account-id 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
 ```
 
 This should show up on the ledger as “Provide Public Key” for
-44’/309’/0’/0/0. Accept it on the Ledger and verify ckb prints the
-resulting address. The result should lookk like:
+44’/309’/0’/1/0. Accept it on the Ledger and verify ckb prints the
+resulting address. The result should look like:
 
 ``` text
 account_source: on-disk password-protected key store
@@ -123,4 +123,69 @@ address:
   mainnet: ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
   testnet: ckt1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsa64fqt
 lock_arg: 0x632c444199275d00b7c1fb65bf001d70bc609599
+```
+
+The “testnet” address is the one you need to save. Keep it for later.
+
+### Transfering ###
+
+#### Starting a node ####
+
+Clone and run ckb:
+
+``` sh
+$ git clone https://github.com/obsidiansystems/ckb.git
+$ cd ckb/
+```
+
+Edit ckb.toml in ckb/, changing:
+
+```
+spec = { bundled = "specs/mainnet.toml" }
+```
+
+to
+
+```
+spec = { bundled = "specs/testnet.toml" }
+```
+
+Run the node with:
+
+```
+$ nix-shell --run 'cargo run run'
+```
+
+Leave this open in a separate terminal as you continue on the next steps.
+
+#### Getting CKB from the faucet ####
+
+Visit https://faucet.nervos.org/auth and follow the process to receive
+testnet tokens. You should use the address generated above in “Get
+Public Key” and the capacity should be 100000.
+
+#### Verify address balance ####
+
+To continue, you need at least 100 CKB in your wallet. Do this with:
+
+``` sh
+$ ckb-cli wallet get-capacity --address
+ckt1qyqqmpgzhw94kdj6d8jwtmt6xgumjyr0negq3d2345
+total: 100.0 (CKB)
+```
+
+If the number is less than 100, you need to somehow get the coins some
+other way.
+
+#### Transfer ####
+
+Transfer operation (use correct --from-account and
+derive-change-address value from “List Ledger Wallets” and “Get Public
+Key” above).
+
+``` sh
+$ ckb-cli wallet transfer --from-account
+0x27fe5acb022cd7b8be0eb7009d42ff4600c597d28b6affefcab6f7396d1311c2
+--to-address ckb1qyqqmpgzhw94kdj6d8jwtmt6xgumjyr0negqvg5weg --capacity
+100 --tx-fee 0.00001 --derive-change-address ckb1qyqqmpgzhw94kdj6d8jwtmt6xgumjyr0negqvg5weg --derive-receiving-address-length 0 --derive-change-address-length 1
 ```
