@@ -151,21 +151,6 @@ Init the testnet toml:
 $ ckb init --import-spec ./aggron.toml --chain testnet
 ```
 
-Next, you must setup the test network following this guide:
-https://docs.nervos.org/dev-guide/testnet.html
-
-Edit ckb.toml in ckb/, changing:
-
-```
-spec = { bundled = "specs/mainnet.toml" }
-```
-
-to
-
-```
-spec = { bundled = "specs/testnet.toml" }
-```
-
 Run the node with:
 
 ```
