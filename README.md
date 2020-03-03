@@ -103,14 +103,15 @@ $ ckb-cli account list
   ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
 ```
 
-Remember the ledger_id given above for the latest commands.
+Remember the ledger_id given above for the latest commands. It will be
+used for ```<ledger-id>``` later on.
 
 ### Get Public Key ###
 
 Get the public key:
 
 ``` sh
-$ ckb-cli account extended-address --path "m/44'/309'/0'/1/0" --account-id 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
+$ ckb-cli account extended-address --path "m/44'/309'/0'/1/0" --account-id <ledger-id>
 ```
 
 This should show up on the ledger as “Provide Public Key” for
@@ -125,11 +126,12 @@ address:
 lock_arg: 0x632c444199275d00b7c1fb65bf001d70bc609599
 ```
 
-The “testnet” address is the one you need to save. Keep it for later.
+The “testnet” address is the one you need to save. Keep it for later,
+as it will be used for ```<ledger-address>```.
 
 ### Transfering ###
 
-#### Starting a node ####
+#### Starting a node (locally) ####
 
 Get ckb in your shell:
 
@@ -140,7 +142,7 @@ $ nix-shell -p '(import ./nix/dep/ckb {})'
 Get aggron.toml:
 
 ``` sh
-$ curl -O aggron.toml https://gist.githubusercontent.com/doitian/573513c345165c0fe4f3504ebc1c8f9f/raw/3032bed68550e0a50e91df2c706481e80b579c70/aggron.toml
+$ curl -o aggron.toml https://gist.githubusercontent.com/doitian/573513c345165c0fe4f3504ebc1c8f9f/raw/3032bed68550e0a50e91df2c706481e80b579c70/aggron.toml
 ```
 
 Init the testnet toml:
@@ -172,6 +174,19 @@ $ ckb run
 
 Leave this open in a separate terminal as you continue on the next steps.
 
+
+#### Starting a node (port forwarding) ####
+
+If you have access to a local node on your network, you can run ssh
+port forwarding. This can be done like this:
+
+```
+$ ssh -L 8114:<host>:8114 localhost
+```
+
+where <host> is the name of your machine running a local node. Note
+this is discourage, and running your own node is preferred.
+
 #### Getting CKB from the faucet ####
 
 Visit https://faucet.nervos.org/auth and follow the process to receive
@@ -183,12 +198,12 @@ Public Key” and the capacity should be 100000.
 To continue, you need at least 100 CKB in your wallet. Do this with:
 
 ``` sh
-$ ckb-cli wallet get-capacity --address
-ckt1qyqqmpgzhw94kdj6d8jwtmt6xgumjyr0negq3d2345
+$ ckb-cli wallet get-capacity --address <ledger-address>
 total: 100.0 (CKB)
 ```
 
-If the number is less than 100, you need to somehow get the coins some
+If your node is not synced up, this will take up to a few hours. If
+the number is less than 100, you need to somehow get the coins some
 other way.
 
 #### Transfer ####
@@ -198,8 +213,11 @@ derive-change-address value from “List Ledger Wallets” and “Get Public
 Key” above).
 
 ``` sh
-$ ckb-cli wallet transfer --from-account
-0x27fe5acb022cd7b8be0eb7009d42ff4600c597d28b6affefcab6f7396d1311c2
---to-address ckb1qyqqmpgzhw94kdj6d8jwtmt6xgumjyr0negqvg5weg --capacity
-100 --tx-fee 0.00001 --derive-change-address ckb1qyqqmpgzhw94kdj6d8jwtmt6xgumjyr0negqvg5weg --derive-receiving-address-length 0 --derive-change-address-length 1
+$ ckb-cli wallet transfer \
+    --from-account <ledger-id> \
+    --to-address <ledger-address> \
+    --capacity 100 --tx-fee 0.00001 \
+    --derive-change-address <ledger-address> \
+    --derive-receiving-address-length 0 \
+    --derive-change-address-length 1
 ```
