@@ -18,6 +18,7 @@
 
 #define PARSE_ERROR() THROW(EXC_PARSE_ERROR)
 
+
 static inline void conditional_init_hash_state(blake2b_hash_state_t *const state, bool personalized) {
     static const uint8_t personalization[]="ckb-default-hash";
     check_null(state);
@@ -173,8 +174,9 @@ void parse_context(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_der
 	for(mol_num_t i=0;i<outputs_len; i++) {
 		mol_seg_res_t output=MolReader_CellOutputVec_get(&outputs, i);
 		mol_seg_t capacity = MolReader_CellOutput_get_capacity(&output.seg);
-		uint64_t capacity_val=*((uint64_t*) capacity.ptr);
-                G.context_transactions[G.context_transactions_fill_idx].outputs[i].amount=*((uint64_t*)capacity.ptr);
+
+	        // Need to do a memcpy because of alignment issues.
+	        memcpy(&G.context_transactions[G.context_transactions_fill_idx].outputs[i].amount, capacity.ptr, 8);
 
 		mol_seg_t lockScript = MolReader_CellOutput_get_lock(&output.seg);
 		mol_seg_t lockArg = MolReader_Script_get_args(&lockScript);
@@ -204,7 +206,7 @@ bool is_self(mol_num_t num_inputs, mol_seg_t* inputs, mol_seg_t* lockScript) {
 		mol_seg_res_t input=MolReader_CellInputVec_get(inputs, i);
 		mol_seg_t outpoint=MolReader_CellInput_get_previous_output(&input.seg);
 		mol_seg_t out_idx_seg=MolReader_OutPoint_get_index(&outpoint);
-		uint32_t out_idx=*((uint32_t*)out_idx_seg.ptr);
+		uint32_t out_idx=mol_unpack_number(out_idx_seg.ptr);
 
 		if(memcmp(G.context_transactions[i].outputs[out_idx].lock_arg, lockArgBytes.ptr, 1)==0) {
 			return true;
@@ -227,12 +229,15 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 
 	uint64_t amount=0;
 
-	for(mol_num_t i=0;i<MolReader_CellInputVec_length(&inputs); i++) {
+        mol_num_t civlength = MolReader_CellInputVec_length(&inputs);
+
+        for(mol_num_t i=0;i<civlength; i++) {
 		mol_seg_res_t input=MolReader_CellInputVec_get(&inputs, i);
 		mol_seg_t outpoint=MolReader_CellInput_get_previous_output(&input.seg);
 		mol_seg_t txhash=MolReader_OutPoint_get_tx_hash(&outpoint);
 		mol_seg_t out_idx_seg=MolReader_OutPoint_get_index(&outpoint);
-		uint32_t out_idx=*((uint32_t*)out_idx_seg.ptr);
+		uint32_t out_idx;
+		memcpy(&out_idx, out_idx_seg.ptr, 4);
 		if(out_idx>3) REJECT("Can't access outputs higher than 3");
 		if(out_idx>G.context_transactions[i].num_outputs) REJECT("Context transaction doesn't have that output");
 		if(memcmp(txhash.ptr, G.context_transactions[i].hash, SIGN_HASH_SIZE) != 0) REJECT("Hash of context %d does not match input transaction hash", i);
@@ -248,7 +253,9 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 	for(unsigned int i=0;i<MolReader_CellOutputVec_length(&outputs); i++) {
           mol_seg_res_t output = MolReader_CellOutputVec_get(&outputs, i);
 	  mol_seg_t capacity = MolReader_CellOutput_get_capacity(&output.seg);
-	  uint64_t capacity_val=*((uint64_t*) capacity.ptr);
+	  uint64_t capacity_val;
+	  memcpy(&capacity_val, capacity.ptr, 8);
+
 	  output_amounts+=capacity_val;
 	  mol_seg_t lockScript = MolReader_CellOutput_get_lock(&output.seg);
 
@@ -277,6 +284,7 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 #define P1_MASK (~(P1_LAST_MARKER|P1_NO_FALLBACK|P1_IS_CONTEXT))
 
 static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, uint8_t const instruction) {
+
     uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
     uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]);
     uint8_t const buff_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);

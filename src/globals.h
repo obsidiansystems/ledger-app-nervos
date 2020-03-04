@@ -61,7 +61,7 @@ typedef struct {
     uint8_t to_parse[MAX_TOSIGN_PARSED];
     uint16_t to_parse_fill_idx;
 
-    struct tx_context context_transactions[5];
+    struct tx_context context_transactions[3];
     uint8_t context_transactions_fill_idx;
 
     struct maybe_transaction maybe_transaction;

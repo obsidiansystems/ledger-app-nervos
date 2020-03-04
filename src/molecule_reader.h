@@ -85,7 +85,9 @@ typedef struct {
 
 MOLECULE_API_DECORATOR mol_num_t mol_unpack_number(const uint8_t *src) {
     if (is_le()) {
-        return *(const uint32_t *)src;
+	uint32_t output;
+	memcpy(&output, src, 4);
+	return output;
     } else {
         uint32_t output = 0;
         uint8_t *dst = (uint8_t*) &output;
