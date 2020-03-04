@@ -32,18 +32,42 @@ typedef struct {
 
 struct maybe_transaction {
 	bool is_valid;
+	bool parse_failed;
 	struct parsed_transaction v;
 };
+
+#define OUTPUT_FLAGS_KNOWN_LOCK 0x01
+#define OUTPUT_FLAGS_IS_DAO 0x02
+
+struct tx_output {
+  uint64_t amount;
+  uint8_t lock_arg[20];
+  uint8_t flags;
+};
+
+struct tx_context {
+    uint8_t hash[32];
+    uint8_t num_outputs;
+    struct tx_output outputs[3];
+};
+
+#define MAX_TOSIGN_PARSED 512
 
 typedef struct {
     bip32_path_t key;
 
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
 
+    uint8_t to_parse[MAX_TOSIGN_PARSED];
+    uint16_t to_parse_fill_idx;
+
+    struct tx_context context_transactions[5];
+    uint8_t context_transactions_fill_idx;
+
     struct maybe_transaction maybe_transaction;
 
-    uint8_t message_data[NERVOS_BUFSIZE];
-    uint32_t message_data_length;
+    //uint8_t message_data[NERVOS_BUFSIZE];
+    //uint32_t message_data_length;
     buffer_t message_data_as_buffer;
 
     blake2b_hash_state_t hash_state;

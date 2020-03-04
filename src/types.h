@@ -104,7 +104,10 @@ static inline bool bip32_paths_eq(
 
 enum operation_tag {
     OPERATION_TAG_NONE = -1, // Sentinal value, as 0 is possibly used for something
-    OPERATION_TAG_PLAIN_TRANSFER = 1
+    OPERATION_TAG_PLAIN_TRANSFER = 1,
+    OPERATION_TAG_DAO_DEPOSIT,
+    OPERATION_TAG_DAO_PREPARE,
+    OPERATION_TAG_DAO_WITHDRAW
 };
 
 
@@ -115,16 +118,15 @@ typedef struct public_key_hash {
 
 struct parsed_transaction {
     enum operation_tag tag;
-    cx_ecfp_public_key_t public_key;
-    struct public_key_hash source;
-    struct public_key_hash destination;
     uint64_t total_fee;
     uint64_t amount; // 0 where inappropriate
     uint32_t flags;  // Interpretation depends on operation type
+    uint8_t source[20];
+    uint8_t destination[20];
 };
 
 // Maximum number of APDU instructions
-#define INS_MAX 0x0F
+#define INS_MAX 0x09
 
 #define APDU_INS(x) ({ \
     _Static_assert(x <= INS_MAX, "APDU instruction is out of bounds"); \

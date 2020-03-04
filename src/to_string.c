@@ -16,7 +16,7 @@ void pkh_to_string(
 );
 
 // These functions output terminating null bytes, and return the ending offset.
-static size_t microtez_to_string(char *dest, uint64_t number);
+static size_t frac_ckb_to_string(char *dest, uint64_t number);
 /*
 void public_key_hash_to_string(
     char *const buff,
@@ -87,12 +87,14 @@ void number_to_string_indirect32(char *const dest, size_t const buff_size, uint3
     number_to_string(dest, *number);
 }
 
-void microtez_to_string_indirect(char *const dest, size_t const buff_size, uint64_t const *const number) {
+void frac_ckb_to_string_indirect(char *const dest, size_t const buff_size, uint64_t const *const number) {
     check_null(dest);
     check_null(number);
     if (buff_size < MAX_INT_DIGITS + 1) THROW(EXC_WRONG_LENGTH); // + terminating null + decimal point
-    microtez_to_string(dest, *number);
+    frac_ckb_to_string(dest, *number);
 }
+
+
 
 size_t number_to_string(char *const dest, uint64_t number) {
     check_null(dest);
@@ -106,14 +108,14 @@ size_t number_to_string(char *const dest, uint64_t number) {
     return length;
 }
 
-// Microtez are in millionths
-#define TEZ_SCALE 1000000
-#define DECIMAL_DIGITS 6
+// frac_ckb are in hundred-millionths
+#define CKB_SCALE 100000000
+#define DECIMAL_DIGITS 8
 
-size_t microtez_to_string(char *const dest, uint64_t number) {
+size_t frac_ckb_to_string(char *const dest, uint64_t number) {
     check_null(dest);
-    uint64_t whole_tez = number / TEZ_SCALE;
-    uint64_t fractional = number % TEZ_SCALE;
+    uint64_t whole_tez = number / CKB_SCALE;
+    uint64_t fractional = number % CKB_SCALE;
     size_t off = number_to_string(dest, whole_tez);
     if (fractional == 0) {
         return off;
@@ -138,6 +140,10 @@ size_t microtez_to_string(char *const dest, uint64_t number) {
     off += length;
     dest[off] = '\0';
     return off;
+}
+
+void lock_arg_to_string(char *const dest, size_t const buff_size, uint8_t const *const lockarg) {
+  bin_to_hex(dest, buff_size, lockarg, 20);
 }
 
 void copy_string(char *const dest, size_t const buff_size, char const *const src) {
