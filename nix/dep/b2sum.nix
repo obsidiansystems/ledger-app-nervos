@@ -1,6 +1,5 @@
-{nixpkgs ? import <nixpkgs> { }}:
+{nixpkgs ? import ./nixpkgs { }}:
 with nixpkgs;
-with pkgs;
 rustPlatform.buildRustPackage rec {
   pname = "b2sum";
   version = "0.5.10";
@@ -10,11 +9,7 @@ rustPlatform.buildRustPackage rec {
     rev = "a0eafd0f86d8fd4f50720e198116dfdea6fbd576";
     sha256 = "08f922c2j88a076j2w869xzh6sw2xy1aaim68s5wx01dlcw6wrpm";
   };
-  patchPhase = ''
-    md5sum Cargo.lock
-    '';
   sourceRoot = "source/blake2_bin";
-  cargoSha256 = "14yvl2xg9qdksld1zmmkzakma045kyp4q8187yxfvqsq4m4ys9kk";
-  verifyCargoDeps = true;
+  cargoSha256 = "0n8qrljh8q5fcg79gf7gb5a2q63i8dqcn4486fh95ss5sgy5isfh";
   buildInputs = [ openssl pkgconfig ];
 }
