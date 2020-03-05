@@ -111,7 +111,7 @@ static size_t sign_complete(uint8_t instruction) {
 			    PROMPT("Amount"),
 			    PROMPT("Fee"),
 			    PROMPT("Source"),
-			    PROMPT("Destimation"),
+			    PROMPT("Destination"),
 			    NULL
 		    };
 		    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
@@ -120,7 +120,29 @@ static size_t sign_complete(uint8_t instruction) {
 				    &G.maybe_transaction.v.destination);
 		    register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
 		    register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
-		    
+
+		    ui_prompt(transaction_prompts, ok_c, sign_reject);
+
+		    }
+		    break;
+	    case OPERATION_TAG_DAO_DEPOSIT:
+		    {
+		    static const uint32_t TYPE_INDEX = 0;
+		    static const uint32_t AMOUNT_INDEX = 1;
+		    static const uint32_t FEE_INDEX = 2;
+		    static const uint32_t SOURCE_INDEX = 3;
+		    static const char *const transaction_prompts[] = {
+			    PROMPT("Confirm DAO"),
+			    PROMPT("Amount"),
+			    PROMPT("Fee"),
+			    PROMPT("Source"),
+			    NULL
+		    };
+		    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
+		    register_ui_callback(SOURCE_INDEX, lock_arg_to_string, &G.maybe_transaction.v.source);
+		    register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+		    register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
+
 		    ui_prompt(transaction_prompts, ok_c, sign_reject);
 
 		    }
@@ -149,7 +171,8 @@ bool is_standard_lock_script(mol_seg_t *lockScript) {
 }
 
 bool is_dao_type_script(mol_seg_t *typeScript) {
-	static const uint8_t defaultTypeScript[] = { 0x9b, 0xd7, 0xe0, 0x6f, 0x3e, 0xcf, 0x4b, 0xe0, 0xf2, 0xfc, 0xd2, 0x18, 0x8b, 0x23, 0xf1,0xb9,0xfc,0xc8,0x8e,0x5d,0x4b,0x65,0xa8,0x63,0x7b,0x17,0x72,0x3b,0xbd,0xa3,0xcc,0xe8 };
+	static const uint8_t defaultTypeScript[] = {
+		0x82, 0xd7, 0x6d, 0x1b, 0x75, 0xfe, 0x2f, 0xd9, 0xa2, 0x7d, 0xfb, 0xaa, 0x65, 0xa0, 0x39, 0x22, 0x1a, 0x38, 0x0d, 0x76, 0xc9, 0x26, 0xf3, 0x78, 0xd3, 0xf8, 0x1c, 0xf3, 0xe7, 0xe1, 0x3f, 0x2e };
 	if(MolReader_ScriptOpt_is_none(typeScript)) return false;
 	mol_seg_t hash_type = MolReader_Script_get_hash_type(typeScript);
 	if(*hash_type.ptr != 1) return false;
@@ -162,7 +185,7 @@ void parse_context(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_der
 	seg.ptr=buff;
 	seg.size=buff_size;
 	uint8_t mol_result=MolReader_RawTransaction_verify(&seg,true);
-	if(mol_result != MOL_OK) 
+	if(mol_result != MOL_OK)
 	  REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
 
 	mol_seg_t outputs = MolReader_RawTransaction_get_outputs(&seg);
@@ -189,7 +212,7 @@ void parse_context(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_der
 		}
 
 		memcpy(G.context_transactions[G.context_transactions_fill_idx].outputs[i].lock_arg, lockArgBytes.ptr, 20);
-		
+
 		mol_seg_t type_script=MolReader_CellOutput_get_type_(&output.seg);
 		if(is_dao_type_script(&type_script)) G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags|=OUTPUT_FLAGS_IS_DAO;
 	}
@@ -201,7 +224,7 @@ bool is_self(mol_num_t num_inputs, mol_seg_t* inputs, mol_seg_t* lockScript) {
 		return false;
 	mol_seg_t lockArg = MolReader_Script_get_args(lockScript);
 	mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
-	
+
 	for(uint8_t i=0;i<num_inputs;i++) {
 		mol_seg_res_t input=MolReader_CellInputVec_get(inputs, i);
 		mol_seg_t outpoint=MolReader_CellInput_get_previous_output(&input.seg);
@@ -220,7 +243,7 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 	seg.ptr=buff;
 	seg.size=buff_size;
 	uint8_t mol_result=MolReader_RawTransaction_verify(&seg,true);
-	if(mol_result != MOL_OK) 
+	if(mol_result != MOL_OK)
 	  REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
 	mol_seg_t inputs = MolReader_RawTransaction_get_inputs(&seg);
 	int inputs_len=MolReader_CellInputVec_length(&inputs);
@@ -243,12 +266,16 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 		if(memcmp(txhash.ptr, G.context_transactions[i].hash, SIGN_HASH_SIZE) != 0) REJECT("Hash of context %d does not match input transaction hash", i);
 		amount+=G.context_transactions[i].outputs[out_idx].amount;
 		memcpy(G.maybe_transaction.v.source, G.context_transactions[i].outputs[i].lock_arg, 20);
+		if(G.context_transactions[i].outputs[out_idx].flags&OUTPUT_FLAGS_IS_DAO)
+			REJECT("DAO Prepare and Withdraw not supported yet");
 	}
 
 	mol_seg_t outputs = MolReader_RawTransaction_get_outputs(&seg);
 
 	uint64_t output_amounts=0;
 	uint64_t sent_amounts=0;
+	uint64_t dao_deposit_amount=0;
+
 
 	for(unsigned int i=0;i<MolReader_CellOutputVec_length(&outputs); i++) {
           mol_seg_res_t output = MolReader_CellOutputVec_get(&outputs, i);
@@ -265,12 +292,26 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 	    mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
 	    memcpy(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20);
 	  }
+	  mol_seg_t type_script=MolReader_CellOutput_get_type_(&output.seg);
+	  if(is_dao_type_script(&type_script)) {
+            dao_deposit_amount+=capacity_val;
+	  }
 	}
+
+	if(!(sent_amounts==0 || dao_deposit_amount==0)) {
+            REJECT("Don't handle mixed dao deposits and non-dao transfers in the same transaction");
+	}
+	if(dao_deposit_amount!=0) {
+	    G.maybe_transaction.v.tag=OPERATION_TAG_DAO_DEPOSIT;
+	}
+	else {
+	    G.maybe_transaction.v.tag=OPERATION_TAG_PLAIN_TRANSFER;
+	}
+
 
 	G.maybe_transaction.v.total_fee=amount-output_amounts;
 	G.maybe_transaction.v.amount=sent_amounts;
 
-	G.maybe_transaction.v.tag=OPERATION_TAG_PLAIN_TRANSFER;
 
 	G.maybe_transaction.is_valid = true;
 }
@@ -333,7 +374,7 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
 		    }
 	    }
     }
-    
+
     if (enable_hashing)
       blake2b_incremental_hash(buff, buff_size, &buff_size, &G.hash_state, is_ctxd);
 
