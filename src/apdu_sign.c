@@ -349,6 +349,13 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
 	  G.hash_state.initialized=false;
           return finalize_successful_send(0);
 	} else {
+          // Double-hash for the lock script.
+      
+          cx_blake2b_t double_state;
+          cx_blake2b_init(&double_state, SIGN_HASH_SIZE*8);
+          cx_hash((cx_hash_t *) &double_state, 0, G.final_hash, sizeof(G.final_hash), NULL, 0);
+          cx_hash((cx_hash_t *) &double_state, CX_LAST, NULL, 0, G.final_hash, sizeof(G.final_hash));
+
           return sign_complete(instruction);
 	}
     } else {
