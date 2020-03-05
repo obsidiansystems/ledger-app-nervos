@@ -2,7 +2,7 @@
 . ./tests/lib.sh
 
 check_signature () {
-  xxd -r -ps <<<"$1" | blake2 --length 32 --personal 636b622d64656661756c742d68617368 | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
+  xxd -r -ps <<<"$1" | blake2 --length 32 --personal 636b622d64656661756c742d68617368 | xxd -p -r | blake2 --length 32 | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
 }
 
 @test "Signing APDU returns something when given something to sign and clickthrough happens." {
@@ -71,6 +71,7 @@ doSign() {
   doSign "$TRANSACTION"
   rv="$(egrep "<= b'.*'9000" <(echo "$output")|cut -d"'" -f2)"
   run check_signature "$TRANSACTION" "$rv"
+  diff <(echo $output) - <<<"Signature Verified Successfully"
 }
 
 @test "Signing with strict checking and a valid useful transaction passes" {
@@ -82,6 +83,7 @@ doSign() {
   sendTransaction "$TRANSACTION"
   rv="$(egrep "<= b'.*'9000" <(echo "$output")|cut -d"'" -f2)"
   run check_signature "$TRANSACTION" "$rv"
+  diff <(echo $output) - <<<"Signature Verified Successfully"
 }
 
 @test "Signing with strict checking and an incorrect context fails" {
