@@ -19,11 +19,12 @@
 #define PARSE_ERROR() THROW(EXC_PARSE_ERROR)
 
 
+static const uint8_t blake2b_personalization[]="ckb-default-hash";
+
 static inline void conditional_init_hash_state(blake2b_hash_state_t *const state, bool personalized) {
-    static const uint8_t personalization[]="ckb-default-hash";
     check_null(state);
     if (!state->initialized) {
-      cx_blake2b_init2(&state->state, SIGN_HASH_SIZE*8, NULL, 0, (uint8_t*) personalization, sizeof(personalization)-1);
+      cx_blake2b_init2(&state->state, SIGN_HASH_SIZE*8, NULL, 0, (uint8_t*) blake2b_personalization, sizeof(blake2b_personalization)-1);
       state->initialized = true;
     }
 }
@@ -352,7 +353,7 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
           // Double-hash for the lock script.
       
           cx_blake2b_t double_state;
-          cx_blake2b_init(&double_state, SIGN_HASH_SIZE*8);
+          cx_blake2b_init2(&double_state, SIGN_HASH_SIZE*8, NULL, 0, (uint8_t*) blake2b_personalization, sizeof(blake2b_personalization)-1);
           cx_hash((cx_hash_t *) &double_state, 0, G.final_hash, sizeof(G.final_hash), NULL, 0);
           cx_hash((cx_hash_t *) &double_state, CX_LAST, NULL, 0, G.final_hash, sizeof(G.final_hash));
 
