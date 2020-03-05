@@ -2,10 +2,13 @@
 . ./tests/lib.sh
 
 blake2b_p () {
-  blake2 --length 32 --personal 636b622d64656661756c742d68617368
+  blake2 --length 32 --personal 636b622d64656661756c742d68617368 | tee txhashdump
+}
+blake2b_lock_hash () {
+  (blake2b_p | tee dumpfile1 ; echo -n "5500000000000000 55000000100000005500000055000000410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") | tee dumpfile | xxd -p -r | blake2b_p
 }
 check_signature () {
-  xxd -r -ps <<<"$1" | blake2b_p | xxd -p -r | blake2b_p | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
+  xxd -r -ps <<<"$1" | blake2b_lock_hash | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
 }
 
 @test "Signing APDU returns something when given something to sign and clickthrough happens." {
