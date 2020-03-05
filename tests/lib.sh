@@ -17,8 +17,11 @@ apdu_with_clicks () {
 COMMIT="$(echo "$GIT_DESCRIBE" | sed 's/-dirty/*/')"
 HEXCOMMIT="$(echo -n ${COMMIT}|xxd -ps -g0)"
 
+blake2b_p () {
+  blake2 --length 32 --personal 636b622d64656661756c742d68617368
+}
 check_signature () {
-  xxd -r -ps <<<"$1" | blake2 --length 32 --personal 636b622d64656661756c742d68617368 | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
+  xxd -r -ps <<<"$1" | blake2b_p | xxd -p -r | blake2b_p | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
 }
 
 sendTransaction() {
