@@ -1,10 +1,6 @@
 
 . ./tests/lib.sh
 
-check_signature () {
-  xxd -r -ps <<<"$1" | blake2 --length 32 --personal 636b622d64656661756c742d68617368 | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
-}
-
 @test "Signing APDU returns something when given something to sign and clickthrough happens." {
   run apdu_fixed "8003000011048000002c800001358000000080000000"
   [ "$status" -eq 0 ]
@@ -28,43 +24,6 @@ check_signature () {
   [ "$status" -eq 0 ]
   grep -q "<= b''9405" <(echo "$output")
  }
-
-sendTransaction() {
-  bytesToSign=$(($(wc -c <<<"$1")/2))
-  toSend=$1
-  while [ "$bytesToSign" -gt 230 ] ;
-  do 
-    run apdu_fixed "80034100e6$(head -c 460 <<<"$toSend")"
-    [ "$status" -eq 0 ]
-    grep -q "<= b''9000" <(echo "$output")
-    toSend="$(tail -c+461 <<<"$toSend")";
-    bytesToSign=$(($(wc -c <<<"$toSend")/2))
-  done
-  bytes=$(printf "%x" $(($(wc -c <<<"$toSend")/2)))
-  if [ -z "$2" ]; then
-    run apdu_with_clicks "8003c100$bytes$toSend" "rR"
-  else
-    run apdu_fixed "8003e100$bytes$toSend"
-  fi
-}
-
-doSign() {
-  run apdu_fixed "8003400011048000002c800001358000000080000000"
-  [ "$status" -eq 0 ]
-  grep -q "<= b''9000" <(echo "$output")
-  bytesToSign=$(($(wc -c <<<"$1")/2))
-  toSend=$1
-  while [ "$bytesToSign" -gt 230 ] ;
-  do 
-    run apdu_fixed "80034100e6$(head -c 460 <<<"$toSend")"
-    [ "$status" -eq 0 ]
-    grep -q "<= b''9000" <(echo "$output")
-    toSend="$(tail -c+461 <<<"$toSend")";
-    bytesToSign=$(($(wc -c <<<"$toSend")/2))
-  done
-  bytes=$(printf "%x" $(($(wc -c <<<"$toSend")/2)))
-  run apdu_with_clicks "8003c100$bytes$toSend" "rR"
-}
 
 @test "Signing with strict checking and a valid but nonuseful transaction passes" {
   TRANSACTION="a10000001c0000002000000024000000280000002c00000095000000000000000000000000000000000000006900000008000000610000001000000018000000610000000040787d01000000490000001000000030000000310000009bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce80114000000b57dd485a1b0c0a57c377e896a1a924d7ed02ab90c0000000800000000000000"
