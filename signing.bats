@@ -30,6 +30,7 @@
   doSign "$TRANSACTION"
   rv="$(egrep "<= b'.*'9000" <(echo "$output")|cut -d"'" -f2)"
   run check_signature "$TRANSACTION" "$rv"
+  diff <(echo $output) - <<<"Signature Verified Successfully"
 }
 
 @test "Signing with strict checking and a valid useful transaction passes" {
@@ -41,6 +42,7 @@
   sendTransaction "$TRANSACTION"
   rv="$(egrep "<= b'.*'9000" <(echo "$output")|cut -d"'" -f2)"
   run check_signature "$TRANSACTION" "$rv"
+  diff <(echo $output) - <<<"Signature Verified Successfully"
 }
 
 @test "Signing with strict checking and an incorrect context fails" {
