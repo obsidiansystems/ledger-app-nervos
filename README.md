@@ -218,7 +218,7 @@ $ dao deposit \
     --capacity 102 \
     --from-account <ledger-id> \
     --tx-fee 0.00001 \
-    --path "m/44'/309'/0'/1/0
+    --path "m/44'/309'/0'/1/0"
 ```
 
 ##### Get live cells ######
