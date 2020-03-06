@@ -4,11 +4,32 @@
 blake2b_p () {
   blake2 --length 32 --personal 636b622d64656661756c742d68617368 | tee txhashdump
 }
+
 blake2b_lock_hash () {
   (blake2b_p | tee dumpfile1 ; echo -n "5500000000000000 55000000100000005500000055000000410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") | tee dumpfile | xxd -p -r | blake2b_p
 }
+
 check_signature () {
-  xxd -r -ps <<<"$1" | blake2b_lock_hash | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
+  echo $2 >> SIGIN.txt
+  r_val=$(head -c64 <<<"$2")
+  s_val=$(tail -c+65 <<<"$2" | head -c64)
+
+  echo $r_val >> RV.txt
+  echo $s_val >> SV.txt
+
+  if [ "$(head -c1 <<<"$r_val")" = f ] ; then r_val="00$r_val"; fi;
+  if [ "$(head -c1 <<<"$s_val")" = f ] ; then s_val="00$s_val"; fi;
+
+  rlen=$((${#r_val}/2))
+  slen=$((${#s_val}/2))
+
+  rfmt="02$(printf "%x" $rlen)${r_val}"
+  sfmt="02$(printf "%x" $slen)${s_val}"
+
+  SIG="30$(printf "%x" $(($rlen+$slen+4)))$rfmt$sfmt"
+  echo $SIG > sig_stash.txt
+
+  xxd -r -ps <<<"$1" | blake2b_lock_hash | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$SIG")
 }
 
 @test "Signing APDU returns something when given something to sign and clickthrough happens." {
@@ -21,7 +42,6 @@ check_signature () {
   echo $rv
   # 142 characters of hexadecimal der-encoded signature, one newline.
   # TODO: use openssl to verify the signature.
-  wc <<<"$rv" > sig_len.txt
   run check_signature "00001111" "$rv"
   diff <(echo $output) - <<<"Signature Verified Successfully"
  } 
