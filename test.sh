@@ -21,8 +21,15 @@ while getopts "hsv" opt; do
   esac
 done
 
+killSpeculos() {
+	echo rRrRrlRL > /dev/tcp/localhost/5667
+	sleep 0.3
+	kill $appPid >& /dev/null
+}
+
 if [ -n "$LEDGER_PROXY_PORT" ] ; then
   speculos --display headless bin/app.elf --button-port 5667 --deterministic-rng 42 |& $speculos_output_cmd $speculos_output_file &
+  trap killSpeculos EXIT
 else
   # Should get this into the shell.
   # usbtool -v 0x2c97 log
@@ -36,7 +43,5 @@ echo "Starting bats"
 bats -p tests/
 bats_result=$?
 echo "Done with bats"
-
-kill $appPid 2> /dev/null || :
 
 exit $bats_result

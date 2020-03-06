@@ -133,14 +133,18 @@ size_t sign(
 		    &info);
 
     // Converting to compressed format
-    PRINTF("SIG: %.*h\n", 100, sig);
+    PRINTF("SIG: %.*h ptr: %d\n", 100, sig, sig);
     int r_size = sig[3];
-    PRINTF("r_size: %d", r_size);
+    int r_size_sat = (r_size>32)?32:r_size;
+    uint8_t *r=sig+4+(r_size>32?1:0);
+    PRINTF("r_size: %d - r: %.*h - %d\n", r_size, r_size_sat, r, r);
     int s_size = sig[3+r_size+2];
-    PRINTF("s_size: %d", r_size);
+    int s_size_sat = (s_size>32)?32:s_size;
+    uint8_t *s=sig+4+r_size+2+(s_size>32?1:0);
+    PRINTF("s_size: %d - s: %.*h - %d\n", s_size, s_size_sat, s, s);
    
-    os_memmove(out+32-(r_size>32?32:r_size), sig+4+32-r_size+(r_size>32?1:0), r_size>32?32:r_size);
-    os_memmove(out+64-(s_size>32?32:r_size), sig+4+r_size+2+32-s_size+(s_size>32?1:0), s_size>32?32:s_size);
+    os_memmove(out+32-r_size_sat, r, r_size_sat);
+    os_memmove(out+64-s_size_sat, s, s_size_sat);
 
     out[64]=0;
     if (info & CX_ECCINFO_PARITY_ODD) {
