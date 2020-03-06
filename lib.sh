@@ -18,10 +18,30 @@ COMMIT="$(echo "$GIT_DESCRIBE" | sed 's/-dirty/*/')"
 HEXCOMMIT="$(echo -n ${COMMIT}|xxd -ps -g0)"
 
 blake2b_p () {
-  blake2 --length 32 --personal 636b622d64656661756c742d68617368
+  blake2 --length 32 --personal 636b622d64656661756c742d68617368 | tee txhashdump
 }
+
+blake2b_lock_hash () {
+  (blake2b_p | tee dumpfile1 ; echo -n "5500000000000000 55000000100000005500000055000000410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") | tee dumpfile | xxd -p -r | blake2b_p
+}
+
 check_signature () {
-  xxd -r -ps <<<"$1" | blake2b_p | xxd -p -r | blake2b_p | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$2")
+  r_val=$(head -c64 <<<"$2")
+  s_val=$(tail -c+65 <<<"$2" | head -c64)
+
+  # Check the high bit, add a zero byte if needed.
+  if [ "$(xxd -r -ps <<<"$r_val" | xxd -b | cut -d' ' -f2 | head -c1 )" == "1" ] ; then r_val="00$r_val"; fi;
+  if [ "$(xxd -r -ps <<<"$s_val" | xxd -b | cut -d' ' -f2 | head -c1 )" == "1" ] ; then s_val="00$s_val"; fi;
+
+  rlen=$((${#r_val}/2))
+  slen=$((${#s_val}/2))
+
+  rfmt="02$(printf "%x" $rlen)${r_val}"
+  sfmt="02$(printf "%x" $slen)${s_val}"
+
+  SIG="30$(printf "%x" $(($rlen+$slen+4)))$rfmt$sfmt"
+
+  xxd -r -ps <<<"$1" | blake2b_lock_hash | xxd -p -r | openssl pkeyutl -verify -pubin -inkey tests/public_key_0_0.pem -sigfile <(xxd -r -ps <<<"$SIG")
 }
 
 sendTransaction() {

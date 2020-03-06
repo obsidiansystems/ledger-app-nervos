@@ -11,7 +11,6 @@
   echo $rv
   # 142 characters of hexadecimal der-encoded signature, one newline.
   # TODO: use openssl to verify the signature.
-  wc <<<"$rv" > sig_len.txt
   run check_signature "00001111" "$rv"
   diff <(echo $output) - <<<"Signature Verified Successfully"
  } 
