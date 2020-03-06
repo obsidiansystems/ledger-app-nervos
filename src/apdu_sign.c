@@ -369,8 +369,6 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
 		  0x00, 0x00, 0x00, 0x00, 0x00
 	  };
 
-	  PRINTF("%d chars - %.*h\n", sizeof(self_witness), sizeof(self_witness), self_witness);
-
           cx_hash((cx_hash_t *) &double_state, 0, self_witness, sizeof(self_witness), NULL, 0);
 
           cx_hash((cx_hash_t *) &double_state, CX_LAST, NULL, 0, G.final_hash, sizeof(G.final_hash));

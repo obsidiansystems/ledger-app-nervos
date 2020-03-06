@@ -113,15 +113,12 @@ size_t sign(
     check_null(pair);
     check_null(in);
     
-    PRINTF("SIGNING\n");
-
     static size_t const SIG_SIZE = 100;
     uint8_t sig[SIG_SIZE];
 
     if (out_size < 65) THROW(EXC_WRONG_LENGTH);
     unsigned int info;
 
-    PRINTF("SIGNING\n");
     cx_ecdsa_sign(
 		    &pair->private_key,
 		    CX_LAST | CX_RND_RFC6979,
@@ -133,15 +130,12 @@ size_t sign(
 		    &info);
 
     // Converting to compressed format
-    PRINTF("SIG: %.*h ptr: %d\n", 100, sig, sig);
     int r_size = sig[3];
     int r_size_sat = (r_size>32)?32:r_size;
     uint8_t *r=sig+4+(r_size>32?1:0);
-    PRINTF("r_size: %d - r: %.*h - %d\n", r_size, r_size_sat, r, r);
     int s_size = sig[3+r_size+2];
     int s_size_sat = (s_size>32)?32:s_size;
     uint8_t *s=sig+4+r_size+2+(s_size>32?1:0);
-    PRINTF("s_size: %d - s: %.*h - %d\n", s_size, s_size_sat, s, s);
    
     os_memmove(out+32-r_size_sat, r, r_size_sat);
     os_memmove(out+64-s_size_sat, s, s_size_sat);
