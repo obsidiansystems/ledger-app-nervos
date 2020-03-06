@@ -201,7 +201,7 @@ Key” above).
 $ ckb-cli wallet transfer \
     --from-account <ledger-id> \
     --to-address <ledger-address> \
-    --capacity 100 --tx-fee 0.00001 \
+    --capacity 102 --tx-fee 0.00001 \
     --derive-change-address <ledger-address> \
     --derive-receiving-address-length 0 \
     --derive-change-address-length 1
@@ -215,7 +215,7 @@ You can deposit to the dao like:
 
 ``` sh
 $ dao deposit \
-    --capacity 100 \
+    --capacity 102 \
     --from-account <ledger-id> \
     --tx-fee 0.00001 \
     --path "m/44'/309'/0'/1/0
