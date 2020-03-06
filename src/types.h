@@ -123,6 +123,7 @@ struct parsed_transaction {
     uint32_t flags;  // Interpretation depends on operation type
     uint8_t source[20];
     uint8_t destination[20];
+    uint32_t input_count;
 };
 
 // Maximum number of APDU instructions

@@ -225,14 +225,16 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 	  REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
 	mol_seg_t inputs = MolReader_RawTransaction_get_inputs(&seg);
 	int inputs_len=MolReader_CellInputVec_length(&inputs);
+	// Needed for signing even when we don't understand the transaction.
+	G.maybe_transaction.v.input_count = inputs_len;
+
 	if(inputs_len>5) REJECT("Too many input cells");
 	if(inputs_len>G.context_transactions_fill_idx) REJECT("Not enough context transactions for inputs");
 
 	uint64_t amount=0;
 
-        mol_num_t civlength = MolReader_CellInputVec_length(&inputs);
 
-        for(mol_num_t i=0;i<civlength; i++) {
+        for(mol_num_t i=0;i<inputs_len; i++) {
 		mol_seg_res_t input=MolReader_CellInputVec_get(&inputs, i);
 		mol_seg_t outpoint=MolReader_CellInput_get_previous_output(&input.seg);
 		mol_seg_t txhash=MolReader_OutPoint_get_tx_hash(&outpoint);
@@ -370,6 +372,11 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
 	  };
 
           cx_hash((cx_hash_t *) &double_state, 0, self_witness, sizeof(self_witness), NULL, 0);
+
+
+	  static const uint8_t empty_witness_len[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	  for(uint32_t i=0;i<G.maybe_transaction.v.input_count;i++)
+            cx_hash((cx_hash_t *) &double_state, 0, empty_witness_len, sizeof(empty_witness_len), NULL, 0);
 
           cx_hash((cx_hash_t *) &double_state, CX_LAST, NULL, 0, G.final_hash, sizeof(G.final_hash));
 
