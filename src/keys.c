@@ -139,8 +139,8 @@ size_t sign(
     int s_size = sig[3+r_size+2];
     PRINTF("s_size: %d", r_size);
    
-    os_memmove(out+32-r_size, sig+4+32-r_size+(r_size>32?1:0), r_size>32?32:r_size);
-    os_memmove(out+64-s_size, sig+4+r_size+32-s_size+(s_size>32?1:0), s_size>32?32:s_size);
+    os_memmove(out+32-(r_size>32?32:r_size), sig+4+32-r_size+(r_size>32?1:0), r_size>32?32:r_size);
+    os_memmove(out+64-(s_size>32?32:r_size), sig+4+r_size+2+32-s_size+(s_size>32?1:0), s_size>32?32:s_size);
 
     out[64]=0;
     if (info & CX_ECCINFO_PARITY_ODD) {
