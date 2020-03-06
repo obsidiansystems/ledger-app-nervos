@@ -375,7 +375,7 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
 
 
 	  static const uint8_t empty_witness_len[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	  for(uint32_t i=0;i<G.maybe_transaction.v.input_count;i++)
+	  for(uint32_t i=1;i<G.maybe_transaction.v.input_count;i++)
             cx_hash((cx_hash_t *) &double_state, 0, empty_witness_len, sizeof(empty_witness_len), NULL, 0);
 
           cx_hash((cx_hash_t *) &double_state, CX_LAST, NULL, 0, G.final_hash, sizeof(G.final_hash));
