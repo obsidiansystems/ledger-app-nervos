@@ -214,7 +214,7 @@ $ ckb-cli wallet transfer \
 You can deposit to the dao like:
 
 ``` sh
-$ dao deposit \
+$ ckb-cli dao deposit \
     --capacity 102 \
     --from-account <ledger-id> \
     --tx-fee 0.00001 \
@@ -226,7 +226,7 @@ $ dao deposit \
 Get live cells:
 
 ``` sh
-$ wallet get-live-cells --address <ledger-address>
+$ ckb-cli wallet get-live-cells --address <ledger-address>
 current_capacity: 2000.0 (CKB)
 current_count: 1
 live_cells:
@@ -252,7 +252,7 @@ Remember the value above for one of live cells under “tx\_hash” and “tx\_i
 Withdraw from DAO:
 
 ``` sh
-$ dao withdraw
+$ ckb-cli dao withdraw
     --from-account <ledger-account> \
     --out-point <tx_hash>-<tx_index> \
     --path "m/44'/309'/0'/1/0" \
