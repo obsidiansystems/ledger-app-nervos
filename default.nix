@@ -7,6 +7,8 @@ let
       then pkgs.fetchFromGitHub { inherit (builtins.fromJSON (builtins.readFile (p + /github.json))) owner repo rev sha256; }
     else p;
 
+  blake2_simd = import ./nix/dep/b2sum.nix { };
+
   targets =
     {
       s = rec {
@@ -55,8 +57,8 @@ let
           speculos.speculos
           pkgs.bats
           pkgs.xxd
-          pkgs.b2sum
           pkgs.openssl
+          blake2_simd
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;

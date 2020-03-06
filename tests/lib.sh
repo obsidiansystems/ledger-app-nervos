@@ -4,7 +4,7 @@ apdu() {
 }
 
 apdu_fixed () {
-  echo "$*" | apdu
+  echo "$*" | apdu | sed 's/HID //'
 }
 
 apdu_with_clicks () {

@@ -21,8 +21,13 @@ void protocol_hash_to_string(char *const buff, size_t const buff_size, uint8_t c
 void parsed_contract_to_string(char *const buff, size_t const buff_size, public_key_hash_t const *const contract);
 void lookup_parsed_contract_name(char *const buff, size_t const buff_size, public_key_hash_t const *const contract);
 
+void lock_arg_to_string(char *const buff, size_t const buff_size, uint8_t const *const contract);
+
 // dest must be at least MAX_INT_DIGITS
 size_t number_to_string(char *const dest, uint64_t number);
+
+// Format a frac_ckb
+void frac_ckb_to_string_indirect(char *const dest, size_t const buff_size, uint64_t const *const number);
 
 // These take their number parameter through a pointer and take a length
 void number_to_string_indirect64(char *const dest, size_t const buff_size, uint64_t const *const number);

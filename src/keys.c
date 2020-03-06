@@ -112,23 +112,41 @@ size_t sign(
     check_null(out);
     check_null(pair);
     check_null(in);
-
-    size_t tx = 0;
+    
     static size_t const SIG_SIZE = 100;
-    if (out_size < SIG_SIZE) THROW(EXC_WRONG_LENGTH);
+    uint8_t sig[SIG_SIZE];
+
+    if (out_size < 65) THROW(EXC_WRONG_LENGTH);
     unsigned int info;
-    tx += cx_ecdsa_sign(
+
+    cx_ecdsa_sign(
 		    &pair->private_key,
 		    CX_LAST | CX_RND_RFC6979,
 		    CX_SHA256,  // historical reasons...semantically CX_NONE
 		    (uint8_t const *)PIC(in),
 		    in_size,
-		    out,
+		    sig,
 		    SIG_SIZE,
 		    &info);
+
+    // Converting to compressed format
+    int r_size = sig[3];
+    int r_size_sat = (r_size>32)?32:r_size;
+    uint8_t *r=sig+4+(r_size>32?1:0);
+    int s_size = sig[3+r_size+2];
+    int s_size_sat = (s_size>32)?32:s_size;
+    uint8_t *s=sig+4+r_size+2+(s_size>32?1:0);
+   
+    os_memmove(out+32-r_size_sat, r, r_size_sat);
+    os_memmove(out+64-s_size_sat, s, s_size_sat);
+
+    out[64]=0;
     if (info & CX_ECCINFO_PARITY_ODD) {
-	    out[0] |= 0x01;
+	    out[64] |= 0x01;
+    }
+    if (info & CX_ECCINFO_xGTn) {
+	    out[64] |= 0x02;
     }
 
-    return tx;
+    return 65;
 }

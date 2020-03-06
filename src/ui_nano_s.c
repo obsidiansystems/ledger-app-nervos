@@ -244,6 +244,12 @@ void ui_prompt(const char *const *labels, ui_callback_t ok_c, ui_callback_t cxl_
     for (i = 0; labels[i] != NULL; i++) {
         const char *label = (const char *)PIC(labels[i]);
         if (i >= MAX_SCREEN_COUNT || strlen(label) > PROMPT_WIDTH) THROW(EXC_MEMORY_ERROR);
+#ifdef NERVOS_DEBUG
+	global.ui.prompt.callbacks[i](
+			global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value),
+			global.ui.prompt.callback_data[i]);
+	PRINTF("Prompt %d:\n%s\n%s\n", i, label, global.ui.prompt.active_value);
+#endif
     }
     size_t screen_count = i;
 
