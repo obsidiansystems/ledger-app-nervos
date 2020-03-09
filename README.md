@@ -253,7 +253,7 @@ Withdraw from DAO:
 
 ``` sh
 $ ckb-cli dao withdraw
-    --from-account <ledger-account> \
+    --from-account <ledger-id> \
     --out-point <tx_hash>-<tx_index> \
     --path "m/44'/309'/0'/1/0" \
     --tx-fee 0.00001
