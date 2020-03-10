@@ -40,7 +40,7 @@ appPid=$!
 
 sleep 1
 echo "Starting bats"
-bats -p tests/dao.bats
+bats -p tests/
 bats_result=$?
 echo "Done with bats"
 
