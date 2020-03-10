@@ -207,20 +207,6 @@ $ ckb-cli wallet transfer \
     --derive-change-address-length 1
 ```
 
-#### DAO ####
-
-##### Deposit #####
-
-You can deposit to the dao like:
-
-``` sh
-$ ckb-cli dao deposit \
-    --capacity 102 \
-    --from-account <ledger-id> \
-    --tx-fee 0.00001 \
-    --path "m/44'/309'/0'/1/0"
-```
-
 ##### Get live cells ######
 
 Get live cells:
@@ -245,16 +231,89 @@ total_capacity: 2000.0 (CKB)
 total_count: 1
 ```
 
-Remember the value above for one of live cells under “tx\_hash” and “tx\_index”.
+#### DAO ####
+
+##### Deposit #####
+
+You can deposit to the dao like:
+
+``` sh
+$ ckb-cli dao deposit \
+    --capacity 102 \
+    --from-account <ledger-id> \
+    --tx-fee 0.00001 \
+    --path "m/44'/309'/0'/1/0"
+```
+
+##### Get deposited cells #####
+
+Get deposited cells:
+
+``` sh
+$ ckb-cli dao query-deposited-cells --address <ledger-address>
+live_cells:
+  - capacity: 10200000000
+    data_bytes: 8
+    index:
+      output_index: 0
+      tx_index: 1
+    lock_hash: 0xa77a89c29289311b5d6a01f234facc8244cf455909260533e11183054852ff61
+    number: 472898
+    tx_hash: 0xc55bad328edd74c4be1e630d0eb52733d9ed027f02eaca10f0e78b96a44053fc
+    tx_index: 0
+    type_hashes:
+      - 0x82d76d1b75fe2fd9a27dfbaa65a039221a380d76c926f378d3f81cf3e7e13f2e
+      - 0xcc77c4deac05d68ab5b26828f0bf4565a8d73113d7bb7e92b8362b8a74e58e58
+total_capacity: 10200000000
+```
+
+Remember the value above for one of live cells under “tx\_hash” and “output\_index”.
+
+##### Prepare #####
+
+Prepare a cell for withdrawal from the DAO:
+
+``` sh
+$ ckb-cli dao prepare --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.0001
+0xae91f2a310f2cfeada391e5f76d0addcc56d99c91a39734c292c930a1cfc67c2
+```
+
+##### Get prepared cells #####
+
+Get prepared cells:
+
+``` sh
+$ ckb-cli dao query-prepared-cells --address <ledger-address>
+live_cells:
+  - capacity: 10500000000
+    data_bytes: 8
+    index:
+      output_index: 0
+      tx_index: 1
+    lock_hash: 0xa77a89c29289311b5d6a01f234facc8244cf455909260533e11183054852ff61
+    maximum_withdraw: 10500154580
+    number: 493786
+    tx_hash: 0xae91f2a310f2cfeada391e5f76d0addcc56d99c91a39734c292c930a1cfc67c2
+    tx_index: 0
+    type_hashes:
+      - 0x82d76d1b75fe2fd9a27dfbaa65a039221a380d76c926f378d3f81cf3e7e13f2e
+      - 0xcc77c4deac05d68ab5b26828f0bf4565a8d73113d7bb7e92b8362b8a74e58e58
+total_maximum_withdraw: 10500154580
+```
+
+Remember the value above for one of live cells under “tx\_hash” and “output\_index”.
 
 ##### Withdraw #####
 
-Withdraw from DAO:
+Withdraw a prepared cell:
 
 ``` sh
-$ ckb-cli dao withdraw
-    --from-account <ledger-id> \
-    --out-point <tx_hash>-<tx_index> \
-    --path "m/44'/309'/0'/1/0" \
-    --tx-fee 0.00001
+$ ckb-cli dao withdraw --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.00001
 ```
+
+At this point, either
+```
+JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c71b5dc71fcbf1638bb72c8fb16f8fffdfd5172456a56167fea0a3)))
+```
+will be reported, showing that the prepared cell is not yet available to withdraw, or a transaction hash if it is.
+
