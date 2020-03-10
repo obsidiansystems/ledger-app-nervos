@@ -129,7 +129,7 @@ struct parsed_transaction {
     uint8_t destination[20];
     uint8_t dao_destination[20];
     uint64_t dao_amount;
-    uint32_t input_count;
+    uint32_t group_input_count;
 };
 
 // Maximum number of APDU instructions

@@ -95,9 +95,6 @@ static size_t sign_complete(uint8_t instruction) {
 
     ui_callback_t const ok_c = instruction == INS_SIGN_WITH_HASH ? sign_with_hash_ok : sign_without_hash_ok;
 
-    PRINTF("optag: %d", G.maybe_transaction.v.tag);
-    PRINTF("AMT: %.*h\n", 8, &G.maybe_transaction.v.amount);
-
     switch (G.maybe_transaction.v.tag) {
 
 	    case OPERATION_TAG_PLAIN_TRANSFER:
@@ -268,6 +265,8 @@ enum dao_data_type get_dao_data_type(mol_seg_t* outputs_data, int i) {
 	return DAO_DATA_PREPARED;
 }
 
+void parse_context_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const buff, uint16_t const buff_size);
+
 void parse_context(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const buff, uint16_t const buff_size) {
 	mol_seg_t seg;
 	seg.ptr=buff;
@@ -275,6 +274,14 @@ void parse_context(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_der
 	uint8_t mol_result=MolReader_RawTransaction_verify(&seg,true);
 	if(mol_result != MOL_OK)
 	  REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
+
+	parse_context_inner(dest, key_derivation, buff, buff_size);
+}
+
+void parse_context_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const buff, uint16_t const buff_size) {
+	mol_seg_t seg;
+	seg.ptr=buff;
+	seg.size=buff_size;
 
 	mol_seg_t outputs = MolReader_RawTransaction_get_outputs(&seg);
 	unsigned int outputs_len=MolReader_CellOutputVec_length(&outputs);
@@ -332,7 +339,7 @@ bool is_self(mol_num_t num_inputs, mol_seg_t* inputs, mol_seg_t* lockScript) {
 		mol_seg_t out_idx_seg=MolReader_OutPoint_get_index(&outpoint);
 		uint32_t out_idx=mol_unpack_number(out_idx_seg.ptr);
 
-		if(memcmp(G.context_transactions[i].outputs[out_idx].lock_arg, lockArgBytes.ptr, 1)==0) {
+		if(memcmp(G.context_transactions[i].outputs[out_idx].lock_arg, lockArgBytes.ptr, 20)==0) {
 			return true;
 		}
 	}
@@ -346,22 +353,21 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 	uint8_t mol_result=MolReader_RawTransaction_verify(&seg,true);
 	if(mol_result != MOL_OK)
 	  REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
+
+	{ // New context for stack.
+
 	mol_seg_t inputs = MolReader_RawTransaction_get_inputs(&seg);
-	int inputs_len=MolReader_CellInputVec_length(&inputs);
-	// Needed for signing even when we don't understand the transaction.
-	G.maybe_transaction.v.input_count = inputs_len;
+	unsigned int inputs_len=MolReader_CellInputVec_length(&inputs);
+
+	G.maybe_transaction.v.group_input_count = 0;
 
 	if(inputs_len>5) REJECT("Too many input cells");
 	if(inputs_len>G.context_transactions_fill_idx) REJECT("Not enough context transactions for inputs");
 
 	uint64_t amount=0;
-
-
-	uint64_t prepare_amounts[inputs_len];
-	memset(prepare_amounts,0,inputs_len*sizeof(uint64_t));
+	uint8_t input_idxes[5];
 
 	uint64_t withdraw_amount=0;
-	bool has_dao_input=false;
 
         for(mol_num_t i=0;i<inputs_len; i++) {
 		mol_seg_res_t input=MolReader_CellInputVec_get(&inputs, i);
@@ -370,16 +376,20 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 		mol_seg_t out_idx_seg=MolReader_OutPoint_get_index(&outpoint);
 		uint32_t out_idx;
 		memcpy(&out_idx, out_idx_seg.ptr, 4);
+		if(memcmp(G.context_transactions[i].outputs[out_idx].lock_arg,G.current_lock_arg,20) == 0) { // Is the input in the group we are signing for right now
+			G.maybe_transaction.v.group_input_count++;
+		}
 		if(out_idx>3) REJECT("Can't access outputs higher than 3");
+		input_idxes[i]=out_idx;
 		if(out_idx>G.context_transactions[i].num_outputs) REJECT("Context transaction doesn't have that output");
 		if(memcmp(txhash.ptr, G.context_transactions[i].hash, SIGN_HASH_SIZE) != 0) REJECT("Hash of context %d does not match input transaction hash", i);
 		amount+=G.context_transactions[i].outputs[out_idx].amount;
 		if(G.context_transactions[i].outputs[out_idx].flags&OUTPUT_FLAGS_IS_DAO) {
 			memcpy(G.maybe_transaction.v.dao_source, G.context_transactions[i].outputs[i].lock_arg, 20);
 			if(G.context_transactions[i].outputs[out_idx].flags&OUTPUT_FLAGS_IS_DAO_DEPOSIT) {
-			  prepare_amounts[i]=amount;
+			 // prepare_amounts[i]=amount;
 			} else {
-			  withdraw_amount+=amount;
+			  withdraw_amount+=G.context_transactions[i].outputs[out_idx].amount;
 			}
 		} else {
 			memcpy(G.maybe_transaction.v.source, G.context_transactions[i].outputs[i].lock_arg, 20);
@@ -425,16 +435,14 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 	                    memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
 			    break;
 		    case DAO_DATA_PREPARED:
-			    if (capacity_val!=prepare_amounts[i])
-				    REJECT("Input and output capacity has to match for a prepare: %d vs %d", capacity_val, prepare_amounts[i]);
+			    if (capacity_val!=G.context_transactions[i].outputs[input_idxes[i]].amount)
+				    REJECT("Input and output capacity has to match for a prepare: %d vs %d", capacity_val, G.context_transactions[i].outputs[input_idxes[i]].amount);
 			    total_prepare_amount+=capacity_val;
 	                    memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
 
 	    }
 	  }
 	}
-
-	PRINTF("SENT: %.*h DEPOSIT: %.*h PREPARE: %.*h WITHDRAW: %.*h\n", 8, &sent_amounts, 8, &dao_deposit_amount, 8, &total_prepare_amount, 8, &withdraw_amount);
 
 	if(((sent_amounts!=0) + (dao_deposit_amount!=0) + (total_prepare_amount!=0) + (withdraw_amount!=0)) > 1) {
             //REJECT("Only handle one of dao deposit, prepare, withdraw, and normal transfer in the same transaction");
@@ -463,6 +471,15 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 	}
 
 	G.maybe_transaction.is_valid = true;
+	}
+}
+
+int set_current_lock_arg(key_pair_t *key_pair) {
+  cx_blake2b_t lock_arg_state;
+  cx_blake2b_init2(&lock_arg_state, 20*8, NULL, 0, (uint8_t*) blake2b_personalization, sizeof(blake2b_personalization)-1);
+  cx_hash((cx_hash_t *) &lock_arg_state, 0, key_pair->public_key.W, key_pair->public_key.W_len, NULL, 0);
+  cx_hash((cx_hash_t *) &lock_arg_state, CX_LAST, NULL, 0, G.current_lock_arg, sizeof(G.current_lock_arg));
+  return 0;
 }
 
 #define P1_FIRST 0x00
@@ -472,6 +489,13 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 #define P1_NO_FALLBACK 0x40
 #define P1_LAST_MARKER 0x80
 #define P1_MASK (~(P1_LAST_MARKER|P1_NO_FALLBACK|P1_IS_CONTEXT))
+
+void prep_current_lock_arg() {
+	int fail=0;
+	fail=WITH_KEY_PAIR(G.key, key_pair, int, ({
+				set_current_lock_arg(key_pair);
+				}));
+}
 
 static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, uint8_t const instruction) {
 
@@ -484,9 +508,14 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
     bool is_ctxd = (p1 & P1_IS_CONTEXT) != 0;
     switch (p1 & P1_MASK) {
     case P1_FIRST:
+	    {
         clear_data();
         read_bip32_path(&G.key, buff, buff_size);
+
+	prep_current_lock_arg();
+
         return finalize_successful_send(0);
+	    }
 
     case P1_NEXT:
         if (G.key.length == 0) THROW(EXC_WRONG_LENGTH_FOR_INS);
@@ -560,9 +589,8 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
 
           cx_hash((cx_hash_t *) &double_state, 0, self_witness, sizeof(self_witness), NULL, 0);
 
-
 	  static const uint8_t empty_witness_len[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	  for(uint32_t i=1;i<G.maybe_transaction.v.input_count;i++)
+	  for(uint32_t i=1;i<G.maybe_transaction.v.group_input_count;i++)
             cx_hash((cx_hash_t *) &double_state, 0, empty_witness_len, sizeof(empty_witness_len), NULL, 0);
 
           cx_hash((cx_hash_t *) &double_state, CX_LAST, NULL, 0, G.final_hash, sizeof(G.final_hash));
@@ -602,6 +630,7 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
 
     uint8_t const *const data = G.final_hash; // on_hash ? G.final_hash : G.message_data;
     size_t const data_length = sizeof(G.final_hash); // on_hash ? sizeof(G.final_hash) : G.message_data_length;
+
     tx += WITH_KEY_PAIR(G.key, key_pair, size_t, ({
         sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, data, data_length);
     }));
