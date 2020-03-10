@@ -1,4 +1,4 @@
-{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", nanoXSdk ? null, ... }:
+{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", nanoXSdk ? null, debug?false, ... }:
 let
   fetchThunk = p:
     if builtins.pathExists (p + /git.json)
@@ -64,6 +64,7 @@ let
         GIT_DESCRIBE = gitDescribe;
         BOLOS_SDK = bolos.sdk;
         BOLOS_ENV = bolos.env;
+        DEBUG=debug;
         installPhase = ''
           mkdir -p $out
           cp -R bin $out

@@ -21,7 +21,7 @@
 
 static const uint8_t blake2b_personalization[]="ckb-default-hash";
 
-static inline void conditional_init_hash_state(blake2b_hash_state_t *const state, bool personalized) {
+static inline void conditional_init_hash_state(blake2b_hash_state_t *const state) {
     check_null(state);
     if (!state->initialized) {
       cx_blake2b_init2(&state->state, SIGN_HASH_SIZE*8, NULL, 0, (uint8_t*) blake2b_personalization, sizeof(blake2b_personalization)-1);
@@ -32,14 +32,13 @@ static inline void conditional_init_hash_state(blake2b_hash_state_t *const state
 static void blake2b_incremental_hash(
     /*in/out*/ uint8_t *const out, size_t const out_size,
     /*in/out*/ size_t *const out_length,
-    /*in/out*/ blake2b_hash_state_t *const state,
-    /*in*/ bool personalized
+    /*in/out*/ blake2b_hash_state_t *const state
 ) {
     check_null(out);
     check_null(out_length);
     check_null(state);
 
-    conditional_init_hash_state(state, personalized);
+    conditional_init_hash_state(state);
     cx_hash((cx_hash_t *) &state->state, 0, out, out_size, NULL, 0);
 }
 
@@ -47,16 +46,14 @@ static void blake2b_finish_hash(
     /*out*/ uint8_t *const out, size_t const out_size,
     /*in/out*/ uint8_t *const buff, size_t const buff_size,
     /*in/out*/ size_t *const buff_length,
-    /*in/out*/ blake2b_hash_state_t *const state,
-    /*in*/ bool personalized
+    /*in/out*/ blake2b_hash_state_t *const state
 ) {
     check_null(out);
     check_null(buff);
     check_null(buff_length);
     check_null(state);
 
-    conditional_init_hash_state(state, personalized);
-    // blake2b_incremental_hash(buff, buff_size, buff_length, state, personalized);
+    conditional_init_hash_state(state);
     cx_hash((cx_hash_t *) &state->state, CX_LAST, NULL, 0, out, out_size);
 }
 
@@ -98,6 +95,9 @@ static size_t sign_complete(uint8_t instruction) {
 
     ui_callback_t const ok_c = instruction == INS_SIGN_WITH_HASH ? sign_with_hash_ok : sign_without_hash_ok;
 
+    PRINTF("optag: %d", G.maybe_transaction.v.tag);
+    PRINTF("AMT: %.*h\n", 8, &G.maybe_transaction.v.amount);
+
     switch (G.maybe_transaction.v.tag) {
 
 	    case OPERATION_TAG_PLAIN_TRANSFER:
@@ -132,6 +132,7 @@ static size_t sign_complete(uint8_t instruction) {
 		    static const uint32_t AMOUNT_INDEX = 1;
 		    static const uint32_t FEE_INDEX = 2;
 		    static const uint32_t SOURCE_INDEX = 3;
+		    static const uint32_t DESTINATION_INDEX = 4;
 		    static const char *const transaction_prompts[] = {
 			    PROMPT("Confirm DAO"),
 			    PROMPT("Amount"),
@@ -141,7 +142,75 @@ static size_t sign_complete(uint8_t instruction) {
 		    };
 		    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
 		    register_ui_callback(SOURCE_INDEX, lock_arg_to_string, &G.maybe_transaction.v.source);
+		    register_ui_callback(DESTINATION_INDEX, lock_arg_to_string, &G.maybe_transaction.v.destination);
 		    register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+		    register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
+
+		    ui_prompt(transaction_prompts, ok_c, sign_reject);
+
+		    }
+		    break;
+	    case OPERATION_TAG_DAO_PREPARE:
+		    {
+			    static const uint32_t TYPE_INDEX = 0;
+			    static const uint32_t AMOUNT_INDEX = 1;
+			    static const uint32_t FEE_INDEX = 2;
+			    static const uint32_t SOURCE_INDEX = 3;
+			    static const uint32_t PAYER_INDEX = 4;
+			    static const uint32_t CHANGE_TO_INDEX = 5;
+			    static const uint32_t CHANGE_INDEX = 6;
+			    static const char *const prepare_prompts_full[] = {
+				    PROMPT("Confirm DAO"),
+				    PROMPT("Amount"),
+				    PROMPT("Fee"),
+				    PROMPT("Owner"),
+				    PROMPT("Fee payer"),
+				    PROMPT("Change to"),
+				    PROMPT("Change"),
+				    NULL
+			    };
+			    static const char *const prepare_prompts_no_change[] = {
+				    PROMPT("Confirm DAO"),
+				    PROMPT("Amount"),
+				    PROMPT("Fee"),
+				    PROMPT("Owner"),
+				    PROMPT("Fee payer"),
+				    NULL
+			    };
+			    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Prepare");
+			    register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
+			    register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+			    register_ui_callback(SOURCE_INDEX, lock_arg_to_string, &G.maybe_transaction.v.dao_source);
+			    register_ui_callback(PAYER_INDEX, lock_arg_to_string, &G.maybe_transaction.v.source);
+			    register_ui_callback(CHANGE_TO_INDEX, lock_arg_to_string, &G.maybe_transaction.v.destination);
+			    register_ui_callback(CHANGE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
+
+			    ui_prompt(G.maybe_transaction.v.flags&HAS_CHANGE_ADDRESS?prepare_prompts_full:prepare_prompts_no_change,
+					    ok_c, sign_reject);
+		    break;
+		    }
+	    case OPERATION_TAG_DAO_WITHDRAW:
+		    {
+		    static const uint32_t TYPE_INDEX = 0;
+		    static const uint32_t AMOUNT_INDEX = 1;
+		    static const uint32_t DESTINATION_INDEX = 2;
+		    static const uint32_t DEPOSIT_INDEX = 3;
+		    static const uint32_t RETURN_INDEX = 4;
+		    static const uint32_t SOURCE_INDEX = 5;
+		    static const char *const transaction_prompts[] = {
+			    PROMPT("Confirm DAO"),
+			    PROMPT("Amount"),
+			    PROMPT("Destination"),
+			    PROMPT("Deposit"),
+			    PROMPT("Return"),
+			    PROMPT("Source"),
+			    NULL
+		    };
+		    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Withdrawal");
+		    register_ui_callback(SOURCE_INDEX, lock_arg_to_string, &G.maybe_transaction.v.dao_source);
+		    register_ui_callback(DESTINATION_INDEX, lock_arg_to_string, &G.maybe_transaction.v.destination);
+		    register_ui_callback(DEPOSIT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
+		    register_ui_callback(RETURN_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
 		    register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
 
 		    ui_prompt(transaction_prompts, ok_c, sign_reject);
@@ -181,6 +250,24 @@ bool is_dao_type_script(mol_seg_t *typeScript) {
 	return memcmp(defaultTypeScript, codeHash.ptr, 32) == 0;
 }
 
+enum dao_data_type {
+	DAO_DATA_NONE=0,
+	DAO_DATA_DEPOSIT,
+	DAO_DATA_PREPARED
+};
+
+enum dao_data_type get_dao_data_type(mol_seg_t* outputs_data, int i) {
+	mol_seg_res_t data=MolReader_BytesVec_get(outputs_data, i);
+	if(data.errno != MOL_OK) return DAO_DATA_NONE;
+	mol_seg_t rawData=MolReader_Bytes_raw_bytes(&data.seg);
+	static const uint8_t eightZeros[8]={ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	if(MolReader_Bytes_length(&data.seg)!=8)
+		return DAO_DATA_NONE;
+	if(memcmp(rawData.ptr, eightZeros, 8)==0)
+		return DAO_DATA_DEPOSIT;
+	return DAO_DATA_PREPARED;
+}
+
 void parse_context(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const buff, uint16_t const buff_size) {
 	mol_seg_t seg;
 	seg.ptr=buff;
@@ -194,6 +281,8 @@ void parse_context(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_der
 
 	if(outputs_len>3) REJECT("Too many output cells");
 	G.context_transactions[G.context_transactions_fill_idx].num_outputs=outputs_len;
+
+	mol_seg_t outputs_data = MolReader_RawTransaction_get_outputs_data(&seg);
 
 	for(mol_num_t i=0;i<outputs_len; i++) {
 		mol_seg_res_t output=MolReader_CellOutputVec_get(&outputs, i);
@@ -215,10 +304,21 @@ void parse_context(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_der
 		memcpy(G.context_transactions[G.context_transactions_fill_idx].outputs[i].lock_arg, lockArgBytes.ptr, 20);
 
 		mol_seg_t type_script=MolReader_CellOutput_get_type_(&output.seg);
-		if(is_dao_type_script(&type_script)) G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags|=OUTPUT_FLAGS_IS_DAO;
+		if(is_dao_type_script(&type_script)) {
+			G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags|=OUTPUT_FLAGS_IS_DAO;
+			switch(get_dao_data_type(&outputs_data, i)) {
+				case DAO_DATA_NONE:
+				  REJECT("DAO cells require 8 bytes of data");
+				  break;
+				case DAO_DATA_DEPOSIT:
+				  G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags|=OUTPUT_FLAGS_IS_DAO_DEPOSIT;
+				  break;
+				case DAO_DATA_PREPARED:
+				  break;
+			}
+		}
 	}
 }
-
 
 bool is_self(mol_num_t num_inputs, mol_seg_t* inputs, mol_seg_t* lockScript) {
 	if(!is_standard_lock_script(lockScript))
@@ -255,6 +355,12 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 
         mol_num_t civlength = MolReader_CellInputVec_length(&inputs);
 
+	uint64_t prepare_amounts[civlength];
+	memset(prepare_amounts,0,civlength*sizeof(uint64_t));
+
+	uint64_t withdraw_amount=0;
+	bool has_dao_input=false;
+
         for(mol_num_t i=0;i<civlength; i++) {
 		mol_seg_res_t input=MolReader_CellInputVec_get(&inputs, i);
 		mol_seg_t outpoint=MolReader_CellInput_get_previous_output(&input.seg);
@@ -266,16 +372,25 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 		if(out_idx>G.context_transactions[i].num_outputs) REJECT("Context transaction doesn't have that output");
 		if(memcmp(txhash.ptr, G.context_transactions[i].hash, SIGN_HASH_SIZE) != 0) REJECT("Hash of context %d does not match input transaction hash", i);
 		amount+=G.context_transactions[i].outputs[out_idx].amount;
-		memcpy(G.maybe_transaction.v.source, G.context_transactions[i].outputs[i].lock_arg, 20);
-		if(G.context_transactions[i].outputs[out_idx].flags&OUTPUT_FLAGS_IS_DAO)
-			REJECT("DAO Prepare and Withdraw not supported yet");
+		if(G.context_transactions[i].outputs[out_idx].flags&OUTPUT_FLAGS_IS_DAO) {
+			memcpy(G.maybe_transaction.v.dao_source, G.context_transactions[i].outputs[i].lock_arg, 20);
+			if(G.context_transactions[i].outputs[out_idx].flags&OUTPUT_FLAGS_IS_DAO_DEPOSIT) {
+			  prepare_amounts[i]=amount;
+			} else {
+			  withdraw_amount+=amount;
+			}
+		} else {
+			memcpy(G.maybe_transaction.v.source, G.context_transactions[i].outputs[i].lock_arg, 20);
+		}
 	}
 
 	mol_seg_t outputs = MolReader_RawTransaction_get_outputs(&seg);
+	mol_seg_t outputs_data = MolReader_RawTransaction_get_outputs_data(&seg);
 
 	uint64_t output_amounts=0;
 	uint64_t sent_amounts=0;
 	uint64_t dao_deposit_amount=0;
+	uint64_t total_prepare_amount=0;
 
 
 	for(unsigned int i=0;i<MolReader_CellOutputVec_length(&outputs); i++) {
@@ -286,33 +401,64 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 
 	  output_amounts+=capacity_val;
 	  mol_seg_t lockScript = MolReader_CellOutput_get_lock(&output.seg);
-
-	  if(!is_self(inputs_len, &inputs, &lockScript)) {
-            sent_amounts+=capacity_val;
-	    mol_seg_t lockArg = MolReader_Script_get_args(&lockScript);
-	    mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
-	    memcpy(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20);
-	  }
 	  mol_seg_t type_script=MolReader_CellOutput_get_type_(&output.seg);
-	  if(is_dao_type_script(&type_script)) {
-            dao_deposit_amount+=capacity_val;
+
+	  bool isSelf=is_self(inputs_len, &inputs, &lockScript);
+	  bool isDao=is_dao_type_script(&type_script);
+	  mol_seg_t lockArg = MolReader_Script_get_args(&lockScript);
+	  mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
+
+	  if(!isSelf && !isDao) {
+            sent_amounts+=capacity_val;
+	    memcpy(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20);
+	    G.maybe_transaction.v.flags|=HAS_DESTINATION_ADDRESS;
+	  }
+	  if(isDao) {
+            switch(get_dao_data_type(&outputs_data, i)) {
+		    case DAO_DATA_NONE:
+			    REJECT("DAO cells require eight bytes of data");
+			    break;
+		    case DAO_DATA_DEPOSIT:
+			    dao_deposit_amount+=capacity_val;
+	                    memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
+			    break;
+		    case DAO_DATA_PREPARED:
+			    if (capacity_val!=prepare_amounts[i])
+				    REJECT("Input and output capacity has to match for a prepare: %d vs %d", capacity_val, prepare_amounts[i]);
+			    total_prepare_amount+=capacity_val;
+	                    memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
+
+	    }
 	  }
 	}
 
-	if(!(sent_amounts==0 || dao_deposit_amount==0)) {
-            REJECT("Don't handle mixed dao deposits and non-dao transfers in the same transaction");
+	PRINTF("SENT: %.*h DEPOSIT: %.*h PREPARE: %.*h WITHDRAW: %.*h\n", 8, &sent_amounts, 8, &dao_deposit_amount, 8, &total_prepare_amount, 8, &withdraw_amount);
+
+	if(((sent_amounts!=0) + (dao_deposit_amount!=0) + (total_prepare_amount!=0) + (withdraw_amount!=0)) > 1) {
+            //REJECT("Only handle one of dao deposit, prepare, withdraw, and normal transfer in the same transaction");
 	}
+	
+	G.maybe_transaction.v.total_fee=amount-output_amounts;
+	
 	if(dao_deposit_amount!=0) {
 	    G.maybe_transaction.v.tag=OPERATION_TAG_DAO_DEPOSIT;
-	}
-	else {
+	    G.maybe_transaction.v.dao_amount=dao_deposit_amount;
+	    if(sent_amounts!=0) REJECT("Deposit with change to a different account is not supported");
+	} else if(total_prepare_amount!=0) {
+            G.maybe_transaction.v.tag=OPERATION_TAG_DAO_PREPARE;
+	    G.maybe_transaction.v.dao_amount=total_prepare_amount;
+	    G.maybe_transaction.v.amount=sent_amounts;
+	    if(sent_amounts!=0) G.maybe_transaction.v.flags|=HAS_CHANGE_ADDRESS;
+	} else if(withdraw_amount!=0) {
+            G.maybe_transaction.v.tag=OPERATION_TAG_DAO_WITHDRAW;
+	    G.maybe_transaction.v.amount=sent_amounts;
+	    G.maybe_transaction.v.dao_amount=withdraw_amount;
+	    // Can't currently calculate fee because that requires knowing total return; this is return claimed by the transaction instead.
+	    G.maybe_transaction.v.total_fee= -G.maybe_transaction.v.total_fee; 
+	} else {
 	    G.maybe_transaction.v.tag=OPERATION_TAG_PLAIN_TRANSFER;
+	    G.maybe_transaction.v.amount=sent_amounts;
 	}
-
-
-	G.maybe_transaction.v.total_fee=amount-output_amounts;
-	G.maybe_transaction.v.amount=sent_amounts;
-
 
 	G.maybe_transaction.is_valid = true;
 }
@@ -377,11 +523,11 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
     }
 
     if (enable_hashing)
-      blake2b_incremental_hash(buff, buff_size, &buff_size, &G.hash_state, is_ctxd);
+      blake2b_incremental_hash(buff, buff_size, &buff_size, &G.hash_state);
 
     if (last) {
         if (enable_hashing) {
-	    blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), buff, buff_size, &buff_size, &G.hash_state, is_ctxd);
+	    blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), buff, buff_size, &buff_size, &G.hash_state);
         }
 
 	if(is_ctxd) {

@@ -38,6 +38,7 @@ struct maybe_transaction {
 
 #define OUTPUT_FLAGS_KNOWN_LOCK 0x01
 #define OUTPUT_FLAGS_IS_DAO 0x02
+#define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
 
 struct tx_output {
   uint64_t amount;
@@ -51,7 +52,7 @@ struct tx_context {
     struct tx_output outputs[3];
 };
 
-#define MAX_TOSIGN_PARSED 512
+#define MAX_TOSIGN_PARSED 600
 
 typedef struct {
     bip32_path_t key;

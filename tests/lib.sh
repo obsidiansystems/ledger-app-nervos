@@ -81,3 +81,8 @@ doSign() {
   run apdu_with_clicks "8003c100$bytes$toSend" "rR"
 }
 
+
+promptsCheck() {
+	if [ "$DEBUG" != "1" ]; then return 0; fi;
+        diff <(egrep -A2 'Prompt [0-9]:' speculos.log | tail -n $(($1*3))) $2
+}
