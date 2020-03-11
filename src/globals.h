@@ -79,6 +79,11 @@ typedef struct {
 } apdu_sign_state_t;
 
 typedef struct {
+  bip32_path_t key;
+  cx_ecfp_public_key_t public_key;
+} derived_pubkey_t;
+
+typedef struct {
   void *stack_root;
   apdu_handler handlers[INS_MAX + 1];
 
@@ -114,12 +119,8 @@ typedef struct {
 
   struct {
       union {
-          struct {
-              bip32_path_t key;
-              cx_ecfp_public_key_t public_key;
-          } pubkey;
-
-          apdu_sign_state_t sign;
+        derived_pubkey_t pubkey;
+        apdu_sign_state_t sign;
       } u;
 
       struct {
