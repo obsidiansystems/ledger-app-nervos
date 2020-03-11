@@ -38,6 +38,7 @@ struct maybe_transaction {
 
 #define OUTPUT_FLAGS_KNOWN_LOCK 0x01
 #define OUTPUT_FLAGS_IS_DAO 0x02
+#define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
 
 struct tx_output {
   uint64_t amount;
@@ -51,10 +52,11 @@ struct tx_context {
     struct tx_output outputs[3];
 };
 
-#define MAX_TOSIGN_PARSED 512
+#define MAX_TOSIGN_PARSED 600
 
 typedef struct {
     bip32_path_t key;
+    uint8_t current_lock_arg[20];
 
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
 
@@ -73,7 +75,6 @@ typedef struct {
     blake2b_hash_state_t hash_state;
     uint8_t final_hash[SIGN_HASH_SIZE];
 
-    uint8_t magic_byte;
     bool hash_only;
 } apdu_sign_state_t;
 
@@ -123,10 +124,6 @@ typedef struct {
 
       struct {
           struct priv_generate_key_pair generate_key_pair;
-
-          struct {
-              cx_ecfp_public_key_t compressed;
-          } public_key_hash;
       } priv;
     } apdu;
 } globals_t;
