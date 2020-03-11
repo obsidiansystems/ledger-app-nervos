@@ -22,6 +22,12 @@ static bool pubkey_ok(void) {
 
 #define BIP32_HARDENED_PATH_BIT 0x80000000
 
+static inline void bound_check_buffer(size_t counter, size_t size) {
+  if (counter >= size) {
+    THROW(EXC_MEMORY_ERROR);
+  }
+}
+
 void bip32_path_to_string(
   char *const out,
   size_t const out_size,
@@ -34,12 +40,13 @@ void bip32_path_to_string(
     number_to_string_indirect32(out+out_current_offset, out_size-out_current_offset, &component);
     out_current_offset = strlen(out);
     if(is_hardened) {
-      out[out_current_offset] = '\'';
-      out_current_offset+=1;
+      bound_check_buffer(out_current_offset, out_size);
+      out[out_current_offset++] = '\'';
     }
-    out[out_current_offset] = '/';
-    out_current_offset+=1;
-    out[out_current_offset]='\0';
+    bound_check_buffer(out_current_offset, out_size);
+    out[out_current_offset++] = '/';
+    bound_check_buffer(out_current_offset, out_size);
+    out[out_current_offset] = '\0';
   }
 }
 
