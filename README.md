@@ -337,7 +337,7 @@ Remember the value above for one of live cells under “tx\_hash” and “outpu
 Prepare a cell for withdrawal from the DAO:
 
 ``` sh
-$ ckb-cli dao prepare --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.0001
+$ ckb-cli dao prepare --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.0001 --path "m/44'/309'/0'/1/0"
 0xae91f2a310f2cfeada391e5f76d0addcc56d99c91a39734c292c930a1cfc67c2
 ```
 
