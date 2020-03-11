@@ -23,24 +23,22 @@ static bool pubkey_ok(void) {
 #define BIP32_HARDENED_PATH_BIT 0x80000000
 
 void bip32_path_to_string(char *const out, size_t const out_size,
-		bip32_path_t const *const key) {
-	size_t out_current_offset = 0;
-	for(int i=0;i<MAX_BIP32_PATH && i<key->length; i++) {
-		bool is_hardened = key->components[i] & BIP32_HARDENED_PATH_BIT;
-		uint32_t component = key->components[i] & ~BIP32_HARDENED_PATH_BIT;
-		number_to_string_indirect32(out+out_current_offset, out_size-out_current_offset, &component);
-		out_current_offset = strlen(out);
-		if(is_hardened) {
-			out[out_current_offset] = '\'';
-			out_current_offset+=1;
-		}
-		out[out_current_offset] = '/';
-		out_current_offset+=1;
-		out[out_current_offset]='\0';
-	}
+    bip32_path_t const *const key) {
+  size_t out_current_offset = 0;
+  for(int i=0;i<MAX_BIP32_PATH && i<key->length; i++) {
+    bool is_hardened = key->components[i] & BIP32_HARDENED_PATH_BIT;
+    uint32_t component = key->components[i] & ~BIP32_HARDENED_PATH_BIT;
+    number_to_string_indirect32(out+out_current_offset, out_size-out_current_offset, &component);
+    out_current_offset = strlen(out);
+    if(is_hardened) {
+      out[out_current_offset] = '\'';
+      out_current_offset+=1;
+    }
+    out[out_current_offset] = '/';
+    out_current_offset+=1;
+    out[out_current_offset]='\0';
+  }
 }
-  
-
 
 __attribute__((noreturn))
 static void prompt_path(
