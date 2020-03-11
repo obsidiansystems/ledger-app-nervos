@@ -1,3 +1,9 @@
+# Overview
+
+This repository contains the Nervos BOLOS application for the Ledger Nano S and Ledger Nano X and tools for testing the application. While this app is currently under development, we do not recommend using it with mainnet CKB. 
+
+This application has been developed against our forks of [CKB-CLI](https://github.com/obsidiansystems/ckb-cli) and [CKB](https://github.com/obsidiansystems/ckb). Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS.
+
 # Development #
 
 ## Developing on the Ledger Nano S ##
@@ -178,6 +184,7 @@ First, make a directory and init it for a dev network:
 ``` sh
 $ mkdir devnet
 $ cd devnet
+$ nix run -f nix/dep/ckb # to make ckb available
 $ ckb init --chain dev
 ```
 
