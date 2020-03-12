@@ -131,6 +131,8 @@ typedef struct {
 
 extern globals_t global;
 
+extern const uint8_t blake2b_personalization[17];
+
 extern unsigned int app_stack_canary; // From SDK
 
 // Used by macros that we don't control.

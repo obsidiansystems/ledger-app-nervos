@@ -18,9 +18,6 @@
 
 #define PARSE_ERROR() THROW(EXC_PARSE_ERROR)
 
-
-static const uint8_t blake2b_personalization[]="ckb-default-hash";
-
 static inline void conditional_init_hash_state(blake2b_hash_state_t *const state) {
     check_null(state);
     if (!state->initialized) {

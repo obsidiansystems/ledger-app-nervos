@@ -20,6 +20,8 @@
 
 globals_t global;
 
+const uint8_t blake2b_personalization[] ="ckb-default-hash";
+
 // These are strange variables that the SDK relies on us to define but uses directly itself.
 #ifdef TARGET_NANOX
     ux_state_t G_ux;
