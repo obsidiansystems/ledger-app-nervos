@@ -182,9 +182,9 @@ this is discourage, and running your own node is preferred.
 
 First, make a directory and init it for a dev network:
 ``` sh
+$ nix run -f nix/dep/ckb # to make ckb available
 $ mkdir devnet
 $ cd devnet
-$ nix run -f nix/dep/ckb # to make ckb available
 $ ckb init --chain dev
 ```
 
