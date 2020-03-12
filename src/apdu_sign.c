@@ -303,7 +303,7 @@ void parse_context_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ k
 		mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
 
 		if(!is_standard_lock_script(&lockScript)) {
-                  return;
+		  REJECT("Cannot parse nonstandard lock script");
 	       	} else {
  		  G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags|=OUTPUT_FLAGS_KNOWN_LOCK;
 		}
