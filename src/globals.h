@@ -161,3 +161,12 @@ void update_baking_idle_screens(void);
     nvm_write((void*)&N_data, &global.apdu.baking_auth.new_data, sizeof(N_data)); \
     update_baking_idle_screens(); \
 })
+
+#ifdef NERVOS_DEBUG
+// Aid for tracking down app crashes
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define AT __FILE__ ":" TOSTRING(__LINE__)
+inline void dbgout(char* at) {int i; PRINTF("%s - sp %p spg %p %d\n", at, &i, &app_stack_canary, app_stack_canary); }
+#define DBGOUT() dbgout(AT)
+#endif

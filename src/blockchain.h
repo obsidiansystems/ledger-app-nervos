@@ -654,7 +654,8 @@ MOLECULE_API_DECORATOR mol_errno MolReader_Script_verify (const mol_seg_t *input
     if (input->size < MOL_NUM_T_SIZE*(field_count+1)){
         return MOL_ERR_HEADER;
     }
-    mol_num_t offsets[field_count+1];
+    if(field_count>3) return MOL_ERR_FIELD_COUNT;
+    mol_num_t offsets[4];
     offsets[0] = offset;
     for (mol_num_t i=1; i<field_count; i++) {
         ptr += MOL_NUM_T_SIZE;
@@ -712,7 +713,8 @@ MOLECULE_API_DECORATOR mol_errno MolReader_CellOutput_verify (const mol_seg_t *i
     if (input->size < MOL_NUM_T_SIZE*(field_count+1)){
         return MOL_ERR_HEADER;
     }
-    mol_num_t offsets[field_count+1];
+    if(field_count>3) return MOL_ERR_FIELD_COUNT;
+    mol_num_t offsets[4];
     offsets[0] = offset;
     for (mol_num_t i=1; i<field_count; i++) {
         ptr += MOL_NUM_T_SIZE;
@@ -773,7 +775,8 @@ MOLECULE_API_DECORATOR mol_errno MolReader_RawTransaction_verify (const mol_seg_
     if (input->size < MOL_NUM_T_SIZE*(field_count+1)){
         return MOL_ERR_HEADER;
     }
-    mol_num_t offsets[field_count+1];
+    if(field_count>6) return MOL_ERR_FIELD_COUNT;
+    mol_num_t offsets[7];
     offsets[0] = offset;
     for (mol_num_t i=1; i<field_count; i++) {
         ptr += MOL_NUM_T_SIZE;
@@ -852,7 +855,8 @@ MOLECULE_API_DECORATOR mol_errno MolReader_Transaction_verify (const mol_seg_t *
     if (input->size < MOL_NUM_T_SIZE*(field_count+1)){
         return MOL_ERR_HEADER;
     }
-    mol_num_t offsets[field_count+1];
+    if(field_count>2) return MOL_ERR_FIELD_COUNT;
+    mol_num_t offsets[3];
     offsets[0] = offset;
     for (mol_num_t i=1; i<field_count; i++) {
         ptr += MOL_NUM_T_SIZE;
@@ -907,7 +911,8 @@ MOLECULE_API_DECORATOR mol_errno MolReader_UncleBlock_verify (const mol_seg_t *i
     if (input->size < MOL_NUM_T_SIZE*(field_count+1)){
         return MOL_ERR_HEADER;
     }
-    mol_num_t offsets[field_count+1];
+    if(field_count>2) return MOL_ERR_FIELD_COUNT;
+    mol_num_t offsets[3];
     offsets[0] = offset;
     for (mol_num_t i=1; i<field_count; i++) {
         ptr += MOL_NUM_T_SIZE;
@@ -962,7 +967,8 @@ MOLECULE_API_DECORATOR mol_errno MolReader_Block_verify (const mol_seg_t *input,
     if (input->size < MOL_NUM_T_SIZE*(field_count+1)){
         return MOL_ERR_HEADER;
     }
-    mol_num_t offsets[field_count+1];
+    if(field_count>4) return MOL_ERR_FIELD_COUNT;
+    mol_num_t offsets[5];
     offsets[0] = offset;
     for (mol_num_t i=1; i<field_count; i++) {
         ptr += MOL_NUM_T_SIZE;
@@ -1029,7 +1035,8 @@ MOLECULE_API_DECORATOR mol_errno MolReader_CellbaseWitness_verify (const mol_seg
     if (input->size < MOL_NUM_T_SIZE*(field_count+1)){
         return MOL_ERR_HEADER;
     }
-    mol_num_t offsets[field_count+1];
+    if(field_count>2) return MOL_ERR_FIELD_COUNT;
+    mol_num_t offsets[3];
     offsets[0] = offset;
     for (mol_num_t i=1; i<field_count; i++) {
         ptr += MOL_NUM_T_SIZE;
@@ -1084,7 +1091,8 @@ MOLECULE_API_DECORATOR mol_errno MolReader_WitnessArgs_verify (const mol_seg_t *
     if (input->size < MOL_NUM_T_SIZE*(field_count+1)){
         return MOL_ERR_HEADER;
     }
-    mol_num_t offsets[field_count+1];
+    if(field_count>3) return MOL_ERR_FIELD_COUNT;
+    mol_num_t offsets[4];
     offsets[0] = offset;
     for (mol_num_t i=1; i<field_count; i++) {
         ptr += MOL_NUM_T_SIZE;
