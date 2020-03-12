@@ -28,10 +28,10 @@ static inline void bound_check_buffer(size_t counter, size_t size) {
   }
 }
 
-void bip32_path_to_string(
+static void bip32_path_to_string(
   char *const out,
   size_t const out_size,
-  derived_pubkey_t const *const pubkey)
+  apdu_pubkey_state_t const *const pubkey)
 {
   size_t out_current_offset = 0;
   for(int i=0;i<MAX_BIP32_PATH && i<pubkey->key.length; i++) {
@@ -50,21 +50,39 @@ void bip32_path_to_string(
   }
 }
 
+static void render_pkh(
+  char *const out,
+  size_t const out_size,
+  apdu_pubkey_state_t const *const pubkey)
+{
+  bound_check_buffer(7, out_size);
+  for (int i = 0; i < 7; i++) {
+    out[i] = (pubkey->public_key_hash[i] % 26) + 101;
+  }
+  out[7] = '\0';
+}
+
 __attribute__((noreturn))
 static void prompt_path(
     ui_callback_t ok_cb,
     ui_callback_t cxl_cb
     ) {
   static size_t const TYPE_INDEX = 0;
-  static size_t const ADDRESS_INDEX = 1;
+  static size_t const DRV_PATH_INDEX = 1;
+  static size_t const MAIN_NET_INDEX = 2;
+  static size_t const TEST_NET_INDEX = 3;
 
   static const char *const pubkey_labels[] = {
     PROMPT("Provide"),
     PROMPT("Public Key For"),
+    PROMPT("Mainnet addr is"),
+    PROMPT("Testnet addr is"),
     NULL,
   };
   REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
-  register_ui_callback(ADDRESS_INDEX, bip32_path_to_string, &G.key);
+  register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
+  register_ui_callback(MAIN_NET_INDEX, render_pkh, &G);
+  register_ui_callback(TEST_NET_INDEX, render_pkh, &G);
   ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
@@ -78,11 +96,24 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
   read_bip32_path(&G.key, dataBuffer, cdata_size);
   generate_public_key(&G.public_key, &G.key);
 
+  cx_blake2b_init2(
+    &G.hash_state, SIGN_HASH_SIZE*8, NULL, 0,
+    (uint8_t*) blake2b_personalization,
+    sizeof(blake2b_personalization)-1);
+
+  cx_hash(
+    (cx_hash_t *) &G.hash_state,
+    0,
+    (uint8_t *const)&G.public_key, sizeof(G.public_key),
+    NULL, 0);
+  cx_hash(
+    (cx_hash_t *) &G.hash_state,
+    CX_LAST,
+    NULL, 0,
+    (uint8_t *const)&G.public_key_hash, sizeof(G.public_key_hash));
+
   // instruction == INS_PROMPT_PUBLIC_KEY || instruction == INS_AUTHORIZE_BAKING
-  ui_callback_t cb;
-  bool bake;
   // INS_PROMPT_PUBLIC_KEY
-  cb = pubkey_ok;
-  bake = false;
+  ui_callback_t cb = pubkey_ok;
   prompt_path(cb, delay_reject);
 }

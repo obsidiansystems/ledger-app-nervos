@@ -81,7 +81,9 @@ typedef struct {
 typedef struct {
   bip32_path_t key;
   cx_ecfp_public_key_t public_key;
-} derived_pubkey_t;
+  cx_blake2b_t hash_state;
+  uint8_t public_key_hash[SIGN_HASH_SIZE];
+} apdu_pubkey_state_t;
 
 typedef struct {
   void *stack_root;
@@ -119,7 +121,7 @@ typedef struct {
 
   struct {
       union {
-        derived_pubkey_t pubkey;
+        apdu_pubkey_state_t pubkey;
         apdu_sign_state_t sign;
       } u;
 
