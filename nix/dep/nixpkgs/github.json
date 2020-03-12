@@ -1,7 +1,8 @@
 {
-  "owner": "NixOS",
+  "owner": "obsidiansystems",
   "repo": "nixpkgs",
-  "branch": "nixos-unstable",
-  "rev": "41d921292e922a6cd1aba64259341c244d4c2cc7",
-  "sha256": "01iq7phnmyz78qddxsjy6lnpgmzcffxk9h7k69sy61dbjsyy9b4q"
+  "branch": "armv6-embedded",
+  "private": false,
+  "rev": "783fa4616e044ca33e4841514a180ad1325b48d4",
+  "sha256": "1bj0rh61cjvx3rn6w74cs0fbpw9kp4mnafkc4v9g5117w20n14fl"
 }

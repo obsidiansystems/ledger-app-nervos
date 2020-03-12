@@ -1,10 +1,47 @@
-{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", nanoXSdk ? null, debug?false, ... }:
+{ pkgsFunc ? import ./nix/dep/nixpkgs
+, gitDescribe ? "TEST-dirty"
+, nanoXSdk ? null
+, debug ? false, ...
+}:
+
 let
+  pkgsBoot = pkgsFunc {
+    config = {};
+    overlays = [];
+  };
+
+  pkgs = pkgsFunc {
+    config = {};
+    overlays = [
+      (import "${fetchThunk ./nix/dep/nixpkgs-mozilla}/rust-overlay.nix")
+    ];
+  };
+
+  ledgerPkgs = pkgsFunc {
+    crossSystem = {
+      config = "armv6l-unknown-none-eabi";
+      #useLLVM = true;
+      platform = {
+        gcc = {
+          arch = "armv6t2";
+          fpu = "vfpv2";
+        };
+        rustc = {
+          arch = "thumbv6m";
+          config = "thumbv6m-none-eabi";
+        };
+      };
+    };
+    overlays = [
+      (import "${fetchThunk ./nix/dep/nixpkgs-mozilla}/rust-overlay.nix")
+    ];
+  };
+
   fetchThunk = p:
     if builtins.pathExists (p + /git.json)
-      then pkgs.fetchgit { inherit (builtins.fromJSON (builtins.readFile (p + /git.json))) url rev sha256; }
+      then pkgsBoot.fetchgit { inherit (builtins.fromJSON (builtins.readFile (p + /git.json))) url rev sha256; }
     else if builtins.pathExists (p + /github.json)
-      then pkgs.fetchFromGitHub { inherit (builtins.fromJSON (builtins.readFile (p + /github.json))) owner repo rev sha256; }
+      then pkgsBoot.fetchFromGitHub { inherit (builtins.fromJSON (builtins.readFile (p + /github.json))) owner repo rev sha256; }
     else p;
 
   blake2_simd = import ./nix/dep/b2sum.nix { };
@@ -39,7 +76,15 @@ let
       };
     };
 
-  src = pkgs.lib.sources.sourceFilesBySuffices (pkgs.lib.sources.cleanSource ./.) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".pem"];
+  gitignoreNix = import (fetchThunk ./nix/dep/gitignore.nix) { inherit (pkgs) lib; };
+
+  inherit (gitignoreNix) gitignoreSource;
+
+  gitIgnoredSrc = gitignoreSource ./.;
+
+  src = pkgs.lib.sources.sourceFilesBySuffices gitIgnoredSrc [
+    ".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".pem"
+  ];
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
 
@@ -195,12 +240,44 @@ let
       '';
      });
 
+  rustPackages = pkgs.rustChannelOf {
+    date = "2020-01-30"; # 1.41
+    channel = "stable";
+    sha256 = "07mp7n4n3cmm37mv152frv7p9q58ahjw5k8gcq48vfczrgm5qgiy";
+  };
+
+  rustc = rustPackages.rust.override {
+    targets = [
+      "thumbv6m-none-eabi"
+    ];
+  };
+
+  rustPlatform = ledgerPkgs.makeRustPlatform {
+    inherit (rustPackages) cargo;
+    inherit rustc;
+  };
+
   mkTargets = mk: {
     s = mk targets.s;
     x = mk targets.x;
   };
 in rec {
-  inherit pkgs;
+  inherit pkgs ledgerPkgs;
+
+  rust = rustPlatform.buildRustPackage {
+    name = "nervos-app-rs";
+    src = gitignoreSource ./rust-temp;
+    #nativeBuildInputs = [ pkgs.pkgconfig ];
+    buildInputs = [ rustPackages.rust-std ];
+    verifyCargoDeps = true;
+
+    # Cargo hash must be updated when Cargo.lock file changes.
+    cargoSha256 = "1ccxgp1f8dlvh7v4hmv9709y7rl16z7jjdgd8blzi09jqnlcysxi";
+
+    meta = {
+      platforms = pkgs.lib.platforms.all;
+    };
+  };
 
   nano = mkTargets build;
 
