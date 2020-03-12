@@ -7,6 +7,8 @@
 #include "protocol.h"
 #include "to_string.h"
 #include "ui.h"
+#include "segwit_addr.h"
+#include "base_32.h"
 #ifdef BAKING_APP
 #include "baking_auth.h"
 #endif // BAKING_APP
@@ -55,11 +57,15 @@ static void render_pkh(
   size_t const out_size,
   apdu_pubkey_state_t const *const pubkey)
 {
+  static const char hrp[] = "sdf";
+  uint8_t base32_buf[256];
+  uint8_t bech32_buf[sizeof(base32_buf) + sizeof(hrp) + 1];
+  base32_encode(&base32_buf, sizeof(base32_buf), &pubkey->public_key_hash, SIGN_HASH_SIZE, 0);
+  bech32_encode(&bech32_buf, &hrp, base32_buf, sizeof(base32_buf));
   bound_check_buffer(7, out_size);
-  for (int i = 0; i < 7; i++) {
-    out[i] = (pubkey->public_key_hash[i] % 26) + 101;
+  for (int i = 0; i < sizeof(bech32_buf); i++) {
+    out[i] = bech32_buf[i];
   }
-  out[7] = '\0';
 }
 
 __attribute__((noreturn))
