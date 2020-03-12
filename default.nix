@@ -90,7 +90,7 @@ let
 
   rustBits = rustPlatform.buildRustPackage {
     name = "nervos-app-rs";
-    src = gitignoreSource ./rust-temp;
+    src = gitignoreSource ./rust;
     #nativeBuildInputs = [ pkgs.pkgconfig ];
     buildInputs = [ rustPackages.rust-std ];
     verifyCargoDeps = true;
