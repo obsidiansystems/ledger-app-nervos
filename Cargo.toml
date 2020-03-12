@@ -7,8 +7,11 @@ edition = "2018"
 crate-type = ["staticlib"]
 
 [dependencies]
-byteorder = "1.3.2"
 cty = "0.2.0"
+
+[dependencies.byteorder]
+version = "1.3.2"
+default-features = false
 
 [dependencies.bech32]
 version = "0.7.2"

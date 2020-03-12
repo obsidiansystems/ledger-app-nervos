@@ -3,7 +3,7 @@
 [[package]]
 name = "bech32"
 version = "0.7.2"
-source = "git+https://github.com/obsidiansystems/rust-bech32?branch=std-feature#7f33bdc61df1bdd929398dc88b767064b281dc32"
+source = "git+https://github.com/obsidiansystems/rust-bech32?branch=std-feature#7ea2543c4cf1ad4c063612469a8210773443f520"
 dependencies = [
  "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
