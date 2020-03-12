@@ -659,7 +659,6 @@ MOLECULE_API_DECORATOR mol_errno MolReader_Script_verify (const mol_seg_t *input
     offsets[0] = offset;
     for (mol_num_t i=1; i<field_count; i++) {
         ptr += MOL_NUM_T_SIZE;
-	PRINTF("-- %x\n", &i);
         offsets[i] = mol_unpack_number(ptr);
         if (offsets[i-1] > offsets[i]) {
             return MOL_ERR_OFFSET;
