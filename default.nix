@@ -88,6 +88,27 @@ let
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
 
+  rustBits = rustPlatform.buildRustPackage {
+    name = "nervos-app-rs";
+    src = gitignoreSource ./rust-temp;
+    #nativeBuildInputs = [ pkgs.pkgconfig ];
+    buildInputs = [ rustPackages.rust-std ];
+    verifyCargoDeps = true;
+    target = "thumbv6m-none-eabi";
+
+    # Cargo hash must be updated when Cargo.lock file changes.
+    cargoSha256 = "1kdg77ijbq0y1cwrivsrnb9mm4y5vlj7hxn39fq1dqlrppr6fdrr";
+
+    # It is more reliable to trick a stable rustc into doing unstable features
+    # than use an unstable nightly rustc. Just because we want unstable
+    # langauge features doesn't mean we want a less tested implementation!
+    RUSTC_BOOTSTRAP = 1;
+
+    meta = {
+      platforms = pkgs.lib.platforms.all;
+    };
+  };
+
   build = bolos:
     let
       app = pkgs.stdenv.mkDerivation {
@@ -105,6 +126,11 @@ let
           pkgs.openssl
           blake2_simd
         ];
+        buildInputs = [
+          rustBits
+        ];
+        rustLibs="${rustBits}/lib";
+        NIX_NO_SELF_RPATH=1;
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
         BOLOS_SDK = bolos.sdk;
@@ -264,26 +290,7 @@ let
 in rec {
   inherit pkgs ledgerPkgs;
 
-  rust = rustPlatform.buildRustPackage {
-    name = "nervos-app-rs";
-    src = gitignoreSource ./rust-temp;
-    #nativeBuildInputs = [ pkgs.pkgconfig ];
-    buildInputs = [ rustPackages.rust-std ];
-    verifyCargoDeps = true;
-    target = "thumbv6m-none-eabi";
-
-    # Cargo hash must be updated when Cargo.lock file changes.
-    cargoSha256 = "1kdg77ijbq0y1cwrivsrnb9mm4y5vlj7hxn39fq1dqlrppr6fdrr";
-
-    # It is more reliable to trick a stable rustc into doing unstable features
-    # than use an unstable nightly rustc. Just because we want unstable
-    # langauge features doesn't mean we want a less tested implementation!
-    RUSTC_BOOTSTRAP = 1;
-
-    meta = {
-      platforms = pkgs.lib.platforms.all;
-    };
-  };
+  inherit rustBits;
 
   nano = mkTargets build;
 

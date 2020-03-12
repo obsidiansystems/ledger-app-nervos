@@ -122,7 +122,11 @@ AS     := $(GCCPATH)arm-none-eabi-gcc
 
 LD       := $(GCCPATH)arm-none-eabi-gcc
 LDFLAGS  += -O3 -Os
-LDLIBS   += -lm -lgcc -lc
+LDLIBS   += \
+	$(rustLibs)/libnervos_app_rs.a \
+	-lm \
+	-lgcc \
+	-lc
 
 # import rules to compile glyphs(/pone)
 include $(BOLOS_SDK)/Makefile.glyphs
