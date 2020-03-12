@@ -35,7 +35,7 @@
  *       prog_len: Number of data bytes in prog.
  *  Returns 1 if successful.
  */
-int segwit_addr_encode(char *output, const char *hrp, int ver,
+int segwit_addr_encode(char *output, size_t out_len, const char *hrp, int ver,
                        const uint8_t *prog, size_t prog_len);
 
 /** Decode a SegWit address
@@ -59,12 +59,14 @@ int segwit_addr_decode(int *ver, uint8_t *prog, size_t *prog_len,
  *
  *  Out: output:  Pointer to a buffer of size strlen(hrp) + data_len + 8 that
  *                will be updated to contain the null-terminated Bech32 string.
+ *       out_len: Length of output buffer so no overflows occur.
  *  In: hrp :     Pointer to the null-terminated human readable part.
  *      data :    Pointer to an array of 5-bit values.
  *      data_len: Length of the data array.
  *  Returns 1 if successful.
  */
-int bech32_encode(char *output, const char *hrp, const uint8_t *data,
+int bech32_encode(char *output, size_t out_len,
+                  const char *hrp, const uint8_t *data,
                   size_t data_len);
 
 /** Decode a Bech32 string
@@ -80,5 +82,8 @@ int bech32_encode(char *output, const char *hrp, const uint8_t *data,
  */
 int bech32_decode(char *hrp, uint8_t *data, size_t *data_len,
                   const char *input);
+
+int convert_bits(uint8_t *out, size_t *outlen, int outbits,
+                 const uint8_t *in, size_t inlen, int inbits, int pad);
 
 #endif /* _SEGWIT_ADDR_H_ */
