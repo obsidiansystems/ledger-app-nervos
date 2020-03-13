@@ -98,10 +98,10 @@ static void prompt_path(
   static size_t const TEST_NET_INDEX = 3;
 
   static const char *const pubkey_labels[] = {
-    PROMPT("Provide"),
-    PROMPT("Public Key For"),
-    PROMPT("Mainnet addr is"),
-    PROMPT("Testnet addr is"),
+    PROMPT("Get Public Key"),
+    PROMPT("Derivation Path"),
+    PROMPT("Mainnet Address"),
+    PROMPT("Testnet Address"),
     NULL,
   };
   REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
