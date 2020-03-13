@@ -499,7 +499,7 @@ int set_lock_arg(key_pair_t *key_pair, uint8_t *destination) {
 
 void prep_lock_arg(bip32_path_t *key, uint8_t *destination) {
 	int fail=0;
-	fail=WITH_KEY_PAIR(key, key_pair, int, ({
+	fail=WITH_KEY_PAIR(*key, key_pair, int, ({
 				set_lock_arg(key_pair, destination);
 				}));
 }
