@@ -61,6 +61,7 @@ static void render_pkh(
   uint8_t base32_buf[base32_max];
   size_t base32_len = 0;
   if (!convert_bits(base32_buf, base32_max, &base32_len, 5, pubkey->public_key_hash, SIGN_HASH_SIZE, 8, 1)) {
+    THROW(EXC_MEMORY_ERROR);
   }
   for (size_t i = 0; i < base32_len; i++) {
     out[i] = base32_buf[i] + 101;
