@@ -7,9 +7,9 @@
 #include "globals.h"
 
 __attribute__((noreturn))
-void app_main(void);
+void rust_main(void);
 
-__attribute__((section(".boot"))) int main(void) {
+__attribute__((section(".boot"))) int c_main(void) {
     // exit critical section
     __asm volatile("cpsie i");
 
@@ -43,7 +43,7 @@ __attribute__((section(".boot"))) int main(void) {
 
                 ui_initial_screen();
 
-                app_main();
+                rust_main();
             }
             CATCH(EXCEPTION_IO_RESET) {
                 // reset IO and UX

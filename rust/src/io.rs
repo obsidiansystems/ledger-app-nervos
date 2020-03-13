@@ -59,17 +59,3 @@ impl IndexMut<usize> for Comm {
         &mut self.apduBuffer[idx]
     }
 }
-
-#[no_mangle]
-pub extern "C" fn io_exchange_al(channel: u8, tx_len: u16, apdubuf: apdu_buffer_t) -> u16 {
-    if channel == CHANNEL_SPI as u8 {
-        if tx_len != 0 {
-            unsafe{ io_seph_recv(apdubuf.buf, tx_len, 0) };
-            return 1
-        } else {
-            return unsafe{ io_seph_recv(apdubuf.buf, 256, 0) };
-        }
-    } else {
-        return 0;
-    }
-}

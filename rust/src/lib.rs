@@ -1,5 +1,4 @@
 #![no_std]
-#![no_main]
 #![feature(asm)]
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
@@ -70,7 +69,7 @@ extern "C" fn sample_main() {
             0x03 => {
                 let len = u16::from_le_bytes([comm[2], comm[3]]) as usize;
                 let out = sha256(&comm.get(4, len));
-                
+
                 for (i, e) in out.iter().enumerate() {
                     comm[i] = *e;
                 }
@@ -82,15 +81,21 @@ extern "C" fn sample_main() {
     }
 }
 
+#[no_mangle]
+pub extern "C" fn rust_main() -> ! {
+    unsafe { app_main() }
+}
+
 
 #[no_mangle]
 extern "C" {
     fn c_main();
+    fn app_main() -> !;
 }
 
 #[link_section = ".boot"]
 #[no_mangle]
-pub extern "C" fn _start() -> ! {
+pub extern "C" fn main() {
     // Main is in C until the try_context can be set properly
     // from Rust
     unsafe { c_main() };
