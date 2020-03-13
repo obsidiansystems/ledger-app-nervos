@@ -88,18 +88,22 @@ let
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
 
-  rust-cbindgen = pkgs.rust-cbindgen.override {
+  rust-bindgen = (ledgerPkgs.buildPackages.rust-bindgen.override {
     inherit rustPlatform;
-  };
+  }).overrideAttrs (_: {
+    doCheck = false;
+  });
 
   build = bolos:
     let
-      rust-bindings = ledgerPkgs.buildPackages.runCommand "${bolos.name}-rust-bindings" {
-        nativeBuildInputs = [ rust-cbindgen rustPackages.rust-std ];
+      rust-src = gitignoreSource ./rust;
+
+      rust-bindings = ledgerPkgs.runCommand "${bolos.name}-rust-bindings" {
+        nativeBuildInputs = [ rust-bindgen rustPackages.rust-std ];
       } ''
         mkdir "$out"
         TARGET=thumbv6m-none-eabi \
-        bindgen wrapper.h \
+        bindgen ${rust-src}/wrapper.h \
           --use-core \
           --no-prepend-enum-name \
           --no-doc-comments \
@@ -113,9 +117,9 @@ let
           > "$out/bindings.rs"
       '';
 
-      rustBits = rustPlatform.buildRustPackage {
+      rustBits = ledgerRustPlatform.buildRustPackage {
         name = "nervos-app-rs";
-        src = gitignoreSource ./rust;
+        src = rust-src;
         postUnpack = ''
           cp ${rust-bindings}/bindings.rs src/
         '';
@@ -196,7 +200,11 @@ let
 
       ledgerApp = app;
     in {
-      inherit app rustBits;
+      inherit app;
+
+      rust = {
+        inherit rustBits rust-bindings;
+      };
 
       release = rec {
         app = mkRelease "nervos_wallet" "Nervos Wallet" ledgerApp;
@@ -303,7 +311,12 @@ let
     ];
   };
 
-  rustPlatform = ledgerPkgs.makeRustPlatform {
+  rustPlatform = pkgs.makeRustPlatform {
+    inherit (rustPackages) cargo;
+    inherit rustc;
+  };
+
+  ledgerRustPlatform = ledgerPkgs.makeRustPlatform {
     inherit (rustPackages) cargo;
     inherit rustc;
   };
