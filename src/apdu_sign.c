@@ -18,9 +18,6 @@
 
 #define PARSE_ERROR() THROW(EXC_PARSE_ERROR)
 
-
-static const uint8_t blake2b_personalization[]="ckb-default-hash";
-
 static inline void conditional_init_hash_state(blake2b_hash_state_t *const state) {
     check_null(state);
     if (!state->initialized) {
@@ -30,12 +27,10 @@ static inline void conditional_init_hash_state(blake2b_hash_state_t *const state
 }
 
 static void blake2b_incremental_hash(
-    /*in/out*/ uint8_t *const out, size_t const out_size,
-    /*in/out*/ size_t *const out_length,
+    /*in*/ uint8_t *const out, size_t const out_size,
     /*in/out*/ blake2b_hash_state_t *const state
 ) {
     check_null(out);
-    check_null(out_length);
     check_null(state);
 
     conditional_init_hash_state(state);
@@ -44,13 +39,9 @@ static void blake2b_incremental_hash(
 
 static void blake2b_finish_hash(
     /*out*/ uint8_t *const out, size_t const out_size,
-    /*in/out*/ uint8_t *const buff, size_t const buff_size,
-    /*in/out*/ size_t *const buff_length,
     /*in/out*/ blake2b_hash_state_t *const state
 ) {
     check_null(out);
-    check_null(buff);
-    check_null(buff_length);
     check_null(state);
 
     conditional_init_hash_state(state);
@@ -564,11 +555,11 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
     }
 
     if (enable_hashing)
-      blake2b_incremental_hash(buff, buff_size, &buff_size, &G.hash_state);
+      blake2b_incremental_hash(buff, buff_size, &G.hash_state);
 
     if (last) {
         if (enable_hashing) {
-	    blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), buff, buff_size, &buff_size, &G.hash_state);
+	    blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), &G.hash_state);
         }
 
 	if(is_ctxd) {
