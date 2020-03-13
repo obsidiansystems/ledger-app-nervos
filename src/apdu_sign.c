@@ -271,14 +271,11 @@ void parse_context(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_der
 	mol_seg_t seg;
 	seg.ptr=buff;
 	seg.size=buff_size;
-	DBGOUT();
 	uint8_t mol_result=MolReader_RawTransaction_verify(&seg,true);
-	DBGOUT();
 	if(mol_result != MOL_OK)
 	  REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
 
 	parse_context_inner(dest, key_derivation, buff, buff_size);
-	DBGOUT();
 }
 
 void parse_context_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const buff, uint16_t const buff_size) {
