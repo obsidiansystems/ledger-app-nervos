@@ -294,7 +294,7 @@ void parse_context_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ k
 		mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
 
 		if(!is_standard_lock_script(&lockScript)) {
-                  return;
+		  REJECT("Cannot parse nonstandard lock script");
 	       	} else {
  		  G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags|=OUTPUT_FLAGS_KNOWN_LOCK;
 		}
@@ -337,6 +337,8 @@ bool is_self(mol_num_t num_inputs, mol_seg_t* inputs, mol_seg_t* lockScript) {
 	return false;
 }
 
+void parse_operation_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const buff, uint16_t const buff_size);
+
 void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const buff, uint16_t const buff_size) {
 	mol_seg_t seg;
 	seg.ptr=buff;
@@ -344,6 +346,14 @@ void parse_operation(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_d
 	uint8_t mol_result=MolReader_RawTransaction_verify(&seg,true);
 	if(mol_result != MOL_OK)
 	  REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
+
+	parse_operation_inner(dest, key_derivation, buff, buff_size);
+}
+
+void parse_operation_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const buff, uint16_t const buff_size) {
+	mol_seg_t seg;
+	seg.ptr=buff;
+	seg.size=buff_size;
 
 	{ // New context for stack.
 
