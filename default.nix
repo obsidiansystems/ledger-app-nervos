@@ -88,29 +88,54 @@ let
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
 
-  rustBits = rustPlatform.buildRustPackage {
-    name = "nervos-app-rs";
-    src = gitignoreSource ./rust;
-    #nativeBuildInputs = [ pkgs.pkgconfig ];
-    buildInputs = [ rustPackages.rust-std ];
-    verifyCargoDeps = true;
-    target = "thumbv6m-none-eabi";
-
-    # Cargo hash must be updated when Cargo.lock file changes.
-    cargoSha256 = "1kdg77ijbq0y1cwrivsrnb9mm4y5vlj7hxn39fq1dqlrppr6fdrr";
-
-    # It is more reliable to trick a stable rustc into doing unstable features
-    # than use an unstable nightly rustc. Just because we want unstable
-    # langauge features doesn't mean we want a less tested implementation!
-    RUSTC_BOOTSTRAP = 1;
-
-    meta = {
-      platforms = pkgs.lib.platforms.all;
-    };
+  rust-cbindgen = pkgs.rust-cbindgen.override {
+    inherit rustPlatform;
   };
 
   build = bolos:
     let
+      rust-bindings = ledgerPkgs.buildPackages.runCommand "${bolos.name}-rust-bindings" {
+        nativeBuildInputs = [ rust-cbindgen rustPackages.rust-std ];
+      } ''
+        mkdir "$out"
+        TARGET=thumbv6m-none-eabi \
+        bindgen wrapper.h \
+          --use-core \
+          --no-prepend-enum-name \
+          --no-doc-comments \
+          --with-derive-default \
+          --no-derive-debug \
+          --ctypes-prefix=cty \
+          -- \
+          -fshort-enums \
+          -I${bolos.sdk}/lib_ux/include \
+          -I${bolos.sdk} \
+          > "$out/bindings.rs"
+      '';
+
+      rustBits = rustPlatform.buildRustPackage {
+        name = "nervos-app-rs";
+        src = gitignoreSource ./rust;
+        postUnpack = ''
+          cp ${rust-bindings}/bindings.rs src/
+        '';
+        #nativeBuildInputs = [ pkgs.pkgconfig ];
+        buildInputs = [ rustPackages.rust-std ];
+        verifyCargoDeps = true;
+        target = "thumbv6m-none-eabi";
+
+        # Cargo hash must be updated when Cargo.lock file changes.
+        cargoSha256 = "1kdg77ijbq0y1cwrivsrnb9mm4y5vlj7hxn39fq1dqlrppr6fdrr";
+
+        # It is more reliable to trick a stable rustc into doing unstable features
+        # than use an unstable nightly rustc. Just because we want unstable
+        # langauge features doesn't mean we want a less tested implementation!
+        RUSTC_BOOTSTRAP = 1;
+
+        meta = {
+          platforms = pkgs.lib.platforms.all;
+        };
+      };
       app = pkgs.stdenv.mkDerivation {
         name = "ledger-app-nervos-nano-${bolos.name}";
         inherit src;
@@ -171,7 +196,7 @@ let
 
       ledgerApp = app;
     in {
-      inherit app;
+      inherit app rustBits;
 
       release = rec {
         app = mkRelease "nervos_wallet" "Nervos Wallet" ledgerApp;
@@ -289,8 +314,6 @@ let
   };
 in rec {
   inherit pkgs ledgerPkgs;
-
-  inherit rustBits;
 
   nano = mkTargets build;
 
