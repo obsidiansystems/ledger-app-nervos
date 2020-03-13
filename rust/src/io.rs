@@ -19,15 +19,19 @@ pub struct Comm {
 
 impl Comm {
     pub fn new() -> Comm {
-       Comm { apduBuffer: [0u8; 260], rx: 0, tx: 0 } 
+        Comm {
+            apduBuffer: [0u8; 260],
+            rx: 0,
+            tx: 0,
+        }
     }
 
     pub fn io_exch(&mut self, flags: u8) {
         let apdu_buf = apdu_buffer_t {
-                            buf: self.apduBuffer.as_mut_ptr(),
-                            len: self.apduBuffer.len() as u16
-                    };
-        self.rx = unsafe{ io_exchange(flags, apdu_buf, self.tx as u16) } as usize;
+            buf: self.apduBuffer.as_mut_ptr(),
+            len: self.apduBuffer.len() as u16,
+        };
+        self.rx = unsafe { io_exchange(flags, apdu_buf, self.tx as u16) } as usize;
         self.tx = 0;
     }
 

@@ -24,7 +24,6 @@ fn panic(_: &PanicInfo) -> ! {
     loop {}
 }
 
-
 /// Example crypto call
 /// safe (?) wrapper
 fn sha256(m: &[u8]) -> [u8; 32] {
@@ -60,12 +59,12 @@ extern "C" fn sample_main() {
             0x00 => {
                 flags |= IO_RESET_AFTER_REPLIED as u8;
                 comm.set_status_word(io::StatusWords::OK)
-            },
+            }
             0x01 => comm.set_status_word(io::StatusWords::OK),
             0x02 => {
                 comm.tx = comm.rx;
                 comm.set_status_word(io::StatusWords::OK)
-            },
+            }
             0x03 => {
                 let len = u16::from_le_bytes([comm[2], comm[3]]) as usize;
                 let out = sha256(&comm.get(4, len));
@@ -74,8 +73,10 @@ extern "C" fn sample_main() {
                     comm[i] = *e;
                 }
                 comm.set_status_word(io::StatusWords::OK)
-            },
-            0xff => {unsafe { os_sched_exit(0) };},
+            }
+            0xff => {
+                unsafe { os_sched_exit(0) };
+            }
             _ => comm.set_status_word(io::StatusWords::Unknown),
         };
     }
@@ -85,7 +86,6 @@ extern "C" fn sample_main() {
 pub extern "C" fn rust_main() -> ! {
     unsafe { app_main() }
 }
-
 
 #[no_mangle]
 extern "C" {
