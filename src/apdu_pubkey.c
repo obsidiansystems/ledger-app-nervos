@@ -63,7 +63,6 @@ static void render_pkh(
   if (!convert_bits(base32_buf, base32_max, &base32_len, 5, pubkey->public_key_hash, SIGN_HASH_SIZE, 8, 1)) {
     THROW(EXC_MEMORY_ERROR);
   }
-  out[base32_len] = '\0';
   if (!bech32_encode(out, out_size, hrb, base32_buf, base32_len)) {
     THROW(EXC_MEMORY_ERROR);
   }
