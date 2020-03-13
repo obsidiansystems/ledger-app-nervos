@@ -52,15 +52,39 @@ static void bip32_path_to_string(
 }
 
 static void render_pkh(
+  const char *const hrb,
   char *const out,
   size_t const out_size,
   apdu_pubkey_state_t const *const pubkey)
 {
-  uint8_t base32_buf[256];
-  size_t outlen;
-  convert_bits(base32_buf, &outlen, 5, pubkey->public_key_hash, SIGN_HASH_SIZE, 8, 1);
-  bech32_encode(out, out_size, "asdf", base32_buf, outlen);
-  bound_check_buffer(7, out_size);
+  const size_t base32_max = 256;
+  uint8_t base32_buf[base32_max];
+  size_t base32_len = 0;
+  if (!convert_bits(base32_buf, base32_max, &base32_len, 5, pubkey->public_key_hash, SIGN_HASH_SIZE, 8, 1)) {
+  }
+  for (size_t i = 0; i < base32_len; i++) {
+    out[i] = base32_buf[i] + 101;
+  }
+  out[base32_len] = '\0';
+  if (!bech32_encode(out, out_size, hrb, base32_buf, base32_len)) {
+    THROW(EXC_MEMORY_ERROR);
+  }
+}
+
+static void render_pkh_mainnet(
+  char *const out,
+  size_t const out_size,
+  apdu_pubkey_state_t const *const pubkey)
+{
+  render_pkh("ckb", out, out_size, pubkey);
+}
+
+static void render_pkh_testnet(
+  char *const out,
+  size_t const out_size,
+  apdu_pubkey_state_t const *const pubkey)
+{
+  render_pkh("ckt", out, out_size, pubkey);
 }
 
 __attribute__((noreturn))
@@ -82,8 +106,8 @@ static void prompt_path(
   };
   REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
   register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
-  register_ui_callback(MAIN_NET_INDEX, render_pkh, &G);
-  register_ui_callback(TEST_NET_INDEX, render_pkh, &G);
+  register_ui_callback(MAIN_NET_INDEX, render_pkh_mainnet, &G);
+  register_ui_callback(TEST_NET_INDEX, render_pkh_testnet, &G);
   ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
