@@ -5,6 +5,7 @@
 #![allow(non_camel_case_types)]
 #![feature(const_fn)]
 
+pub mod apdu;
 pub mod bindings;
 pub mod io;
 pub mod ui;

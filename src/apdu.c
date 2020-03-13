@@ -22,12 +22,6 @@ size_t handle_apdu_error(uint8_t __attribute__((unused)) instruction) {
     THROW(EXC_INVALID_INS);
 }
 
-size_t handle_apdu_version(uint8_t __attribute__((unused)) instruction) {
-    memcpy(G_io_apdu_buffer, &version, sizeof(version_t));
-    size_t tx = sizeof(version_t);
-    return finalize_successful_send(tx);
-}
-
 size_t handle_apdu_git(uint8_t __attribute__((unused)) instruction) {
     static const char commit[] = COMMIT;
     memcpy(G_io_apdu_buffer, commit, sizeof(commit));
