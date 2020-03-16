@@ -194,7 +194,7 @@ then modify the value at the end of ckb-miner.toml to be small:
 value = 20
 ```
 
-and uncomment the block_assembler block at the end of ckb.toml:
+and uncomment the block_assembler block at the end of ckb.toml and change the 'message' to '0x':
 
 ```
 [block_assembler]
