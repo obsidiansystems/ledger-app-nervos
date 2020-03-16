@@ -80,6 +80,13 @@ typedef struct {
 } apdu_sign_state_t;
 
 typedef struct {
+  bip32_path_t key;
+  cx_ecfp_public_key_t public_key;
+  cx_blake2b_t hash_state;
+  uint8_t public_key_hash[SIGN_HASH_SIZE];
+} apdu_pubkey_state_t;
+
+typedef struct {
   void *stack_root;
   apdu_handler handlers[INS_MAX + 1];
 
@@ -115,12 +122,8 @@ typedef struct {
 
   struct {
       union {
-          struct {
-              bip32_path_t key;
-              cx_ecfp_public_key_t public_key;
-          } pubkey;
-
-          apdu_sign_state_t sign;
+        apdu_pubkey_state_t pubkey;
+        apdu_sign_state_t sign;
       } u;
 
       struct {
@@ -130,6 +133,8 @@ typedef struct {
 } globals_t;
 
 extern globals_t global;
+
+extern const uint8_t blake2b_personalization[17];
 
 extern unsigned int app_stack_canary; // From SDK
 

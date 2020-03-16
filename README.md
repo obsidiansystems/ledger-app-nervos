@@ -182,9 +182,9 @@ this is discourage, and running your own node is preferred.
 
 First, make a directory and init it for a dev network:
 ``` sh
+$ nix run -f nix/dep/ckb # to make ckb available
 $ mkdir devnet
 $ cd devnet
-$ nix run -f nix/dep/ckb # to make ckb available
 $ ckb init --chain dev
 ```
 
@@ -194,7 +194,7 @@ then modify the value at the end of ckb-miner.toml to be small:
 value = 20
 ```
 
-and uncomment the block_assembler block at the end of ckb.toml:
+and uncomment the block_assembler block at the end of ckb.toml and change the 'message' to '0x':
 
 ```
 [block_assembler]
@@ -337,7 +337,7 @@ Remember the value above for one of live cells under “tx\_hash” and “outpu
 Prepare a cell for withdrawal from the DAO:
 
 ``` sh
-$ ckb-cli dao prepare --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.0001
+$ ckb-cli dao prepare --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.0001 --path "m/44'/309'/0'/1/0"
 0xae91f2a310f2cfeada391e5f76d0addcc56d99c91a39734c292c930a1cfc67c2
 ```
 

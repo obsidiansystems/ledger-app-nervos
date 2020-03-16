@@ -18,9 +18,6 @@
 
 #define PARSE_ERROR() THROW(EXC_PARSE_ERROR)
 
-
-static const uint8_t blake2b_personalization[]="ckb-default-hash";
-
 static inline void conditional_init_hash_state(blake2b_hash_state_t *const state) {
     check_null(state);
     if (!state->initialized) {
@@ -30,12 +27,10 @@ static inline void conditional_init_hash_state(blake2b_hash_state_t *const state
 }
 
 static void blake2b_incremental_hash(
-    /*in/out*/ uint8_t *const out, size_t const out_size,
-    /*in/out*/ size_t *const out_length,
+    /*in*/ uint8_t *const out, size_t const out_size,
     /*in/out*/ blake2b_hash_state_t *const state
 ) {
     check_null(out);
-    check_null(out_length);
     check_null(state);
 
     conditional_init_hash_state(state);
@@ -44,13 +39,9 @@ static void blake2b_incremental_hash(
 
 static void blake2b_finish_hash(
     /*out*/ uint8_t *const out, size_t const out_size,
-    /*in/out*/ uint8_t *const buff, size_t const buff_size,
-    /*in/out*/ size_t *const buff_length,
     /*in/out*/ blake2b_hash_state_t *const state
 ) {
     check_null(out);
-    check_null(buff);
-    check_null(buff_length);
     check_null(state);
 
     conditional_init_hash_state(state);
@@ -270,14 +261,11 @@ void parse_context(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_der
 	mol_seg_t seg;
 	seg.ptr=buff;
 	seg.size=buff_size;
-	DBGOUT();
 	uint8_t mol_result=MolReader_RawTransaction_verify(&seg,true);
-	DBGOUT();
 	if(mol_result != MOL_OK)
 	  REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
 
 	parse_context_inner(dest, key_derivation, buff, buff_size);
-	DBGOUT();
 }
 
 void parse_context_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const buff, uint16_t const buff_size) {
@@ -305,7 +293,7 @@ void parse_context_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ k
 		mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
 
 		if(!is_standard_lock_script(&lockScript)) {
-                  return;
+		  REJECT("Cannot parse nonstandard lock script");
 	       	} else {
  		  G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags|=OUTPUT_FLAGS_KNOWN_LOCK;
 		}
@@ -437,8 +425,13 @@ void parse_operation_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_
 
 	  if(!isChange && !isDao) {
             sent_amounts+=capacity_val;
-	    memcpy(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20);
-	    G.maybe_transaction.v.flags|=HAS_DESTINATION_ADDRESS;
+	    if(G.maybe_transaction.v.flags&HAS_DESTINATION_ADDRESS) {
+               if(memcmp(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20) != 0)
+	         REJECT("Can't handle transactions with multiple destinations\n");
+	    } else {
+	       memcpy(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20);
+	       G.maybe_transaction.v.flags|=HAS_DESTINATION_ADDRESS;
+	    }
 	  }
 	  if(isDao) {
             switch(get_dao_data_type(&outputs_data, i)) {
@@ -586,11 +579,11 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
     }
 
     if (enable_hashing)
-      blake2b_incremental_hash(buff, buff_size, &buff_size, &G.hash_state);
+      blake2b_incremental_hash(buff, buff_size, &G.hash_state);
 
     if (last) {
         if (enable_hashing) {
-	    blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), buff, buff_size, &buff_size, &G.hash_state);
+	    blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), &G.hash_state);
         }
 
 	if(is_ctxd) {
