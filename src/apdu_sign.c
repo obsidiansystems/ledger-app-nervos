@@ -240,7 +240,6 @@ bool is_standard_lock_script(mol_seg_t *lockScript) {
 bool is_dao_type_script(mol_seg_t *typeScript) {
 	static const uint8_t defaultTypeScript[] = {
 		0x82, 0xd7, 0x6d, 0x1b, 0x75, 0xfe, 0x2f, 0xd9, 0xa2, 0x7d, 0xfb, 0xaa, 0x65, 0xa0, 0x39, 0x22, 0x1a, 0x38, 0x0d, 0x76, 0xc9, 0x26, 0xf3, 0x78, 0xd3, 0xf8, 0x1c, 0xf3, 0xe7, 0xe1, 0x3f, 0x2e };
-	if(MolReader_ScriptOpt_is_none(typeScript)) return false;
 	mol_seg_t hash_type = MolReader_Script_get_hash_type(typeScript);
 	if(*hash_type.ptr != 1) return false;
 	mol_seg_t codeHash = MolReader_Script_get_code_hash(typeScript);
@@ -314,7 +313,8 @@ void parse_context_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ k
 		memcpy(G.context_transactions[G.context_transactions_fill_idx].outputs[i].lock_arg, lockArgBytes.ptr, 20);
 
 		mol_seg_t type_script=MolReader_CellOutput_get_type_(&output.seg);
-		if(is_dao_type_script(&type_script)) {
+                if(!MolReader_ScriptOpt_is_none(&type_script)) {
+                    if(is_dao_type_script(&type_script)) {
 			G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags|=OUTPUT_FLAGS_IS_DAO;
 			switch(get_dao_data_type(&outputs_data, i)) {
 				case DAO_DATA_NONE:
@@ -326,7 +326,10 @@ void parse_context_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ k
 				case DAO_DATA_PREPARED:
 				  break;
 			}
-		}
+                    } else {
+                        REJECT("Cannot parse transactions with non-DAO type scripts");
+                    }
+                }
 	}
 }
 
@@ -419,7 +422,16 @@ void parse_operation_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_
 	  mol_seg_t type_script=MolReader_CellOutput_get_type_(&output.seg);
 
 	  bool isChange=is_change(inputs_len, &inputs, &lockScript);
-	  bool isDao=is_dao_type_script(&type_script);
+
+	  bool isDao = false;
+          if (!MolReader_ScriptOpt_is_none(&type_script)) {
+              if (is_dao_type_script(&type_script)) {
+                  isDao = true;
+              } else {
+                  REJECT("Cannot parse transactions with non-DAO type scripts");
+              }
+          }
+
 	  mol_seg_t lockArg = MolReader_Script_get_args(&lockScript);
 	  mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
 
