@@ -12,7 +12,7 @@
   # TODO: use openssl to verify the signature.
   run check_signature "00001111" "$rv"
   diff <(echo $output) - <<<"Signature Verified Successfully"
- } 
+ }
 
 @test "Signing APDU rejects when given garbage to sign and strict checking is enabled." {
   run apdu_fixed "8003400011048000002c800001358000000080000000"
