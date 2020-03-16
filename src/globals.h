@@ -57,6 +57,7 @@ struct tx_context {
 typedef struct {
     bip32_path_t key;
     uint8_t current_lock_arg[20];
+    uint8_t change_lock_arg[20];
 
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
 

@@ -318,23 +318,13 @@ void parse_context_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ k
 	}
 }
 
-bool is_self(mol_num_t num_inputs, mol_seg_t* inputs, mol_seg_t* lockScript) {
+bool is_change(mol_num_t num_inputs, mol_seg_t* inputs, mol_seg_t* lockScript) {
 	if(!is_standard_lock_script(lockScript))
 		return false;
 	mol_seg_t lockArg = MolReader_Script_get_args(lockScript);
 	mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
 
-	for(uint8_t i=0;i<num_inputs;i++) {
-		mol_seg_res_t input=MolReader_CellInputVec_get(inputs, i);
-		mol_seg_t outpoint=MolReader_CellInput_get_previous_output(&input.seg);
-		mol_seg_t out_idx_seg=MolReader_OutPoint_get_index(&outpoint);
-		uint32_t out_idx=mol_unpack_number(out_idx_seg.ptr);
-
-		if(memcmp(G.context_transactions[i].outputs[out_idx].lock_arg, lockArgBytes.ptr, 20)==0) {
-			return true;
-		}
-	}
-	return false;
+	return memcmp(G.change_lock_arg, lockArgBytes.ptr, 20)==0;
 }
 
 void parse_operation_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_ key_derivation, uint8_t *const buff, uint16_t const buff_size);
@@ -416,12 +406,12 @@ void parse_operation_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_
 	  mol_seg_t lockScript = MolReader_CellOutput_get_lock(&output.seg);
 	  mol_seg_t type_script=MolReader_CellOutput_get_type_(&output.seg);
 
-	  bool isSelf=is_self(inputs_len, &inputs, &lockScript);
+	  bool isChange=is_change(inputs_len, &inputs, &lockScript);
 	  bool isDao=is_dao_type_script(&type_script);
 	  mol_seg_t lockArg = MolReader_Script_get_args(&lockScript);
 	  mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
 
-	  if(!isSelf && !isDao) {
+	  if(!isChange && !isDao) {
             sent_amounts+=capacity_val;
 	    if(G.maybe_transaction.v.flags&HAS_DESTINATION_ADDRESS) {
                if(memcmp(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20) != 0)
@@ -480,26 +470,30 @@ void parse_operation_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_
 	}
 }
 
-int set_current_lock_arg(key_pair_t *key_pair) {
+int set_lock_arg(key_pair_t *key_pair, uint8_t *destination) {
+  check_null(key_pair);
+  check_null(destination);
   cx_blake2b_t lock_arg_state;
   cx_blake2b_init2(&lock_arg_state, 20*8, NULL, 0, (uint8_t*) blake2b_personalization, sizeof(blake2b_personalization)-1);
   cx_hash((cx_hash_t *) &lock_arg_state, 0, key_pair->public_key.W, key_pair->public_key.W_len, NULL, 0);
-  cx_hash((cx_hash_t *) &lock_arg_state, CX_LAST, NULL, 0, G.current_lock_arg, sizeof(G.current_lock_arg));
+  cx_hash((cx_hash_t *) &lock_arg_state, CX_LAST, NULL, 0, destination, sizeof(G.current_lock_arg));
   return 0;
 }
 
 #define P1_FIRST 0x00
 #define P1_NEXT 0x01
 #define P1_HASH_ONLY_NEXT 0x03 // You only need it once
+#define P1_CHANGE_PATH 0x10
+#define P1_CHANGE_PATH_CASE 0x11
 #define P1_IS_CONTEXT 0x20
 #define P1_NO_FALLBACK 0x40
 #define P1_LAST_MARKER 0x80
 #define P1_MASK (~(P1_LAST_MARKER|P1_NO_FALLBACK|P1_IS_CONTEXT))
 
-void prep_current_lock_arg() {
+void prep_lock_arg(bip32_path_t *key, uint8_t *destination) {
 	int fail=0;
-	fail=WITH_KEY_PAIR(G.key, key_pair, int, ({
-				set_current_lock_arg(key_pair);
+	fail=WITH_KEY_PAIR(*key, key_pair, int, ({
+				set_lock_arg(key_pair, destination);
 				}));
 }
 
@@ -518,7 +512,20 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
         clear_data();
         read_bip32_path(&G.key, buff, buff_size);
 
-	prep_current_lock_arg();
+	prep_lock_arg(&G.key, &G.current_lock_arg);
+       	
+	// Default the change lock arg to the one we're currently going to sign for
+	memcpy(&G.change_lock_arg, &G.current_lock_arg, 20);
+
+        return finalize_successful_send(0);
+	    }
+    
+    case P1_CHANGE_PATH_CASE:
+	    {
+        bip32_path_t change_key;
+        read_bip32_path(&change_key, buff, buff_size);
+
+	prep_lock_arg(&change_key, &G.change_lock_arg);
 
         return finalize_successful_send(0);
 	    }

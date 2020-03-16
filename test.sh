@@ -40,6 +40,7 @@ appPid=$!
 
 sleep 1
 echo "Starting bats"
+if [ -n "$DEBUG" ] ; then echo "In debug mode (testing prompts)"; fi;
 bats -p tests/
 bats_result=$?
 echo "Done with bats"
