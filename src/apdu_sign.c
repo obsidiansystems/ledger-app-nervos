@@ -423,8 +423,13 @@ void parse_operation_inner(struct maybe_transaction* _U_ dest, bip32_path_t* _U_
 
 	  if(!isSelf && !isDao) {
             sent_amounts+=capacity_val;
-	    memcpy(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20);
-	    G.maybe_transaction.v.flags|=HAS_DESTINATION_ADDRESS;
+	    if(G.maybe_transaction.v.flags&HAS_DESTINATION_ADDRESS) {
+               if(memcmp(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20) != 0)
+	         REJECT("Can't handle transactions with multiple destinations\n");
+	    } else {
+	       memcpy(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20);
+	       G.maybe_transaction.v.flags|=HAS_DESTINATION_ADDRESS;
+	    }
 	  }
 	  if(isDao) {
             switch(get_dao_data_type(&outputs_data, i)) {
