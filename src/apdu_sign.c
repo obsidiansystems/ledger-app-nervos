@@ -212,19 +212,26 @@ bool is_dao_type_script(mol_seg_t *typeScript) {
     return memcmp(defaultTypeScript, codeHash.ptr, 32) == 0;
 }
 
-enum dao_data_type { DAO_DATA_INVALID = 0, DAO_DATA_DEPOSIT, DAO_DATA_PREPARED };
+enum output_type_type {
+    OUTPUT_TYPE_INVALID = 0,
+    OUTPUT_TYPE_PLAIN_TRANSFER,
+    OUTPUT_TYPE_DAO_DEPOSIT,
+    OUTPUT_TYPE_DAO_PREPARED,
+};
 
-enum dao_data_type get_dao_data_type(mol_seg_t *outputs_data, int i) {
+enum output_type_type get_output_type_type(mol_seg_t *outputs_data, int i) {
     mol_seg_res_t data = MolReader_BytesVec_get(outputs_data, i);
     if (data.errno != MOL_OK)
-        return DAO_DATA_INVALID;
+        return OUTPUT_TYPE_INVALID;
     mol_seg_t rawData = MolReader_Bytes_raw_bytes(&data.seg);
     static const uint8_t eightZeros[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    if (MolReader_Bytes_length(&data.seg) == 0)
+        return OUTPUT_TYPE_PLAIN_TRANSFER;
     if (MolReader_Bytes_length(&data.seg) != 8)
-        return DAO_DATA_INVALID;
+        return OUTPUT_TYPE_INVALID;
     if (memcmp(rawData.ptr, eightZeros, 8) == 0)
-        return DAO_DATA_DEPOSIT;
-    return DAO_DATA_PREPARED;
+        return OUTPUT_TYPE_DAO_DEPOSIT;
+    return OUTPUT_TYPE_DAO_PREPARED;
 }
 
 void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
@@ -277,23 +284,38 @@ void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ k
         memcpy(G.context_transactions[G.context_transactions_fill_idx].outputs[i].lock_arg, lockArgBytes.ptr, 20);
 
         mol_seg_t type_script = MolReader_CellOutput_get_type_(&output.seg);
+
+        bool isDao;
         if (!MolReader_ScriptOpt_is_none(&type_script)) {
             if (is_dao_type_script(&type_script)) {
-                G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags |= OUTPUT_FLAGS_IS_DAO;
-                switch (get_dao_data_type(&outputs_data, i)) {
-                case DAO_DATA_INVALID:
-                    REJECT("DAO cells require 8 bytes of data");
-                    break;
-                case DAO_DATA_DEPOSIT:
-                    G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags |=
-                        OUTPUT_FLAGS_IS_DAO_DEPOSIT;
-                    break;
-                case DAO_DATA_PREPARED:
-                    break;
-                }
+                isDao = true;
             } else {
                 REJECT("Cannot parse transactions with non-DAO type scripts");
             }
+        } else {
+            isDao = false;
+        }
+
+        if (isDao) {
+            G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags |= OUTPUT_FLAGS_IS_DAO;
+        }
+        switch (get_output_type_type(&outputs_data, i)) {
+        case OUTPUT_TYPE_INVALID:
+            REJECT("Invalid output data");
+        case OUTPUT_TYPE_PLAIN_TRANSFER:
+            if (isDao)
+                REJECT("output data cannot be empty for DAO");
+            break;
+        case OUTPUT_TYPE_DAO_DEPOSIT:
+            if (!isDao)
+                REJECT("only DAO script can have DAO output");
+            G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags |=
+                OUTPUT_FLAGS_IS_DAO_DEPOSIT;
+            break;
+        case OUTPUT_TYPE_DAO_PREPARED:
+            if (!isDao)
+                REJECT("only DAO script can have DAO output");
+            break;
         }
     }
 }
@@ -419,22 +441,27 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
                     G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
                 }
             }
-            if (isDao) {
-                switch (get_dao_data_type(&outputs_data, i)) {
-                case DAO_DATA_INVALID:
-                    REJECT("DAO cells require eight bytes of data");
-                    break;
-                case DAO_DATA_DEPOSIT:
-                    dao_deposit_amount += capacity_val;
-                    memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
-                    break;
-                case DAO_DATA_PREPARED:
-                    if (capacity_val != G.context_transactions[i].outputs[input_idxes[i]].amount)
-                        REJECT("Input and output capacity has to match for a prepare: %d vs %d", capacity_val,
-                               G.context_transactions[i].outputs[input_idxes[i]].amount);
-                    total_prepare_amount += capacity_val;
-                    memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
-                }
+            switch (get_output_type_type(&outputs_data, i)) {
+            case OUTPUT_TYPE_INVALID:
+                REJECT("DAO cells require eight bytes of data");
+            case OUTPUT_TYPE_PLAIN_TRANSFER:
+                if (isDao)
+                    REJECT("output data cannot be empty for DAO");
+                break;
+            case OUTPUT_TYPE_DAO_DEPOSIT:
+                if (!isDao)
+                    REJECT("only DAO script can have DAO output");
+                dao_deposit_amount += capacity_val;
+                memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
+                break;
+            case OUTPUT_TYPE_DAO_PREPARED:
+                if (!isDao)
+                    REJECT("only DAO script can have DAO output");
+                if (capacity_val != G.context_transactions[i].outputs[input_idxes[i]].amount)
+                    REJECT("Input and output capacity has to match for a prepare: %d vs %d", capacity_val,
+                           G.context_transactions[i].outputs[input_idxes[i]].amount);
+                total_prepare_amount += capacity_val;
+                memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
             }
         }
 
