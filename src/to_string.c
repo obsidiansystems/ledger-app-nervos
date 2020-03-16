@@ -5,15 +5,12 @@
 
 #include <string.h>
 
-#define NO_CONTRACT_STRING "None"
+#define NO_CONTRACT_STRING      "None"
 #define NO_CONTRACT_NAME_STRING "Custom Delegate: please verify the address"
 
 #define TEZOS_HASH_CHECKSUM_SIZE 4
 
-void pkh_to_string(
-    char *const buff, size_t const buff_size,
-    uint8_t const hash[KEY_HASH_SIZE]
-);
+void pkh_to_string(char *const buff, size_t const buff_size, uint8_t const hash[KEY_HASH_SIZE]);
 
 // These functions output terminating null bytes, and return the ending offset.
 static size_t frac_ckb_to_string(char *dest, uint64_t number);
@@ -50,10 +47,12 @@ void compute_hash_checksum(uint8_t out[TEZOS_HASH_CHECKSUM_SIZE], void const *co
 }
 
 
-#define STRCPY_OR_THROW(buff, size, x, exc) ({ \
-    if (size < sizeof(x)) THROW(exc); \
-    strcpy(buff, x); \
-})
+#define STRCPY_OR_THROW(buff, size, x, exc)                                                                            \
+    ({                                                                                                                 \
+        if (size < sizeof(x))                                                                                          \
+            THROW(exc);                                                                                                \
+        strcpy(buff, x);                                                                                               \
+    })
 
 // These functions do not output terminating null bytes.
 
@@ -76,21 +75,24 @@ static inline size_t convert_number(char dest[MAX_INT_DIGITS], uint64_t number, 
 void number_to_string_indirect64(char *const dest, size_t const buff_size, uint64_t const *const number) {
     check_null(dest);
     check_null(number);
-    if (buff_size < MAX_INT_DIGITS + 1) THROW(EXC_WRONG_LENGTH); // terminating null
+    if (buff_size < MAX_INT_DIGITS + 1)
+        THROW(EXC_WRONG_LENGTH); // terminating null
     number_to_string(dest, *number);
 }
 
 void number_to_string_indirect32(char *const dest, size_t const buff_size, uint32_t const *const number) {
     check_null(dest);
     check_null(number);
-    if (buff_size < MAX_INT_DIGITS + 1) THROW(EXC_WRONG_LENGTH); // terminating null
+    if (buff_size < MAX_INT_DIGITS + 1)
+        THROW(EXC_WRONG_LENGTH); // terminating null
     number_to_string(dest, *number);
 }
 
 void frac_ckb_to_string_indirect(char *const dest, size_t const buff_size, uint64_t const *const number) {
     check_null(dest);
     check_null(number);
-    if (buff_size < MAX_INT_DIGITS + 1) THROW(EXC_WRONG_LENGTH); // + terminating null + decimal point
+    if (buff_size < MAX_INT_DIGITS + 1)
+        THROW(EXC_WRONG_LENGTH); // + terminating null + decimal point
     frac_ckb_to_string(dest, *number);
 }
 
@@ -109,7 +111,7 @@ size_t number_to_string(char *const dest, uint64_t number) {
 }
 
 // frac_ckb are in hundred-millionths
-#define CKB_SCALE 100000000
+#define CKB_SCALE      100000000
 #define DECIMAL_DIGITS 8
 
 size_t frac_ckb_to_string(char *const dest, uint64_t number) {
@@ -143,7 +145,7 @@ size_t frac_ckb_to_string(char *const dest, uint64_t number) {
 }
 
 void lock_arg_to_string(char *const dest, size_t const buff_size, uint8_t const *const lockarg) {
-  bin_to_hex(dest, buff_size, lockarg, 20);
+    bin_to_hex(dest, buff_size, lockarg, 20);
 }
 
 void copy_string(char *const dest, size_t const buff_size, char const *const src) {
@@ -151,7 +153,8 @@ void copy_string(char *const dest, size_t const buff_size, char const *const src
     check_null(src);
     char const *const src_in = (char const *)PIC(src);
     // I don't care that we will loop through the string twice, latency is not an issue
-    if (strlen(src_in) >= buff_size) THROW(EXC_WRONG_LENGTH);
+    if (strlen(src_in) >= buff_size)
+        THROW(EXC_WRONG_LENGTH);
     strcpy(dest, src_in);
 }
 
@@ -160,12 +163,13 @@ void bin_to_hex(char *const out, size_t const out_size, uint8_t const *const in,
     check_null(in);
 
     size_t const out_len = in_size * 2;
-    if (out_size < out_len + 1) THROW(EXC_MEMORY_ERROR);
+    if (out_size < out_len + 1)
+        THROW(EXC_MEMORY_ERROR);
 
     char const *const src = (char const *)PIC(in);
     for (size_t i = 0; i < in_size; i++) {
-        out[i*2]   = "0123456789ABCDEF"[src[i] >> 4];
-        out[i*2+1] = "0123456789ABCDEF"[src[i] & 0x0F];
+        out[i * 2] = "0123456789ABCDEF"[src[i] >> 4];
+        out[i * 2 + 1] = "0123456789ABCDEF"[src[i] & 0x0F];
     }
     out[out_len] = '\0';
 }
