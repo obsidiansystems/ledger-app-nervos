@@ -3,7 +3,7 @@ export LEDGER_PROXY_ADDRESS=127.0.0.1 LEDGER_PROXY_PORT=9999
 speculos_output_file="speculos.log"
 
 writeFile() {
-	cat > $1
+        cat > $1
 }
 speculos_output_cmd="writeFile"
 
@@ -22,9 +22,9 @@ while getopts "hsv" opt; do
 done
 
 killSpeculos() {
-	echo rRrRrlRL > /dev/tcp/localhost/5667
-	sleep 0.3
-	kill $appPid >& /dev/null
+        echo rRrRrlRL > /dev/tcp/localhost/5667
+        sleep 0.3
+        kill $appPid >& /dev/null
 }
 
 if [ -n "$LEDGER_PROXY_PORT" ] ; then
