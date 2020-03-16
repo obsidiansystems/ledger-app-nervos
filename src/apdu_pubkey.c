@@ -75,9 +75,13 @@ __attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callba
     static size_t const TEST_NET_INDEX = 3;
 
     static const char *const pubkey_labels[] = {
-        PROMPT("Get Public Key"), PROMPT("Derivation Path"), PROMPT("Mainnet Address"), PROMPT("Testnet Address"), NULL,
+        PROMPT("Get Public Key"),
+        PROMPT("Derivation Path:"),
+        PROMPT("Mainnet Address:"),
+        PROMPT("Testnet Address:"),
+        NULL,
     };
-    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
+    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "");
     register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
     register_ui_callback(MAIN_NET_INDEX, render_pkh_mainnet, &G);
     register_ui_callback(TEST_NET_INDEX, render_pkh_testnet, &G);
