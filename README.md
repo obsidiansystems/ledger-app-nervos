@@ -71,6 +71,21 @@ also necessary. This enables end-to-end testing of the ckb
 Here is how to set up an environment to test the Ledger app on Nano S
 using the ckb command line:
 
+## Prepare machine to talk to ledger.
+
+On Linux, the "udev" rules must be set up to allow your user to communicate with the ledger device.
+On NixOS, one can easily do this with:
+``` nix
+{
+  # ...
+  hardware.ledger.enable = true;
+  users.users."your-username".extraGroups = [ "ledger" ];
+  # ...
+}
+```
+
+### Prepare ledger and client
+
 Load the latest version of the Nervos app, confirming the unsafe
 prompt:
 
