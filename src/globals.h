@@ -11,7 +11,7 @@ void clear_apdu_globals(void);
 // Zeros out all application-specific globals and SDK-specific UI/exchange buffers.
 void init_globals(void);
 
-#define MAX_APDU_SIZE 230  // Maximum number of bytes in a single APDU
+#define MAX_APDU_SIZE 230 // Maximum number of bytes in a single APDU
 
 // Our buffer must accommodate any remainder from hashing and the next message at once.
 #define NERVOS_BUFSIZE (BLAKE2B_BLOCKBYTES + MAX_APDU_SIZE)
@@ -31,19 +31,19 @@ typedef struct {
 } blake2b_hash_state_t;
 
 struct maybe_transaction {
-	bool is_valid;
-	bool parse_failed;
-	struct parsed_transaction v;
+    bool is_valid;
+    bool parse_failed;
+    struct parsed_transaction v;
 };
 
-#define OUTPUT_FLAGS_KNOWN_LOCK 0x01
-#define OUTPUT_FLAGS_IS_DAO 0x02
+#define OUTPUT_FLAGS_KNOWN_LOCK     0x01
+#define OUTPUT_FLAGS_IS_DAO         0x02
 #define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
 
 struct tx_output {
-  uint64_t amount;
-  uint8_t lock_arg[20];
-  uint8_t flags;
+    uint64_t amount;
+    uint8_t lock_arg[20];
+    uint8_t flags;
 };
 
 struct tx_context {
@@ -71,8 +71,8 @@ typedef struct {
 
     struct maybe_transaction maybe_transaction;
 
-    //uint8_t message_data[NERVOS_BUFSIZE];
-    //uint32_t message_data_length;
+    // uint8_t message_data[NERVOS_BUFSIZE];
+    // uint32_t message_data_length;
     buffer_t message_data_as_buffer;
 
     blake2b_hash_state_t hash_state;
@@ -82,55 +82,55 @@ typedef struct {
 } apdu_sign_state_t;
 
 typedef struct {
-  bip32_path_t key;
-  cx_ecfp_public_key_t public_key;
-  cx_blake2b_t hash_state;
-  uint8_t public_key_hash[SIGN_HASH_SIZE];
+    bip32_path_t key;
+    cx_ecfp_public_key_t public_key;
+    cx_blake2b_t hash_state;
+    uint8_t public_key_hash[SIGN_HASH_SIZE];
 } apdu_pubkey_state_t;
 
 typedef struct {
-  void *stack_root;
-  apdu_handler handlers[INS_MAX + 1];
-
-  struct {
-    ui_callback_t ok_callback;
-    ui_callback_t cxl_callback;
-
-#   ifndef TARGET_NANOX
-    uint32_t ux_step;
-    uint32_t ux_step_count;
-
-    uint32_t timeout_cycle_count;
-#   endif
+    void *stack_root;
+    apdu_handler handlers[INS_MAX + 1];
 
     struct {
-      string_generation_callback callbacks[MAX_SCREEN_COUNT];
-      const void *callback_data[MAX_SCREEN_COUNT];
+        ui_callback_t ok_callback;
+        ui_callback_t cxl_callback;
 
-#     ifdef TARGET_NANOX
-      struct {
-        char prompt[PROMPT_WIDTH + 1];
-        char value[VALUE_WIDTH + 1];
-      } screen[MAX_SCREEN_COUNT];
-#     else
-      char active_prompt[PROMPT_WIDTH + 1];
-      char active_value[VALUE_WIDTH + 1];
+#ifndef TARGET_NANOX
+        uint32_t ux_step;
+        uint32_t ux_step_count;
 
-      // This will and must always be static memory full of constants
-      const char *const *prompts;
-#     endif
-    } prompt;
-  } ui;
+        uint32_t timeout_cycle_count;
+#endif
 
-  struct {
-      union {
-        apdu_pubkey_state_t pubkey;
-        apdu_sign_state_t sign;
-      } u;
+        struct {
+            string_generation_callback callbacks[MAX_SCREEN_COUNT];
+            const void *callback_data[MAX_SCREEN_COUNT];
 
-      struct {
-          struct priv_generate_key_pair generate_key_pair;
-      } priv;
+#ifdef TARGET_NANOX
+            struct {
+                char prompt[PROMPT_WIDTH + 1];
+                char value[VALUE_WIDTH + 1];
+            } screen[MAX_SCREEN_COUNT];
+#else
+            char active_prompt[PROMPT_WIDTH + 1];
+            char active_value[VALUE_WIDTH + 1];
+
+            // This will and must always be static memory full of constants
+            const char *const *prompts;
+#endif
+        } prompt;
+    } ui;
+
+    struct {
+        union {
+            apdu_pubkey_state_t pubkey;
+            apdu_sign_state_t sign;
+        } u;
+
+        struct {
+            struct priv_generate_key_pair generate_key_pair;
+        } priv;
     } apdu;
 } globals_t;
 
@@ -142,10 +142,10 @@ extern unsigned int app_stack_canary; // From SDK
 
 // Used by macros that we don't control.
 #ifdef TARGET_NANOX
-    extern ux_state_t G_ux;
-    extern bolos_ux_params_t G_ux_params;
+extern ux_state_t G_ux;
+extern bolos_ux_params_t G_ux_params;
 #else
-    extern ux_state_t ux;
+extern ux_state_t ux;
 #endif
 extern unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
@@ -162,19 +162,24 @@ void update_baking_idle_screens(void);
 // Properly updates NVRAM data to prevent any clobbering of data.
 // 'out_param' defines the name of a pointer to the nvram_data struct
 // that 'body' can change to apply updates.
-#define UPDATE_NVRAM(out_name, body) ({ \
-    nvram_data *const out_name = &global.apdu.baking_auth.new_data; \
-    memcpy(&global.apdu.baking_auth.new_data, (nvram_data const *const)&N_data, sizeof(global.apdu.baking_auth.new_data)); \
-    body; \
-    nvm_write((void*)&N_data, &global.apdu.baking_auth.new_data, sizeof(N_data)); \
-    update_baking_idle_screens(); \
-})
+#define UPDATE_NVRAM(out_name, body)                                                                                   \
+    ({                                                                                                                 \
+        nvram_data *const out_name = &global.apdu.baking_auth.new_data;                                                \
+        memcpy(&global.apdu.baking_auth.new_data, (nvram_data const *const) & N_data,                                  \
+               sizeof(global.apdu.baking_auth.new_data));                                                              \
+        body;                                                                                                          \
+        nvm_write((void *)&N_data, &global.apdu.baking_auth.new_data, sizeof(N_data));                                 \
+        update_baking_idle_screens();                                                                                  \
+    })
 
 #ifdef NERVOS_DEBUG
 // Aid for tracking down app crashes
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-#define AT __FILE__ ":" TOSTRING(__LINE__)
-inline void dbgout(char* at) {int i; PRINTF("%s - sp %p spg %p %d\n", at, &i, &app_stack_canary, app_stack_canary); }
+#define TOSTRING(x)  STRINGIFY(x)
+#define AT           __FILE__ ":" TOSTRING(__LINE__)
+inline void dbgout(char *at) {
+    int i;
+    PRINTF("%s - sp %p spg %p %d\n", at, &i, &app_stack_canary, app_stack_canary);
+}
 #define DBGOUT() dbgout(AT)
 #endif
