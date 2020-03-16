@@ -123,8 +123,8 @@ $ ckb-cli account extended-address --path "m/44'/309'/0'/1/0" --account-id <ledg
 This should show up on the ledger as (in 4 screens):
 
 `` text
-Get Public Key
-
+Provide
+Public Key
 ```
 ``` text
 Derivation Path
