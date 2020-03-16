@@ -380,3 +380,8 @@ JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c7
 ```
 will be reported, showing that the prepared cell is not yet available to withdraw, or a transaction hash if it is.
 
+# Troubleshooting #
+
+## Application Build Failure ##
+
+If you run into issues building the Ledger application using `nix-shell -A wallet.s --run 'make SHELL=sh all'`, we recommend trying `nix-shell -A wallet.s --run 'make SHELL=sh clean all`.
