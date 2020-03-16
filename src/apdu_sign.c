@@ -433,6 +433,9 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
 
             if (!isChange && !isDao) {
                 sent_amounts += capacity_val;
+                // There must be one destination address which is the one from
+                // the lock arg. If it's unset, set it. But if it's already set
+                // to something else, abort rather than change it.
                 if (G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) {
                     if (memcmp(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20) != 0)
                         REJECT("Can't handle transactions with multiple destinations\n");
