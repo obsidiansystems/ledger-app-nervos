@@ -79,7 +79,6 @@ On NixOS, one can easily do this with:
 {
   # ...
   hardware.ledger.enable = true;
-  users.users."your-username".extraGroups = [ "ledger" ];
   # ...
 }
 ```
