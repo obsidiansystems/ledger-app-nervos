@@ -54,10 +54,12 @@ struct tx_context {
 
 #define MAX_TOSIGN_PARSED 600
 
+typedef uint8_t standard_lock_arg_t[20];
+
 typedef struct {
     bip32_path_t key;
-    uint8_t current_lock_arg[20];
-    uint8_t change_lock_arg[20];
+    standard_lock_arg_t current_lock_arg;
+    standard_lock_arg_t change_lock_arg;
 
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
 
