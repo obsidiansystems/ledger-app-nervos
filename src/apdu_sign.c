@@ -212,16 +212,16 @@ bool is_dao_type_script(mol_seg_t *typeScript) {
     return memcmp(defaultTypeScript, codeHash.ptr, 32) == 0;
 }
 
-enum dao_data_type { DAO_DATA_NONE = 0, DAO_DATA_DEPOSIT, DAO_DATA_PREPARED };
+enum dao_data_type { DAO_DATA_INVALID = 0, DAO_DATA_DEPOSIT, DAO_DATA_PREPARED };
 
 enum dao_data_type get_dao_data_type(mol_seg_t *outputs_data, int i) {
     mol_seg_res_t data = MolReader_BytesVec_get(outputs_data, i);
     if (data.errno != MOL_OK)
-        return DAO_DATA_NONE;
+        return DAO_DATA_INVALID;
     mol_seg_t rawData = MolReader_Bytes_raw_bytes(&data.seg);
     static const uint8_t eightZeros[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     if (MolReader_Bytes_length(&data.seg) != 8)
-        return DAO_DATA_NONE;
+        return DAO_DATA_INVALID;
     if (memcmp(rawData.ptr, eightZeros, 8) == 0)
         return DAO_DATA_DEPOSIT;
     return DAO_DATA_PREPARED;
@@ -281,7 +281,7 @@ void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ k
             if (is_dao_type_script(&type_script)) {
                 G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags |= OUTPUT_FLAGS_IS_DAO;
                 switch (get_dao_data_type(&outputs_data, i)) {
-                case DAO_DATA_NONE:
+                case DAO_DATA_INVALID:
                     REJECT("DAO cells require 8 bytes of data");
                     break;
                 case DAO_DATA_DEPOSIT:
@@ -421,7 +421,7 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
             }
             if (isDao) {
                 switch (get_dao_data_type(&outputs_data, i)) {
-                case DAO_DATA_NONE:
+                case DAO_DATA_INVALID:
                     REJECT("DAO cells require eight bytes of data");
                     break;
                 case DAO_DATA_DEPOSIT:
