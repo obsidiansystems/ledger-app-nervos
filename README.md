@@ -168,9 +168,7 @@ Make sure the two addresses match.  The “testnet” address is the one you
 need to save. Keep it for later, as it will be used for
 `<ledger-address>`.
 
-### Transfering ###
-
-#### Starting a node (locally) ####
+### Starting a node (locally) ####
 
 Get ckb in your shell:
 
@@ -199,74 +197,7 @@ $ ckb run
 Leave this open in a separate terminal as you continue on the next steps.
 
 
-#### Starting a node (port forwarding) ####
-
-If you have access to a local node on your network, you can run ssh
-port forwarding. This can be done like this:
-
-```
-$ ssh -L 8114:<host>:8114 localhost
-```
-
-where <host> is the name of your machine running a local node. Note
-this is discourage, and running your own node is preferred.
-
-#### Starting a local dev network ####
-
-First, make a directory and init it for a dev network:
-``` sh
-$ nix run -f nix/dep/ckb # to make ckb available
-$ mkdir devnet
-$ cd devnet
-$ ckb init --chain dev
-```
-
-then modify the value at the end of ckb-miner.toml to be small:
-
-```
-value = 20
-```
-
-and uncomment the block_assembler block at the end of ckb.toml and change the 'message' to '0x':
-
-```
-[block_assembler]
-code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-args = "0xb57dd485a1b0c0a57c377e896a1a924d7ed02ab9"
-hash_type = "type"
-message = "0x"
-```
-
-providing some lock argument in place of args.
-
-finally, in specs/dev.toml, set genesis_epoch_length to 1 and uncomment permanent_difficulty_in_dummy:
-
-```
-genesis_epoch_length = 1
-# For development and testing purposes only.
-# Keep difficulty be permanent if the pow is Dummy. (default: false)
-permanent_difficulty_in_dummy = true
-```
-
-and also pick one of the genesis issuance cells and set args to a lock arg from your ledger:
-
-```
-[[genesis.issued_cells]]
-capacity = 20_000_000_000_00000000
-lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-lock.args = "<your-ledger-lock-arg>"
-lock.hash_type = "type"
-```
-
-Then you can run 
-
-```
-ckb run &
-ckb miner &
-```
-
-to start up the node and miner; the ledger account you added to
-genesis.issued\_cells should have a large quantity of CKB to spend testing.
+### Transfering ###
 
 #### Getting CKB from the faucet ####
 
@@ -364,6 +295,63 @@ total_capacity: 10200000000
 ```
 
 Remember the value above for one of live cells under “tx\_hash” and “output\_index”.
+
+##### Starting a local dev network #####
+
+First, make a directory and init it for a dev network:
+``` sh
+$ nix run -f nix/dep/ckb # to make ckb available
+$ mkdir devnet
+$ cd devnet
+$ ckb init --chain dev
+```
+
+then modify the value at the end of ckb-miner.toml to be small:
+
+```
+value = 20
+```
+
+and uncomment the block_assembler block at the end of ckb.toml and change the 'message' to '0x':
+
+```
+[block_assembler]
+code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
+args = "0xb57dd485a1b0c0a57c377e896a1a924d7ed02ab9"
+hash_type = "type"
+message = "0x"
+```
+
+providing some lock argument in place of args.
+
+finally, in specs/dev.toml, set genesis_epoch_length to 1 and uncomment permanent_difficulty_in_dummy:
+
+```
+genesis_epoch_length = 1
+# For development and testing purposes only.
+# Keep difficulty be permanent if the pow is Dummy. (default: false)
+permanent_difficulty_in_dummy = true
+```
+
+and also pick one of the genesis issuance cells and set args to a lock arg from your ledger:
+
+```
+[[genesis.issued_cells]]
+capacity = 20_000_000_000_00000000
+lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
+lock.args = "<your-ledger-lock-arg>"
+lock.hash_type = "type"
+```
+
+Then you can run 
+
+```
+ckb run &
+ckb miner &
+```
+
+to start up the node and miner; the ledger account you added to
+genesis.issued\_cells should have a large quantity of CKB to spend testing.
 
 ##### Prepare #####
 
