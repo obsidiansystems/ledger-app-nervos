@@ -47,12 +47,37 @@ static void bip32_path_to_string(char *const out, size_t const out_size, apdu_pu
     }
 }
 
+static void base32_addr(char *const out, size_t const out_size,
+                        apdu_pubkey_state_t const *const pubkey) {
+    const size_t base32_max = 256;
+    uint8_t base32_buf[base32_max];
+    size_t base32_len = 0;
+    if (!convert_bits(base32_buf, base32_max, &base32_len,
+                      5,
+                      pubkey->prefixed_public_key_hash.entire, sizeof(pubkey->prefixed_public_key_hash.entire),
+                      8,
+                      1)) {
+        THROW(EXC_MEMORY_ERROR);
+    }
+    size_t i = 0;
+    for (; i < base32_len; ++i) {
+        if (i >= out_size)
+            THROW(EXC_MEMORY_ERROR);
+        out[i] = 'A' + base32_buf[i];
+    }
+    out[i] = '\0';
+}
+
 static void render_pkh(const char *const hrb, char *const out, size_t const out_size,
                        apdu_pubkey_state_t const *const pubkey) {
     const size_t base32_max = 256;
     uint8_t base32_buf[base32_max];
     size_t base32_len = 0;
-    if (!convert_bits(base32_buf, base32_max, &base32_len, 5, pubkey->prefixed_public_key_hash.entire, SIGN_HASH_SIZE, 8, 1)) {
+    if (!convert_bits(base32_buf, base32_max, &base32_len,
+                      5,
+                      pubkey->prefixed_public_key_hash.entire, sizeof(pubkey->prefixed_public_key_hash.entire),
+                      8,
+                      1)) {
         THROW(EXC_MEMORY_ERROR);
     }
     if (!bech32_encode(out, out_size, hrb, base32_buf, base32_len)) {
@@ -68,20 +93,25 @@ static void render_pkh_testnet(char *const out, size_t const out_size, apdu_pubk
     render_pkh("ckt", out, out_size, pubkey);
 }
 
-__attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callback_t cxl_cb) {
-    static size_t const TYPE_INDEX = 0;
-    static size_t const DRV_PATH_INDEX = 1;
-    static size_t const MAIN_NET_INDEX = 2;
-    static size_t const TEST_NET_INDEX = 3;
+enum Index {
+    TYPE_INDEX = 0,
+    BASE32_INDEX,
+    DRV_PATH_INDEX,
+    MAIN_NET_INDEX,
+    TEST_NET_INDEX,
+};
 
+__attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callback_t cxl_cb) {
     static const char *const pubkey_labels[] = {
         PROMPT("Provide"),
+        PROMPT("Base 32"),
         PROMPT("Derivation Path"),
         PROMPT("Mainnet Address"),
         PROMPT("Testnet Address"),
         NULL,
     };
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
+    register_ui_callback(BASE32_INDEX, base32_addr, &G);
     register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
     register_ui_callback(MAIN_NET_INDEX, render_pkh_mainnet, &G);
     register_ui_callback(TEST_NET_INDEX, render_pkh_testnet, &G);
@@ -107,7 +137,7 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     cx_blake2b_init2(
         &G.hash_state, SIGN_HASH_SIZE * 8,
         NULL, 0,
-        (const uint8_t *const) blake2b_personalization, sizeof(blake2b_personalization) - 1);
+        (uint8_t *) blake2b_personalization, sizeof(blake2b_personalization) - 1);
     cx_hash(
         (cx_hash_t *)&G.hash_state, 0,
         (const uint8_t *const) & G.public_key, sizeof(G.public_key),
