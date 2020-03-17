@@ -71,6 +71,20 @@ also necessary. This enables end-to-end testing of the ckb
 Here is how to set up an environment to test the Ledger app on Nano S
 using the ckb command line:
 
+## Prepare machine to talk to ledger.
+
+On Linux, the "udev" rules must be set up to allow your user to communicate with the ledger device.
+On NixOS, one can easily do this with:
+``` nix
+{
+  # ...
+  hardware.ledger.enable = true;
+  # ...
+}
+```
+
+### Prepare ledger and client
+
 Load the latest version of the Nervos app, confirming the unsafe
 prompt:
 
@@ -120,8 +134,26 @@ Get the public key:
 $ ckb-cli account extended-address --path "m/44'/309'/0'/1/0" --account-id <ledger-id>
 ```
 
-This should show up on the ledger as “Provide Public Key” for
-44’/309’/0’/1/0. Accept it on the Ledger and verify ckb prints the
+This should show up on the ledger as (in 4 screens):
+
+`` text
+Provide
+Public Key
+```
+``` text
+Derivation Path
+44’/309’/0’/1/0.
+```
+``` text
+Mainnet Address:
+ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
+```
+``` text
+Testnet Address:
+ckt1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsa64fqt
+```
+
+Accept it on the Ledger and verify ckb prints the
 resulting address. The result should look like:
 
 ``` text
@@ -132,8 +164,9 @@ address:
 lock_arg: 0x632c444199275d00b7c1fb65bf001d70bc609599
 ```
 
-The “testnet” address is the one you need to save. Keep it for later,
-as it will be used for ```<ledger-address>```.
+Make sure the two addresses match.  The “testnet” address is the one you
+need to save. Keep it for later, as it will be used for
+`<ledger-address>`.
 
 ### Transfering ###
 
@@ -380,3 +413,8 @@ JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c7
 ```
 will be reported, showing that the prepared cell is not yet available to withdraw, or a transaction hash if it is.
 
+# Troubleshooting #
+
+## Application Build Failure ##
+
+If you run into issues building the Ledger application using `nix-shell -A wallet.s --run 'make SHELL=sh all'`, we recommend trying `nix-shell -A wallet.s --run 'make SHELL=sh clean all`.
