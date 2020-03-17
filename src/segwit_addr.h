@@ -80,7 +80,9 @@ int bech32_encode(char *output, size_t out_len, const char *hrp, const uint8_t *
  */
 int bech32_decode(char *hrp, uint8_t *data, size_t data_len_max, size_t *data_len, const char *input);
 
-int convert_bits(uint8_t *out, size_t outlen_max, size_t *outlen, int outbits, const uint8_t *in, size_t inlen,
-                 int inbits, int pad);
+int convert_bits(
+    uint8_t *const out, const size_t outlen_max, size_t *outlen, const int outbits,
+    const uint8_t *const in, const size_t inlen, const int inbits,
+    int pad);
 
 #endif /* _SEGWIT_ADDR_H_ */
