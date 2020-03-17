@@ -604,7 +604,12 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
                     }
                     // Fallback: assume we're signing for all inputs.
                     PRINTF("Parse failed but still signing; assuming we sign for all inputs\n");
-                    G.maybe_transaction.v.group_input_count=G.maybe_transaction.input_count;
+                    G.maybe_transaction.v.group_input_count = G.maybe_transaction.input_count;
+                } else {
+                    // TODO: For unclear reasons, the
+                    // group_input_count calculated above is incorrect
+                    // and leading to validation failure
+                    G.maybe_transaction.v.group_input_count = G.maybe_transaction.input_count;
                 }
             }
         }
