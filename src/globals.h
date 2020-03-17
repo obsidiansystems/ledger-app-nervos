@@ -34,6 +34,7 @@ struct maybe_transaction {
     bool is_valid;
     bool parse_failed;
     struct parsed_transaction v;
+    uint16_t input_count;
 };
 
 #define OUTPUT_FLAGS_KNOWN_LOCK     0x01
@@ -53,6 +54,7 @@ struct tx_context {
 };
 
 #define MAX_TOSIGN_PARSED 600
+#define MAX_CONTEXT_TRANSACTIONS 3
 
 typedef uint8_t standard_lock_arg_t[20];
 
@@ -66,7 +68,7 @@ typedef struct {
     uint8_t to_parse[MAX_TOSIGN_PARSED];
     uint16_t to_parse_fill_idx;
 
-    struct tx_context context_transactions[3];
+    struct tx_context context_transactions[MAX_CONTEXT_TRANSACTIONS];
     uint8_t context_transactions_fill_idx;
 
     struct maybe_transaction maybe_transaction;
