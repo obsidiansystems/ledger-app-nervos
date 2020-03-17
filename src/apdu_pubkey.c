@@ -52,7 +52,7 @@ static void render_pkh(const char *const hrb, char *const out, size_t const out_
     const size_t base32_max = 256;
     uint8_t base32_buf[base32_max];
     size_t base32_len = 0;
-    if (!convert_bits(base32_buf, base32_max, &base32_len, 5, pubkey->public_key_hash, SIGN_HASH_SIZE, 8, 1)) {
+    if (!convert_bits(base32_buf, base32_max, &base32_len, 5, pubkey->prefixed_public_key_hash.entire, SIGN_HASH_SIZE, 8, 1)) {
         THROW(EXC_MEMORY_ERROR);
     }
     if (!bech32_encode(out, out_size, hrb, base32_buf, base32_len)) {
@@ -99,12 +99,23 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     read_bip32_path(&G.key, dataBuffer, cdata_size);
     generate_public_key(&G.public_key, &G.key);
 
-    cx_blake2b_init2(&G.hash_state, SIGN_HASH_SIZE * 8, NULL, 0, (uint8_t *)blake2b_personalization,
-                     sizeof(blake2b_personalization) - 1);
+    // write tags
+    G.prefixed_public_key_hash.address_type_is_short = 0x01;
+    G.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
 
-    cx_hash((cx_hash_t *)&G.hash_state, 0, (uint8_t *const) & G.public_key, sizeof(G.public_key), NULL, 0);
-    cx_hash((cx_hash_t *)&G.hash_state, CX_LAST, NULL, 0, (uint8_t *const) & G.public_key_hash,
-            sizeof(G.public_key_hash));
+    // write public key hash
+    cx_blake2b_init2(
+        &G.hash_state, SIGN_HASH_SIZE * 8,
+        NULL, 0,
+        (const uint8_t *const) blake2b_personalization, sizeof(blake2b_personalization) - 1);
+    cx_hash(
+        (cx_hash_t *)&G.hash_state, 0,
+        (const uint8_t *const) & G.public_key, sizeof(G.public_key),
+        NULL, 0);
+    cx_hash(
+        (cx_hash_t *)&G.hash_state, CX_LAST,
+        NULL, 0,
+        (uint8_t *const) & G.prefixed_public_key_hash.hash, sizeof(G.prefixed_public_key_hash.hash));
 
     // instruction == INS_PROMPT_PUBLIC_KEY || instruction == INS_AUTHORIZE_BAKING
     // INS_PROMPT_PUBLIC_KEY
