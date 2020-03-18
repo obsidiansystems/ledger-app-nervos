@@ -567,8 +567,10 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
             THROW(EXC_WRONG_LENGTH_FOR_INS);
 
         // Guard against overflow
-        if (G.packet_index >= 0xFF)
+        if (G.packet_index >= 0xFF) {
+            PRINTF("Packet overflow.\n");
             PARSE_ERROR();
+        }
         G.packet_index++;
 
         break;
