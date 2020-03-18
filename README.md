@@ -409,3 +409,14 @@ will be reported, showing that the prepared cell is not yet available to withdra
 ## Application Build Failure ##
 
 If you run into issues building the Ledger application using `nix-shell -A wallet.s --run 'make SHELL=sh all'`, we recommend trying `nix-shell -A wallet.s --run 'make SHELL=sh clean all`.
+
+## Devnet stops at 59594 blocks ##
+
+At some point, you hit an issue where the node can’t hold the capacity of the miner. This can be resolved by, clearing your devnet and restarting like so:
+
+``` sh
+CTRL-C
+$ rm -rf data/
+$ ckb run &
+$ ckb miner
+```
