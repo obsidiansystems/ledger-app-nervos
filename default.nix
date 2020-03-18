@@ -94,16 +94,20 @@ let
     doCheck = false;
   });
 
+  rust-sdk-bindings-src = gitignoreSource ./rust-sdk-bindings;
+
   build = bolos:
     let
-      rust-src = gitignoreSource ./rust;
-
       rust-bindings = ledgerPkgs.runCommand "${bolos.name}-rust-bindings" {
-        nativeBuildInputs = [ rust-bindgen rustPackages.rust-std ];
+        nativeBuildInputs = [
+          rust-bindgen
+          rustPackages.rust
+          rustPackages.rust-std
+        ];
       } ''
         mkdir "$out"
         TARGET=thumbv6m-none-eabi \
-        bindgen ${rust-src}/wrapper.h \
+        bindgen ${rust-sdk-bindings-src}/wrapper.h \
           --use-core \
           --no-prepend-enum-name \
           --no-doc-comments \
@@ -113,14 +117,17 @@ let
           -- \
           -fshort-enums \
           -I${bolos.sdk}/lib_ux/include \
-          -I${bolos.sdk} \
+          -I${bolos.sdk}/include \
+          -I${rust-sdk-bindings-src}/include \
           > "$out/bindings.rs"
       '';
 
+      rust-src = gitignoreSource ./rust;
+
       rustBits = ledgerRustPlatform.buildRustPackage {
-        name = "nervos-app-rs";
+        name = "${bolos.name}-nervos-app-rs";
         src = rust-src;
-        postUnpack = ''
+        preConfigure = ''
           cp ${rust-bindings}/bindings.rs src/
         '';
         #nativeBuildInputs = [ pkgs.pkgconfig ];

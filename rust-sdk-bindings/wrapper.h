@@ -12,5 +12,5 @@
 #define HAVE_UX_FLOW
 #define IO_USB_MAX_ENDPOINTS 6 
 #define IO_SEPROXYHAL_BUFFER_SIZE_B 128
-#include "include/os_io_seproxyhal.h"
-#include "include/os.h"
+#include "os_io_seproxyhal.h"
+#include "os.h"
