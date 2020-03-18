@@ -59,4 +59,4 @@ static inline void public_key_hash(uint8_t *const hash_out, size_t const hash_ou
 size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const key, uint8_t const *const in,
             size_t const in_size);
 
-void generate_lock_arg_for_pubkey(cx_ecfp_public_key_t *key, uint8_t *dest);
+void generate_lock_arg_for_pubkey(const cx_ecfp_public_key_t *key, standard_lock_arg_t *dest);

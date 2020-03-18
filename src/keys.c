@@ -121,7 +121,7 @@ size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const p
     return 65;
 }
 
-void generate_lock_arg_for_pubkey(cx_ecfp_public_key_t *key, uint8_t *dest) {
+void generate_lock_arg_for_pubkey(const cx_ecfp_public_key_t *const key, standard_lock_arg_t *const dest) {
 
     uint8_t tag_byte=(key->W[64]&1) ? 0x03 : 0x02;
 
