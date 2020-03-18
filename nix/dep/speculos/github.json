@@ -2,6 +2,7 @@
   "owner": "obsidiansystems",
   "repo": "speculos",
   "branch": "with-nix-build",
-  "rev": "3ac714c2bb9c11671e4ffd3c490c6bdd021180f9",
-  "sha256": "1sdzklbwfrakd19phpibnp3vplfzxsy3hp7vibadj7dry2rj322c"
+  "private": false,
+  "rev": "2b640871e77ee2a433b8a2a7b260b132a44ffd1e",
+  "sha256": "166rglqnpxvsgj5v6q1w66cdk5vvipbkfm0lqx2f7llf24xdah50"
 }

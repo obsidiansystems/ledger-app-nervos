@@ -6,8 +6,7 @@
 
 #include "globals.h"
 
-__attribute__((noreturn))
-void rust_main(void);
+__attribute__((noreturn)) void rust_main(void);
 
 __attribute__((section(".boot"))) int c_main(void) {
     // exit critical section
@@ -52,8 +51,7 @@ __attribute__((section(".boot"))) int c_main(void) {
             CATCH_OTHER(e) {
                 break;
             }
-            FINALLY {
-            }
+            FINALLY {}
         }
         END_TRY;
     }
