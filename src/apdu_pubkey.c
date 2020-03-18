@@ -103,6 +103,11 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
 
     generate_public_key(&G.public_key, &G.key);
 
+    // write tags
+    G.prefixed_public_key_hash.address_type_is_short = 0x01;
+    G.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
+
+    // write lock arg
     generate_lock_arg_for_pubkey(&G.public_key, &G.prefixed_public_key_hash.hash);
 
     // instruction == INS_PROMPT_PUBLIC_KEY || instruction == INS_AUTHORIZE_BAKING
