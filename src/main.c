@@ -2,8 +2,7 @@
 #include "globals.h"
 #include "memory.h"
 
-__attribute__((noreturn))
-void app_main(void) {
+__attribute__((noreturn)) void app_main(void) {
     // TODO: Consider using static initialization of a const, instead of this
     for (size_t i = 0; i < NUM_ELEMENTS(global.handlers); i++) {
         global.handlers[i] = handle_apdu_error;

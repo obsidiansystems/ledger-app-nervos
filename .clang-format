@@ -1,0 +1,26 @@
+Language: Cpp
+
+TabWidth: 4
+UseTab: Never
+IndentWidth: 4
+
+ColumnLimit: 120
+MaxEmptyLinesToKeep: 3
+
+BreakBeforeBraces: Attach
+
+AlignAfterOpenBracket: true
+AlignConsecutiveMacros: true
+AlignEscapedNewlinesLeft: false
+AlignOperands: true
+AlwaysBreakAfterReturnType: None
+AllowShortFunctionsOnASingleLine: Empty
+BinPackArguments: true
+BinPackParameters: true
+DerivePointerAlignment: false
+PointerAlignment: Right
+SortIncludes: false
+SpaceInEmptyParentheses: false
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false

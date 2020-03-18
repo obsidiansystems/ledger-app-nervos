@@ -48,7 +48,7 @@ sendTransaction() {
   bytesToSign=$(($(wc -c <<<"$1")/2))
   toSend=$1
   while [ "$bytesToSign" -gt 230 ] ;
-  do 
+  do
     apdu_fixed "80034100e6$(head -c 460 <<<"$toSend")"
     # [ "$status" -eq 0 ]
     # grep -q "<= b''9000" <(echo "$output")
@@ -70,7 +70,7 @@ doSign() {
   bytesToSign=$(($(wc -c <<<"$1")/2))
   toSend=$1
   while [ "$bytesToSign" -gt 230 ] ;
-  do 
+  do
     apdu_fixed "80034100e6$(head -c 460 <<<"$toSend")"
     # [ "$status" -eq 0 ]
     # grep -q "<= b''9000" <(echo "$output")
@@ -83,6 +83,11 @@ doSign() {
 
 
 promptsCheck() {
-	if [ "$DEBUG" != "1" ]; then return 0; fi;
-        diff <(egrep -A2 'Prompt [0-9]:' speculos.log | tail -n $(($1*3))) $2
+  if [ "$DEBUG" != "1" ]; then return 0; fi;
+  diff <(egrep -A2 'Prompt [0-9]:' speculos.log | tail -n $(($1*3))) $2
+}
+
+rejectionMessageCheck() {
+  if [ "$DEBUG" != "1" ]; then return 0; fi;
+  test "$(egrep '^Rejecting: ' speculos.log | tail -n1)" = "Rejecting: $1"
 }
