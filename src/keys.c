@@ -137,6 +137,6 @@ void generate_lock_arg_for_pubkey(const cx_ecfp_public_key_t *const key, standar
     cx_hash((cx_hash_t *)&hash_state, CX_LAST, NULL, 0, (uint8_t *const) temp_hash,
             sizeof(temp_hash));
 
-    memcpy(dest, temp_hash, 20);
+    memcpy(dest, temp_hash, sizeof(standard_lock_arg_t));
 
 }
