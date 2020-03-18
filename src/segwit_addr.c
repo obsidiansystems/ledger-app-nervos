@@ -151,14 +151,17 @@ int bech32_decode(char *hrp, uint8_t *data, size_t data_max, size_t *data_len, c
     return chk == 1;
 }
 
-int convert_bits(uint8_t *out, size_t outlen_max, size_t *outlen, int outbits, const uint8_t *in, size_t inlen,
-                 int inbits, int pad) {
+int convert_bits(
+    uint8_t *const out, const size_t outlen_max, size_t *outlen, const int outbits,
+    const uint8_t *const in, const size_t inlen, const int inbits,
+    int pad)
+{
     uint32_t val = 0;
     int bits = 0;
     size_t out_idx = 0;
-    uint32_t maxv = (((uint32_t)1) << outbits) - 1;
-    while (inlen--) {
-        val = (val << inbits) | *(in++);
+    const uint32_t maxv = (((uint32_t)1) << outbits) - 1;
+    for (size_t inx_idx = 0; inx_idx < inlen; ++inx_idx) {
+        val = (val << inbits) | in[inx_idx];
         bits += inbits;
         while (bits >= outbits) {
             bits -= outbits;
