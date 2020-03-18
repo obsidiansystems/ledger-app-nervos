@@ -1,6 +1,7 @@
 use crate::bindings::*;
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 struct Version {
     major: u8,
     minor: u8,
@@ -21,28 +22,14 @@ fn finalize_successful_send(mut tx: usize) -> usize {
         G_io_apdu_buffer[tx] = 0x00;
     }
     tx += 1;
-    return tx;
+    tx
 }
 
 #[no_mangle]
 extern "C" fn handle_apdu_version(_instruction: u8) -> usize {
-    let mut tx: usize = 0;
     unsafe {
-        G_io_apdu_buffer[tx] = version.major;
+        *(&mut G_io_apdu_buffer as *mut _ as *mut Version) = version;
     }
-    tx += 1;
-    unsafe {
-        G_io_apdu_buffer[tx] = version.minor;
-    }
-    tx += 1;
-    unsafe {
-        G_io_apdu_buffer[tx] = version.patch;
-    }
-    tx += 1;
-    unsafe {
-        // padding
-        G_io_apdu_buffer[tx] = 0;
-    }
-    tx += 1;
+    let tx: usize = core::mem::size_of::<Version>();
     finalize_successful_send(tx)
 }
