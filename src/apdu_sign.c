@@ -502,17 +502,6 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
     }
 }
 
-int set_lock_arg(key_pair_t *key_pair, standard_lock_arg_t *destination) {
-    check_null(key_pair);
-    check_null(destination);
-    cx_blake2b_t lock_arg_state;
-    cx_blake2b_init2(&lock_arg_state, 20 * 8, NULL, 0, (uint8_t *)blake2b_personalization,
-                     sizeof(blake2b_personalization) - 1);
-    cx_hash((cx_hash_t *)&lock_arg_state, 0, key_pair->public_key.W, key_pair->public_key.W_len, NULL, 0);
-    cx_hash((cx_hash_t *)&lock_arg_state, CX_LAST, NULL, 0, (uint8_t*)destination, sizeof(G.current_lock_arg));
-    return 0;
-}
-
 #define P1_FIRST            0x00
 #define P1_NEXT             0x01
 #define P1_HASH_ONLY_NEXT   0x03 // You only need it once
@@ -524,8 +513,9 @@ int set_lock_arg(key_pair_t *key_pair, standard_lock_arg_t *destination) {
 #define P1_MASK             (~(P1_LAST_MARKER | P1_NO_FALLBACK | P1_IS_CONTEXT))
 
 void prep_lock_arg(bip32_path_t *key, standard_lock_arg_t *destination) {
-    int fail = 0;
-    fail = WITH_KEY_PAIR(*key, key_pair, int, ({ set_lock_arg(key_pair, destination); }));
+    cx_ecfp_public_key_t public_key;
+    generate_public_key(&public_key, key);
+    generate_lock_arg_for_pubkey(&public_key, destination);
 }
 
 static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, uint8_t const instruction) {

@@ -95,16 +95,12 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
         THROW(EXC_WRONG_PARAM);
 
     size_t const cdata_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
-
+    
     read_bip32_path(&G.key, dataBuffer, cdata_size);
+
     generate_public_key(&G.public_key, &G.key);
 
-    cx_blake2b_init2(&G.hash_state, SIGN_HASH_SIZE * 8, NULL, 0, (uint8_t *)blake2b_personalization,
-                     sizeof(blake2b_personalization) - 1);
-
-    cx_hash((cx_hash_t *)&G.hash_state, 0, (uint8_t *const) & G.public_key, sizeof(G.public_key), NULL, 0);
-    cx_hash((cx_hash_t *)&G.hash_state, CX_LAST, NULL, 0, (uint8_t *const) & G.public_key_hash,
-            sizeof(G.public_key_hash));
+    generate_lock_arg_for_pubkey(&G.public_key, G.public_key_hash);
 
     // instruction == INS_PROMPT_PUBLIC_KEY || instruction == INS_AUTHORIZE_BAKING
     // INS_PROMPT_PUBLIC_KEY
