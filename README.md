@@ -170,46 +170,33 @@ need to save. Keep it for later, as it will be used for
 
 ### Transfering ###
 
-#### Starting a node (locally) ####
+#### Creating a new account for local dev network ####
 
-Get ckb in your shell:
-
-``` sh
-$ nix-shell -p '(import ./nix/dep/ckb {})'
-```
-
-Get aggron.toml:
-
-``` sh
-$ curl -o aggron.toml https://gist.githubusercontent.com/doitian/573513c345165c0fe4f3504ebc1c8f9f/raw/3032bed68550e0a50e91df2c706481e80b579c70/aggron.toml
-```
-
-Init the testnet toml:
-
-``` sh
-$ ckb init --import-spec ./aggron.toml --chain testnet
-```
-
-Run the node with:
+Now, you must also create an account from ckb-cli so that an account
+can get the issued cells. This can be done with:
 
 ```
-$ ckb run
+$ ckb-cli account new
 ```
 
-Leave this open in a separate terminal as you continue on the next steps.
-
-
-#### Starting a node (port forwarding) ####
-
-If you have access to a local node on your network, you can run ssh
-port forwarding. This can be done like this:
+Follow the prompts and choose a password to continue. Next, get the
+lock_arg for your account with:
 
 ```
-$ ssh -L 8114:<host>:8114 localhost
+$ ckb-cli account list
+- "#": 0
+  account_source: on-disk password-protected key store
+  address:
+    mainnet: ckb1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqpwltnt
+    testnet: ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
+  lock_arg: 0xabaedbbb6d8de1d8ad4d036237c23c822f84e870
+  lock_hash: 0x21ad4eee4fb0f079f5f8166f42f0d4fbd1fd63b8f36a7ccfb9d3657f9a5aed43
+- "#": 1
+  account_source: ledger hardware wallet
+  ledger_id: 0x27fe5acb022cd7b8be0eb7009d42ff4600c597d28b6affefcab6f7396d1311c2
 ```
 
-where <host> is the name of your machine running a local node. Note
-this is discourage, and running your own node is preferred.
+The value of “lock_arg: ...” is your-new-account-lock-arg.
 
 #### Starting a local dev network ####
 
@@ -254,7 +241,7 @@ and also pick one of the genesis issuance cells and set args to a lock arg from 
 [[genesis.issued_cells]]
 capacity = 20_000_000_000_00000000
 lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-lock.args = "<your-ledger-lock-arg>"
+lock.args = "<your-new-account-lock-arg>"
 lock.hash_type = "type"
 ```
 
@@ -268,11 +255,15 @@ ckb miner &
 to start up the node and miner; the ledger account you added to
 genesis.issued\_cells should have a large quantity of CKB to spend testing.
 
-#### Getting CKB from the faucet ####
+#### Getting CKB from the miner ####
 
-Visit https://faucet.nervos.org/auth and follow the process to receive
-testnet tokens. You should use the address generated above in “Get
-Public Key” and the capacity should be 100000.
+The dev network is set up to send CKBs to the on-disk account. To get
+money onto the Ledger, you need to do a transfer. This can be done
+with an initial transfer:
+
+```
+$ ckb-cli transfer --from-account <your-new-account-lock-arg> --to-address <ledger-address> --capacity 1000 --tx-fee 0.001
+```
 
 #### Verify address balance ####
 
