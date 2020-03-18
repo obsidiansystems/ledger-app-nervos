@@ -7,8 +7,9 @@
 
 pub mod apdu;
 pub mod bindings;
-pub mod io;
-pub mod ui;
+// Bump SDK then enable
+//pub mod io;
+//pub mod ui;
 use bindings::*;
 
 use core::panic::PanicInfo;
@@ -18,9 +19,9 @@ use core::panic::PanicInfo;
 /// the app
 #[panic_handler]
 fn panic(_: &PanicInfo) -> ! {
-    let mut comm = io::Comm::new();
-    comm.set_status_word(io::StatusWords::InternalError);
-    comm.io_exch(0);
+    //let mut comm = io::Comm::new();
+    //comm.set_status_word(io::StatusWords::InternalError);
+    //comm.io_exch(0);
     unsafe { os_sched_exit(1) };
     loop {}
 }
@@ -35,53 +36,53 @@ fn sha256(m: &[u8]) -> [u8; 32] {
     out
 }
 
-#[no_mangle]
-extern "C" fn sample_main() {
-    let mut comm = io::Comm::new();
-    let mut flags = 0u8;
-
-    loop {
-        comm.io_exch(flags);
-        flags = 0;
-
-        if comm.rx == 0 {
-            comm.set_status_word(io::StatusWords::NothingReceived);
-            continue;
-        }
-
-        let (cla, ins) = comm.get_cla_ins();
-
-        if cla != 0x80 {
-            comm.set_status_word(io::StatusWords::BadCLA);
-            continue;
-        }
-
-        match ins {
-            0x00 => {
-                flags |= IO_RESET_AFTER_REPLIED as u8;
-                comm.set_status_word(io::StatusWords::OK)
-            }
-            0x01 => comm.set_status_word(io::StatusWords::OK),
-            0x02 => {
-                comm.tx = comm.rx;
-                comm.set_status_word(io::StatusWords::OK)
-            }
-            0x03 => {
-                let len = u16::from_le_bytes([comm[2], comm[3]]) as usize;
-                let out = sha256(&comm.get(4, len));
-
-                for (i, e) in out.iter().enumerate() {
-                    comm[i] = *e;
-                }
-                comm.set_status_word(io::StatusWords::OK)
-            }
-            0xff => {
-                unsafe { os_sched_exit(0) };
-            }
-            _ => comm.set_status_word(io::StatusWords::Unknown),
-        };
-    }
-}
+//#[no_mangle]
+//extern "C" fn sample_main() {
+//    let mut comm = io::Comm::new();
+//    let mut flags = 0u8;
+//
+//    loop {
+//        comm.io_exch(flags);
+//        flags = 0;
+//
+//        if comm.rx == 0 {
+//            comm.set_status_word(io::StatusWords::NothingReceived);
+//            continue;
+//        }
+//
+//        let (cla, ins) = comm.get_cla_ins();
+//
+//        if cla != 0x80 {
+//            comm.set_status_word(io::StatusWords::BadCLA);
+//            continue;
+//        }
+//
+//        match ins {
+//            0x00 => {
+//                flags |= IO_RESET_AFTER_REPLIED as u8;
+//                comm.set_status_word(io::StatusWords::OK)
+//            }
+//            0x01 => comm.set_status_word(io::StatusWords::OK),
+//            0x02 => {
+//                comm.tx = comm.rx;
+//                comm.set_status_word(io::StatusWords::OK)
+//            }
+//            0x03 => {
+//                let len = u16::from_le_bytes([comm[2], comm[3]]) as usize;
+//                let out = sha256(&comm.get(4, len));
+//
+//                for (i, e) in out.iter().enumerate() {
+//                    comm[i] = *e;
+//                }
+//                comm.set_status_word(io::StatusWords::OK)
+//            }
+//            0xff => {
+//                unsafe { os_sched_exit(0) };
+//            }
+//            _ => comm.set_status_word(io::StatusWords::Unknown),
+//        };
+//    }
+//}
 
 #[no_mangle]
 pub extern "C" fn rust_main() -> ! {
