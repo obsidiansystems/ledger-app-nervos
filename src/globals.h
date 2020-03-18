@@ -85,7 +85,14 @@ typedef struct {
     bip32_path_t key;
     cx_ecfp_public_key_t public_key;
     cx_blake2b_t hash_state;
-    uint8_t public_key_hash[SIGN_HASH_SIZE];
+    union {
+        uint8_t entire[2 + sizeof(standard_lock_arg_t)];
+        struct {
+            uint8_t address_type_is_short;
+            uint8_t key_hash_type_is_sighash;
+            standard_lock_arg_t hash;
+        };
+    } prefixed_public_key_hash;
 } apdu_pubkey_state_t;
 
 typedef struct {
