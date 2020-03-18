@@ -576,9 +576,9 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
         THROW(EXC_WRONG_PARAM);
     }
 
-    if (enable_parsing) {
-        if (!G.maybe_transaction.parse_failed && G.to_parse_fill_idx + buff_size > MAX_TOSIGN_PARSED) {
-            PRINTF("Transaction body too big; can't parse.");
+    if (enable_parsing && !G.maybe_transaction.parse_failed) {
+        if (G.to_parse_fill_idx + buff_size > MAX_TOSIGN_PARSED) {
+            PRINTF("Transaction body too big; can't parse.\n");
             G.maybe_transaction.parse_failed = true;
         } else {
             memcpy(G.to_parse + G.to_parse_fill_idx, buff, buff_size);
