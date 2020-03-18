@@ -88,8 +88,11 @@ __attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callba
     ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
+_Static_assert(sizeof G.prefixed_public_key_hash == 22, "address will be wrong length");
+_Static_assert(sizeof G.prefixed_public_key_hash.entire == 22, "address will be wrong length");
+
 size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
-    uint8_t *dataBuffer = G_io_apdu_buffer + OFFSET_CDATA;
+    const uint8_t *const dataBuffer = G_io_apdu_buffer + OFFSET_CDATA;
 
     if (READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]) != 0)
         THROW(EXC_WRONG_PARAM);
@@ -97,25 +100,10 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     size_t const cdata_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
 
     read_bip32_path(&G.key, dataBuffer, cdata_size);
+
     generate_public_key(&G.public_key, &G.key);
 
-    // write tags
-    G.prefixed_public_key_hash.address_type_is_short = 0x01;
-    G.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
-
-    // write public key hash
-    cx_blake2b_init2(
-        &G.hash_state, SIGN_HASH_SIZE * 8,
-        NULL, 0,
-        (const uint8_t *const) blake2b_personalization, sizeof(blake2b_personalization) - 1);
-    cx_hash(
-        (cx_hash_t *)&G.hash_state, 0,
-        (const uint8_t *const) & G.public_key, sizeof(G.public_key),
-        NULL, 0);
-    cx_hash(
-        (cx_hash_t *)&G.hash_state, CX_LAST,
-        NULL, 0,
-        (uint8_t *const) & G.prefixed_public_key_hash.hash, sizeof(G.prefixed_public_key_hash.hash));
+    generate_lock_arg_for_pubkey(&G.public_key, &G.prefixed_public_key_hash.hash);
 
     // instruction == INS_PROMPT_PUBLIC_KEY || instruction == INS_AUTHORIZE_BAKING
     // INS_PROMPT_PUBLIC_KEY

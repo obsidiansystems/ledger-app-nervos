@@ -99,6 +99,7 @@ enum operation_tag {
     OPERATION_TAG_DAO_WITHDRAW
 };
 
+typedef uint8_t standard_lock_arg_t[20];
 
 typedef struct public_key_hash {
     uint8_t hash[KEY_HASH_SIZE];
