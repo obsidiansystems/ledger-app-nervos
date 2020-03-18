@@ -320,7 +320,7 @@ void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ k
     }
 }
 
-bool is_change(mol_num_t num_inputs, mol_seg_t *inputs, mol_seg_t *lockScript) {
+bool is_change(mol_seg_t *lockScript) {
     if (!is_standard_lock_script(lockScript))
         return false;
     mol_seg_t lockArg = MolReader_Script_get_args(lockScript);
@@ -418,7 +418,7 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
             mol_seg_t lockScript = MolReader_CellOutput_get_lock(&output.seg);
             mol_seg_t type_script = MolReader_CellOutput_get_type_(&output.seg);
 
-            bool isChange = is_change(inputs_len, &inputs, &lockScript);
+            bool isChange = is_change(&lockScript);
 
             bool isDao = false;
             if (!MolReader_ScriptOpt_is_none(&type_script)) {
