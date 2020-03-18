@@ -46,51 +46,40 @@ typedef struct {
     uint32_t components[MAX_BIP32_PATH];
 } bip32_path_t;
 
-static inline void copy_bip32_path(
-    bip32_path_t *const out,
-    bip32_path_t volatile const *const in
-) {
+static inline void copy_bip32_path(bip32_path_t *const out, bip32_path_t volatile const *const in) {
     check_null(out);
     check_null(in);
     memcpy(out->components, (void *)in->components, in->length * sizeof(*in->components));
     out->length = in->length;
 }
 
-static inline bool bip32_paths_eq(
-    bip32_path_t volatile const *const a,
-    bip32_path_t volatile const *const b
-) {
-    return a == b || (
-        a != NULL &&
-        b != NULL &&
-        a->length == b->length &&
-        memcmp(
-            (void const *)a->components,
-            (void const *)b->components,
-            a->length * sizeof(*a->components)
-        ) == 0
-    );
+static inline bool bip32_paths_eq(bip32_path_t volatile const *const a, bip32_path_t volatile const *const b) {
+    return a == b ||
+           (a != NULL && b != NULL && a->length == b->length &&
+            memcmp((void const *)a->components, (void const *)b->components, a->length * sizeof(*a->components)) == 0);
 }
 
 #define SIGN_HASH_SIZE 32 // TODO: Rename or use a different constant.
 
-#define PKH_STRING_SIZE 40 // includes null byte // TODO: use sizeof for this.
+#define PKH_STRING_SIZE                  40 // includes null byte // TODO: use sizeof for this.
 #define PROTOCOL_HASH_BASE58_STRING_SIZE sizeof("ProtoBetaBetaBetaBetaBetaBetaBetaBetaBet11111a5ug96")
 
 #define MAX_SCREEN_COUNT 7 // Current maximum usage
-#define PROMPT_WIDTH 16
-#define VALUE_WIDTH 64 // Needs to hold a 32 bytes of hash in hex.
+#define PROMPT_WIDTH     16
+#define VALUE_WIDTH      64 // Needs to hold a 32 bytes of hash in hex.
 
 // Macros to wrap a static prompt and value strings and ensure they aren't too long.
-#define PROMPT(str) ({ \
-    _Static_assert(sizeof(str) <= PROMPT_WIDTH + 1/*null byte*/ , str " won't fit in the UI prompt."); \
-    str; \
-})
+#define PROMPT(str)                                                                                                    \
+    ({                                                                                                                 \
+        _Static_assert(sizeof(str) <= PROMPT_WIDTH + 1 /*null byte*/, str " won't fit in the UI prompt.");             \
+        str;                                                                                                           \
+    })
 
-#define STATIC_UI_VALUE(str) ({ \
-    _Static_assert(sizeof(str) <= VALUE_WIDTH + 1/*null byte*/, str " won't fit in the UI."); \
-    str; \
-})
+#define STATIC_UI_VALUE(str)                                                                                           \
+    ({                                                                                                                 \
+        _Static_assert(sizeof(str) <= VALUE_WIDTH + 1 /*null byte*/, str " won't fit in the UI.");                     \
+        str;                                                                                                           \
+    })
 
 
 // Operations
@@ -112,49 +101,53 @@ enum operation_tag {
 
 
 typedef struct public_key_hash {
-  uint8_t hash[KEY_HASH_SIZE];
-  char* hash_ptr; // caching.
+    uint8_t hash[KEY_HASH_SIZE];
+    char *hash_ptr; // caching.
 } public_key_hash_t;
 
 #define HAS_DESTINATION_ADDRESS 0x01
-#define HAS_CHANGE_ADDRESS 0x02
+#define HAS_CHANGE_ADDRESS      0x02
 
 struct parsed_transaction {
     enum operation_tag tag;
     uint64_t total_fee;
     uint64_t amount; // 0 where inappropriate
-    uint32_t flags;  // Interpretation depends on operation type
+    uint8_t flags;   // Interpretation depends on operation type
     uint8_t source[20];
     uint8_t dao_source[20];
     uint8_t destination[20];
     uint8_t dao_destination[20];
     uint64_t dao_amount;
-    uint32_t group_input_count;
+    uint8_t group_input_count;
 };
 
 // Maximum number of APDU instructions
 #define INS_MAX 0x09
 
-#define APDU_INS(x) ({ \
-    _Static_assert(x <= INS_MAX, "APDU instruction is out of bounds"); \
-    x; \
-})
+#define APDU_INS(x)                                                                                                    \
+    ({                                                                                                                 \
+        _Static_assert(x <= INS_MAX, "APDU instruction is out of bounds");                                             \
+        x;                                                                                                             \
+    })
 
-#define STRCPY(buff, x) ({ \
-    _Static_assert(sizeof(buff) >= sizeof(x) && sizeof(*x) == sizeof(char), "String won't fit in buffer"); \
-    strcpy(buff, x); \
-})
+#define STRCPY(buff, x)                                                                                                \
+    ({                                                                                                                 \
+        _Static_assert(sizeof(buff) >= sizeof(x) && sizeof(*x) == sizeof(char), "String won't fit in buffer");         \
+        strcpy(buff, x);                                                                                               \
+    })
 
 #undef MAX
-#define MAX(a, b) ({ \
-    __typeof__(a) ____a_ = (a); \
-    __typeof__(b) ____b_ = (b); \
-    ____a_ > ____b_ ? ____a_ : ____b_; \
-})
+#define MAX(a, b)                                                                                                      \
+    ({                                                                                                                 \
+        __typeof__(a) ____a_ = (a);                                                                                    \
+        __typeof__(b) ____b_ = (b);                                                                                    \
+        ____a_ > ____b_ ? ____a_ : ____b_;                                                                             \
+    })
 
 #undef MIN
-#define MIN(a, b) ({ \
-    __typeof__(a) ____a_ = (a); \
-    __typeof__(b) ____b_ = (b); \
-    ____a_ < ____b_ ? ____a_ : ____b_; \
-})
+#define MIN(a, b)                                                                                                      \
+    ({                                                                                                                 \
+        __typeof__(a) ____a_ = (a);                                                                                    \
+        __typeof__(b) ____b_ = (b);                                                                                    \
+        ____a_ < ____b_ ? ____a_ : ____b_;                                                                             \
+    })

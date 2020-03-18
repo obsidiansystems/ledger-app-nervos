@@ -9,14 +9,8 @@
 #include "types.h"
 #include "ui.h"
 
-void pubkey_to_pkh_string(
-    char *const out, size_t const out_size,
-    cx_ecfp_public_key_t const *const public_key
-);
-void bip32_path_to_pkh_string(
-    char *const out, size_t const out_size,
-    bip32_path_t const *const key
-);
+void pubkey_to_pkh_string(char *const out, size_t const out_size, cx_ecfp_public_key_t const *const public_key);
+void bip32_path_to_pkh_string(char *const out, size_t const out_size, bip32_path_t const *const key);
 void protocol_hash_to_string(char *const buff, size_t const buff_size, uint8_t const hash[PROTOCOL_HASH_SIZE]);
 void parsed_contract_to_string(char *const buff, size_t const buff_size, public_key_hash_t const *const contract);
 void lookup_parsed_contract_name(char *const buff, size_t const buff_size, public_key_hash_t const *const contract);
