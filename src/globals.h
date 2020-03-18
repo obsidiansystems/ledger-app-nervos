@@ -56,8 +56,6 @@ struct tx_context {
 #define MAX_TOSIGN_PARSED 600
 #define MAX_CONTEXT_TRANSACTIONS 3
 
-typedef uint8_t standard_lock_arg_t[20];
-
 typedef struct {
     bip32_path_t key;
     standard_lock_arg_t current_lock_arg;
