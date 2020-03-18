@@ -1,3 +1,5 @@
+use crate::bindings::*;
+
 #[repr(C)]
 struct Version {
     major: u8,
@@ -7,7 +9,6 @@ struct Version {
 
 extern "C" {
     static version: Version;
-    static mut G_io_apdu_buffer: [u8; 260];
 }
 
 #[inline]
