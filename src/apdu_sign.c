@@ -320,7 +320,7 @@ void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ k
     }
 }
 
-bool is_change(mol_num_t num_inputs, mol_seg_t *inputs, mol_seg_t *lockScript) {
+bool is_change(mol_seg_t *lockScript) {
     if (!is_standard_lock_script(lockScript))
         return false;
     mol_seg_t lockArg = MolReader_Script_get_args(lockScript);
@@ -356,6 +356,7 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
         unsigned int inputs_len = MolReader_CellInputVec_length(&inputs);
 
         G.maybe_transaction.v.group_input_count = 0;
+        G.maybe_transaction.input_count = inputs_len; // for fallback code on parse failures.
 
         if (inputs_len > 5)
             REJECT("Too many input cells");
@@ -417,7 +418,7 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
             mol_seg_t lockScript = MolReader_CellOutput_get_lock(&output.seg);
             mol_seg_t type_script = MolReader_CellOutput_get_type_(&output.seg);
 
-            bool isChange = is_change(inputs_len, &inputs, &lockScript);
+            bool isChange = is_change(&lockScript);
 
             bool isDao = false;
             if (!MolReader_ScriptOpt_is_none(&type_script)) {
@@ -502,17 +503,6 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
     }
 }
 
-int set_lock_arg(key_pair_t *key_pair, standard_lock_arg_t *destination) {
-    check_null(key_pair);
-    check_null(destination);
-    cx_blake2b_t lock_arg_state;
-    cx_blake2b_init2(&lock_arg_state, 20 * 8, NULL, 0, (uint8_t *)blake2b_personalization,
-                     sizeof(blake2b_personalization) - 1);
-    cx_hash((cx_hash_t *)&lock_arg_state, 0, key_pair->public_key.W, key_pair->public_key.W_len, NULL, 0);
-    cx_hash((cx_hash_t *)&lock_arg_state, CX_LAST, NULL, 0, (uint8_t*)destination, sizeof(G.current_lock_arg));
-    return 0;
-}
-
 #define P1_FIRST            0x00
 #define P1_NEXT             0x01
 #define P1_HASH_ONLY_NEXT   0x03 // You only need it once
@@ -524,8 +514,9 @@ int set_lock_arg(key_pair_t *key_pair, standard_lock_arg_t *destination) {
 #define P1_MASK             (~(P1_LAST_MARKER | P1_NO_FALLBACK | P1_IS_CONTEXT))
 
 void prep_lock_arg(bip32_path_t *key, standard_lock_arg_t *destination) {
-    int fail = 0;
-    fail = WITH_KEY_PAIR(*key, key_pair, int, ({ set_lock_arg(key_pair, destination); }));
+    cx_ecfp_public_key_t public_key;
+    generate_public_key(&public_key, key);
+    generate_lock_arg_for_pubkey(&public_key, destination);
 }
 
 static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, uint8_t const instruction) {
@@ -547,6 +538,7 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
 
         // Default the change lock arg to the one we're currently going to sign for
         memcpy(&G.change_lock_arg, G.current_lock_arg, 20);
+
 
         return finalize_successful_send(0);
     }
@@ -587,12 +579,27 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
             G.maybe_transaction.is_valid = false;
 
             if (is_ctxd) {
+                if(G.context_transactions_fill_idx>=MAX_CONTEXT_TRANSACTIONS) {
+                    G.maybe_transaction.parse_failed = true;
+                    G.maybe_transaction.is_valid = false;
+                    THROW(EXC_PARSE_ERROR);
+                }
                 parse_context(&G.maybe_transaction, &G.key, G.to_parse, G.to_parse_fill_idx);
             } else {
                 parse_operation(&G.maybe_transaction, &G.key, G.to_parse, G.to_parse_fill_idx);
                 if (G.maybe_transaction.is_valid == false && (p1 & P1_NO_FALLBACK)) {
-                    PRINTF("Strict checking requested and parse failed; bailing.\n");
-                    THROW(EXC_PARSE_ERROR);
+                    if(p1 & P1_NO_FALLBACK) {
+                        PRINTF("Strict checking requested and parse failed; bailing.\n");
+                        THROW(EXC_PARSE_ERROR);
+                    }
+                    // Fallback: assume we're signing for all inputs.
+                    PRINTF("Parse failed but still signing; assuming we sign for all inputs\n");
+                    G.maybe_transaction.v.group_input_count = G.maybe_transaction.input_count;
+                } else {
+                    // TODO: For unclear reasons, the
+                    // group_input_count calculated above is incorrect
+                    // and leading to validation failure
+                    G.maybe_transaction.v.group_input_count = G.maybe_transaction.input_count;
                 }
             }
         }
