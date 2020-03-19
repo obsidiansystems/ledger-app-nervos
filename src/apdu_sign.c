@@ -235,22 +235,24 @@ enum output_type_type get_output_type_type(mol_seg_t *outputs_data, int i) {
 }
 
 void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
-                         uint16_t const buff_size);
+                         uint16_t const buff_size, uint32_t idx);
 
 void parse_context(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
                    uint16_t const buff_size) {
     mol_seg_t seg;
-    seg.ptr = buff;
+    seg.ptr = buff+4;
     seg.size = buff_size;
+    uint32_t idx;
+    memcpy(&idx, seg.ptr, 4);
     uint8_t mol_result = MolReader_RawTransaction_verify(&seg, true);
     if (mol_result != MOL_OK)
         REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
 
-    parse_context_inner(dest, key_derivation, buff, buff_size);
+    parse_context_inner(dest, key_derivation, buff, buff_size, idx);
 }
 
 void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
-                         uint16_t const buff_size) {
+                         uint16_t const buff_size, uint32_t idx) {
     mol_seg_t seg;
     seg.ptr = buff;
     seg.size = buff_size;
@@ -258,48 +260,47 @@ void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ k
     mol_seg_t outputs = MolReader_RawTransaction_get_outputs(&seg);
     unsigned int outputs_len = MolReader_CellOutputVec_length(&outputs);
 
-    if (outputs_len > 2)
-        REJECT("Too many output cells");
-    G.context_transactions[G.context_transactions_fill_idx].num_outputs = outputs_len;
-
     mol_seg_t outputs_data = MolReader_RawTransaction_get_outputs_data(&seg);
 
-    for (mol_num_t i = 0; i < outputs_len; i++) {
-        mol_seg_res_t output = MolReader_CellOutputVec_get(&outputs, i);
-        mol_seg_t capacity = MolReader_CellOutput_get_capacity(&output.seg);
+    if (idx > outputs_len)
+	    REJECT("Context transaction doesn't have that output");
+    mol_seg_res_t output = MolReader_CellOutputVec_get(&outputs, idx);
+    mol_seg_t capacity = MolReader_CellOutput_get_capacity(&output.seg);
 
-        // Need to do a memcpy because of alignment issues.
-        memcpy(&G.context_transactions[G.context_transactions_fill_idx].outputs[i].amount, capacity.ptr, 8);
+    // Need to do a memcpy because of alignment issues.
+    memcpy(&G.context_transactions[G.context_transactions_fill_idx].output.amount, capacity.ptr, 8);
 
-        mol_seg_t lockScript = MolReader_CellOutput_get_lock(&output.seg);
-        mol_seg_t lockArg = MolReader_Script_get_args(&lockScript);
-        mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
+    G.context_transactions[G.context_transactions_fill_idx].index=idx;
 
-        if (!is_standard_lock_script(&lockScript)) {
-            REJECT("Cannot parse nonstandard lock script");
+    mol_seg_t lockScript = MolReader_CellOutput_get_lock(&output.seg);
+    mol_seg_t lockArg = MolReader_Script_get_args(&lockScript);
+    mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
+
+    if (!is_standard_lock_script(&lockScript)) {
+        REJECT("Cannot parse nonstandard lock script");
+    } else {
+        G.context_transactions[G.context_transactions_fill_idx].output.flags |= OUTPUT_FLAGS_KNOWN_LOCK;
+    }
+
+    memcpy(G.context_transactions[G.context_transactions_fill_idx].output.lock_arg, lockArgBytes.ptr, 20);
+
+    mol_seg_t type_script = MolReader_CellOutput_get_type_(&output.seg);
+
+    bool isDao;
+    if (!MolReader_ScriptOpt_is_none(&type_script)) {
+        if (is_dao_type_script(&type_script)) {
+            isDao = true;
         } else {
-            G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags |= OUTPUT_FLAGS_KNOWN_LOCK;
+            REJECT("Cannot parse transactions with non-DAO type scripts");
         }
+    } else {
+        isDao = false;
+    }
 
-        memcpy(G.context_transactions[G.context_transactions_fill_idx].outputs[i].lock_arg, lockArgBytes.ptr, 20);
-
-        mol_seg_t type_script = MolReader_CellOutput_get_type_(&output.seg);
-
-        bool isDao;
-        if (!MolReader_ScriptOpt_is_none(&type_script)) {
-            if (is_dao_type_script(&type_script)) {
-                isDao = true;
-            } else {
-                REJECT("Cannot parse transactions with non-DAO type scripts");
-            }
-        } else {
-            isDao = false;
-        }
-
-        if (isDao) {
-            G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags |= OUTPUT_FLAGS_IS_DAO;
-        }
-        switch (get_output_type_type(&outputs_data, i)) {
+    if (isDao) {
+        G.context_transactions[G.context_transactions_fill_idx].output.flags |= OUTPUT_FLAGS_IS_DAO;
+    }
+    switch (get_output_type_type(&outputs_data, idx)) {
         case OUTPUT_TYPE_INVALID:
             REJECT("Invalid output data");
         case OUTPUT_TYPE_PLAIN_TRANSFER:
@@ -309,14 +310,13 @@ void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ k
         case OUTPUT_TYPE_DAO_DEPOSIT:
             if (!isDao)
                 REJECT("only DAO script can have DAO output");
-            G.context_transactions[G.context_transactions_fill_idx].outputs[i].flags |=
+            G.context_transactions[G.context_transactions_fill_idx].output.flags |=
                 OUTPUT_FLAGS_IS_DAO_DEPOSIT;
             break;
         case OUTPUT_TYPE_DAO_PREPARED:
             if (!isDao)
                 REJECT("only DAO script can have DAO output");
             break;
-        }
     }
 }
 
@@ -359,7 +359,7 @@ void add_first_witnessarg(cx_blake2b_t *double_state, mol_seg_t witness_bytes) {
                         new_witness_header[3]+=69-lock_length;
 
                         hash_32_as_64(double_state, new_witness_header[0]);
-                        cx_hash((cx_hash_t *)double_state, 0, new_witness_header, 16, NULL, 0);
+                        cx_hash((cx_hash_t *)double_state, 0, (uint8_t*) new_witness_header, 16, NULL, 0);
 
                         cx_hash((cx_hash_t *)&double_state, 0, zero_bytes, 69, NULL, 0);
 
@@ -424,7 +424,6 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
             REJECT("Not enough context transactions for inputs");
 
         uint64_t amount = 0;
-        uint8_t input_idxes[5];
 
         uint64_t withdraw_amount = 0;
 
@@ -432,10 +431,13 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
             mol_seg_res_t input = MolReader_CellInputVec_get(&inputs, i);
             mol_seg_t outpoint = MolReader_CellInput_get_previous_output(&input.seg);
             mol_seg_t txhash = MolReader_OutPoint_get_tx_hash(&outpoint);
+
+	    // Verify the output we're looking for is the one we've got
             mol_seg_t out_idx_seg = MolReader_OutPoint_get_index(&outpoint);
-            uint32_t out_idx;
-            memcpy(&out_idx, out_idx_seg.ptr, 4);
-            if (memcmp(G.context_transactions[i].outputs[out_idx].lock_arg, G.current_lock_arg, 20) ==
+	    // memcmp becuase of alignment
+	    if(memcmp(&G.context_transactions[i].index, out_idx_seg.ptr, 4) != 0) REJECT("Transaction asks for different output than provided");
+
+            if (memcmp(G.context_transactions[i].output.lock_arg, G.current_lock_arg, 20) ==
                     0) { // Is the input in the group we are signing for right now
                 if(i<witness_count) {
                     mol_seg_res_t witness=MolReader_BytesVec_get(&witnesses, i);
@@ -455,23 +457,18 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
                 }
                 G.maybe_transaction.v.group_input_count++;
             }
-            if (out_idx > 3)
-                REJECT("Can't access outputs higher than 3");
-            input_idxes[i] = out_idx;
-            if (out_idx > G.context_transactions[i].num_outputs)
-                REJECT("Context transaction doesn't have that output");
             if (memcmp(txhash.ptr, G.context_transactions[i].hash, SIGN_HASH_SIZE) != 0)
                 REJECT("Hash of context %d does not match input transaction hash", i);
-            amount += G.context_transactions[i].outputs[out_idx].amount;
-            if (G.context_transactions[i].outputs[out_idx].flags & OUTPUT_FLAGS_IS_DAO) {
-                memcpy(G.maybe_transaction.v.dao_source, G.context_transactions[i].outputs[i].lock_arg, 20);
-                if (G.context_transactions[i].outputs[out_idx].flags & OUTPUT_FLAGS_IS_DAO_DEPOSIT) {
+            amount += G.context_transactions[i].output.amount;
+            if (G.context_transactions[i].output.flags & OUTPUT_FLAGS_IS_DAO) {
+                memcpy(G.maybe_transaction.v.dao_source, G.context_transactions[i].output.lock_arg, 20);
+                if (G.context_transactions[i].output.flags & OUTPUT_FLAGS_IS_DAO_DEPOSIT) {
                     // prepare_amounts[i]=amount;
                 } else {
-                    withdraw_amount += G.context_transactions[i].outputs[out_idx].amount;
+                    withdraw_amount += G.context_transactions[i].output.amount;
                 }
             } else {
-                memcpy(G.maybe_transaction.v.source, G.context_transactions[i].outputs[i].lock_arg, 20);
+                memcpy(G.maybe_transaction.v.source, G.context_transactions[i].output.lock_arg, 20);
             }
         }
 
@@ -547,9 +544,9 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
             case OUTPUT_TYPE_DAO_PREPARED:
                 if (!isDao)
                     REJECT("only DAO script can have DAO output");
-                if (capacity_val != G.context_transactions[i].outputs[input_idxes[i]].amount)
+                if (capacity_val != G.context_transactions[i].output.amount)
                     REJECT("Input and output capacity has to match for a prepare: %d vs %d", capacity_val,
-                           G.context_transactions[i].outputs[input_idxes[i]].amount);
+                           G.context_transactions[i].output.amount);
                 total_prepare_amount += capacity_val;
                 memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
             }

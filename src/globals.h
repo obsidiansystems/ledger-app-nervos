@@ -49,12 +49,12 @@ struct tx_output {
 
 struct tx_context {
     uint8_t hash[32];
-    uint8_t num_outputs;
-    struct tx_output outputs[2];
+    uint32_t index;
+    struct tx_output output;
 };
 
 #define MAX_TOSIGN_PARSED 600
-#define MAX_CONTEXT_TRANSACTIONS 2
+#define MAX_CONTEXT_TRANSACTIONS 4
 
 typedef struct {
     bip32_path_t key;
