@@ -248,7 +248,7 @@ void parse_context(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_der
     if (mol_result != MOL_OK)
         REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
 
-    parse_context_inner(dest, key_derivation, buff, buff_size, idx);
+    parse_context_inner(dest, key_derivation, buff+4, buff_size-4, idx);
 }
 
 void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
@@ -265,6 +265,10 @@ void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ k
     if (idx > outputs_len)
 	    REJECT("Context transaction doesn't have that output");
     mol_seg_res_t output = MolReader_CellOutputVec_get(&outputs, idx);
+
+    if(output.errno != MOL_OK)
+	    PRINTF("Molecule error on output: %x\n", output.errno);
+
     mol_seg_t capacity = MolReader_CellOutput_get_capacity(&output.seg);
 
     // Need to do a memcpy because of alignment issues.
@@ -670,6 +674,13 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
                     THROW(EXC_PARSE_ERROR);
                 }
                 parse_context(&G.maybe_transaction, &G.key, G.to_parse, G.to_parse_fill_idx);
+                blake2b_incremental_hash(G.to_parse+4, G.to_parse_fill_idx-4, &G.hash_state);
+                blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), &G.hash_state);
+
+                memcpy(G.context_transactions[G.context_transactions_fill_idx].hash, G.final_hash, SIGN_HASH_SIZE);
+                G.context_transactions_fill_idx++;
+                G.to_parse_fill_idx = 0;
+                G.hash_state.initialized = false;
             } else {
                 parse_operation(&G.maybe_transaction, &G.key, G.to_parse, G.to_parse_fill_idx);
                 if (G.maybe_transaction.is_valid == false && (p1 & P1_NO_FALLBACK)) {
@@ -690,19 +701,9 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
         }
     }
 
-    if (is_ctxd && enable_hashing)
-        blake2b_incremental_hash(buff, buff_size, &G.hash_state);
 
     if (last) {
-        if (is_ctxd && enable_hashing) {
-            blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), &G.hash_state);
-        }
-
         if (is_ctxd) {
-            memcpy(G.context_transactions[G.context_transactions_fill_idx].hash, G.final_hash, SIGN_HASH_SIZE);
-            G.context_transactions_fill_idx++;
-            G.to_parse_fill_idx = 0;
-            G.hash_state.initialized = false;
             return finalize_successful_send(0);
         } else {
             // We already computed the hash above, so just proceed to sign_complete.
