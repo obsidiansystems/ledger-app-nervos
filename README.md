@@ -262,7 +262,7 @@ money onto the Ledger, you need to do a transfer. This can be done
 with an initial transfer:
 
 ```
-$ ckb-cli transfer --from-account <your-new-account-lock-arg> --to-address <ledger-address> --capacity 1000 --tx-fee 0.001
+$ ckb-cli wallet transfer --from-account <your-new-account-lock-arg> --to-address <ledger-address> --capacity 1000 --tx-fee 0.001
 ```
 
 #### Verify address balance ####
