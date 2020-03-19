@@ -90,10 +90,17 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     THROW(EXC_WRONG_LENGTH);
                 }
 
+		int canary=app_stack_canary;
+
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
                 apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
 
+                if(canary != app_stack_canary) {
+                    THROW(EXC_STACK_ERROR);
+                }
+
                 size_t const tx = cb(instruction);
+
                 rx = io_exchange(CHANNEL_APDU, tx);
             }
             CATCH(ASYNC_EXCEPTION) {
@@ -120,6 +127,14 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     rx = io_exchange(CHANNEL_APDU, tx);
                     break;
                 }
+                case 0xA000 ... 0xAFFF: {
+                    PRINTF("Other error: %x\n", sw);
+                    size_t tx = 0;
+                    G_io_apdu_buffer[tx++] = sw >> 8;
+                    G_io_apdu_buffer[tx++] = sw;
+                    rx = io_exchange(CHANNEL_APDU, tx);
+                    break;
+					}
                 }
             }
             FINALLY {}
