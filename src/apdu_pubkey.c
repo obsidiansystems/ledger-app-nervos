@@ -40,8 +40,10 @@ static void bip32_path_to_string(char *const out, size_t const out_size, apdu_pu
             bound_check_buffer(out_current_offset, out_size);
             out[out_current_offset++] = '\'';
         }
-        bound_check_buffer(out_current_offset, out_size);
-        out[out_current_offset++] = '/';
+        if (i < pubkey->key.length - 1) {
+            bound_check_buffer(out_current_offset, out_size);
+            out[out_current_offset++] = '/';
+        }
         bound_check_buffer(out_current_offset, out_size);
         out[out_current_offset] = '\0';
     }
