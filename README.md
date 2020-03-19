@@ -481,3 +481,16 @@ $ rm -rf data/
 $ ckb run &
 $ ckb miner
 ```
+
+## Invalid cell status ##
+
+This can happen when you have switched networks between ckb-cli usage.
+If this is the case, it can be fixed by clearing your cache. This can
+be done on the command line.
+
+First, quit out of ckb-cli so that we can modify our index. Then,
+clear your cache with:
+
+``` sh
+$ rm -rf $HOME/.ckb-cli/index-v1/
+```
