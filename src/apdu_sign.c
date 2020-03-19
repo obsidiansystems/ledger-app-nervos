@@ -365,7 +365,7 @@ void add_first_witnessarg(cx_blake2b_t *double_state, mol_seg_t witness_bytes) {
                         hash_32_as_64(double_state, new_witness_header[0]);
                         cx_hash((cx_hash_t *)double_state, 0, (uint8_t*) new_witness_header, 16, NULL, 0);
 
-                        cx_hash((cx_hash_t *)&double_state, 0, zero_bytes, 69, NULL, 0);
+                        cx_hash((cx_hash_t *)double_state, 0, zero_bytes, 69, NULL, 0);
 
                         cx_hash((cx_hash_t *)double_state, 0, witness_bytes.ptr+after_lock_offset, witness_bytes.size-after_lock_offset, NULL, 0);
 }
