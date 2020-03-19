@@ -407,11 +407,15 @@ Then you can run
 
 ```
 ckb run &
-ckb miner &
+ckb miner
 ```
 
 to start up the node and miner; the ledger account you added to
 genesis.issued\_cells should have a large quantity of CKB to spend testing.
+
+Note that you may have to suspend your miner to avoid hitting the
+maximum amount of deposited cells. You can do this with Ctrl-Z. Type
+‘fg’ followed by enter to continue running it later.
 
 ##### Prepare #####
 
@@ -452,7 +456,7 @@ Remember the value above for one of live cells under “tx\_hash” and “outpu
 Withdraw a prepared cell:
 
 ``` sh
-$ ckb-cli dao withdraw --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.00001
+$ ckb-cli dao withdraw --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.00001 --path "m/44'/309'/0'/1/0"
 ```
 
 At this point, either
