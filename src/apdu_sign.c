@@ -241,9 +241,9 @@ void parse_context(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_der
                    uint16_t const buff_size) {
     mol_seg_t seg;
     seg.ptr = buff+4;
-    seg.size = buff_size;
+    seg.size = buff_size - 4;
     uint32_t idx;
-    memcpy(&idx, seg.ptr, 4);
+    memcpy(&idx, buff, 4);
     uint8_t mol_result = MolReader_RawTransaction_verify(&seg, true);
     if (mol_result != MOL_OK)
         REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
