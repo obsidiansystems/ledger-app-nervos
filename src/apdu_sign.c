@@ -470,6 +470,9 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
             }
         }
 
+        if (witness_count == 0)
+            add_default_first_witnessarg(&double_state);
+
         // Add witnesses from no input to the hash.
         for (mol_num_t i = inputs_len; i < witness_count; i++) {
                     mol_seg_res_t witness=MolReader_BytesVec_get(&witnesses, i);
