@@ -148,24 +148,18 @@ static size_t sign_complete(uint8_t instruction) {
     }
     case OPERATION_TAG_DAO_WITHDRAW: {
         static const uint32_t TYPE_INDEX = 0;
-        static const uint32_t AMOUNT_INDEX = 1;
-        static const uint32_t DESTINATION_INDEX = 2;
-        static const uint32_t DEPOSIT_INDEX = 3;
-        static const uint32_t RETURN_INDEX = 4;
-        static const uint32_t SOURCE_INDEX = 5;
+        static const uint32_t DEPOSIT_INDEX = 1;
+        static const uint32_t RETURN_INDEX = 2;
+        static const uint32_t SOURCE_INDEX = 3;
         static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"),
-                                                          PROMPT("Amount"),
-                                                          PROMPT("Destination"),
                                                           PROMPT("Deposit"),
                                                           PROMPT("Return"),
                                                           PROMPT("Source"),
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Withdrawal");
-        register_ui_callback(SOURCE_INDEX, lock_arg_to_string, &G.maybe_transaction.v.dao_source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_string, &G.maybe_transaction.v.destination);
         register_ui_callback(DEPOSIT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
         register_ui_callback(RETURN_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
+        register_ui_callback(SOURCE_INDEX, lock_arg_to_string, &G.maybe_transaction.v.dao_source);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
