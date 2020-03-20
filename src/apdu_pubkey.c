@@ -54,7 +54,11 @@ static void render_pkh(const char *const hrb, char *const out, size_t const out_
     const size_t base32_max = 256;
     uint8_t base32_buf[base32_max];
     size_t base32_len = 0;
-    if (!convert_bits(base32_buf, base32_max, &base32_len, 5, pubkey->prefixed_public_key_hash.entire, SIGN_HASH_SIZE, 8, 1)) {
+    if (!convert_bits(base32_buf, base32_max, &base32_len,
+                      5,
+                      pubkey->prefixed_public_key_hash.entire, sizeof(pubkey->prefixed_public_key_hash.entire),
+                      8,
+                      1)) {
         THROW(EXC_MEMORY_ERROR);
     }
     if (!bech32_encode(out, out_size, hrb, base32_buf, base32_len)) {
