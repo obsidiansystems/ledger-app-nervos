@@ -258,6 +258,11 @@ to start up the node and miner; the ledger account you added to
 genesis.issued\_cells should have a large quantity of CKB to spend
 testing.
 
+Note that you may have to suspend your miner to avoid hitting the
+maximum amount of deposited cells. You can do this with Ctrl-Z. Type
+‘fg’ followed by enter to continue running it later. The miner should
+be running when running any ckb-cli commands.
+
 #### Getting CKB from the miner ####
 
 The dev network is set up to send CKBs to the on-disk account. To get
