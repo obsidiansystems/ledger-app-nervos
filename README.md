@@ -170,46 +170,33 @@ need to save. Keep it for later, as it will be used for
 
 ### Transfering ###
 
-#### Starting a node (locally) ####
+#### Creating a new account for local dev network ####
 
-Get ckb in your shell:
-
-``` sh
-$ nix-shell -p '(import ./nix/dep/ckb {})'
-```
-
-Get aggron.toml:
-
-``` sh
-$ curl -o aggron.toml https://gist.githubusercontent.com/doitian/573513c345165c0fe4f3504ebc1c8f9f/raw/3032bed68550e0a50e91df2c706481e80b579c70/aggron.toml
-```
-
-Init the testnet toml:
-
-``` sh
-$ ckb init --import-spec ./aggron.toml --chain testnet
-```
-
-Run the node with:
+Now, you must also create an account from ckb-cli so that an account
+can get the issued cells. This can be done with:
 
 ```
-$ ckb run
+$ ckb-cli account new
 ```
 
-Leave this open in a separate terminal as you continue on the next steps.
-
-
-#### Starting a node (port forwarding) ####
-
-If you have access to a local node on your network, you can run ssh
-port forwarding. This can be done like this:
+Follow the prompts and choose a password to continue. Next, get the
+lock_arg for your account with:
 
 ```
-$ ssh -L 8114:<host>:8114 localhost
+$ ckb-cli account list
+- "#": 0
+  account_source: on-disk password-protected key store
+  address:
+    mainnet: ckb1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqpwltnt
+    testnet: ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
+  lock_arg: 0xabaedbbb6d8de1d8ad4d036237c23c822f84e870
+  lock_hash: 0x21ad4eee4fb0f079f5f8166f42f0d4fbd1fd63b8f36a7ccfb9d3657f9a5aed43
+- "#": 1
+  account_source: ledger hardware wallet
+  ledger_id: 0x27fe5acb022cd7b8be0eb7009d42ff4600c597d28b6affefcab6f7396d1311c2
 ```
 
-where <host> is the name of your machine running a local node. Note
-this is discourage, and running your own node is preferred.
+The value of “lock_arg: ...” is your-new-account-lock-arg.
 
 #### Starting a local dev network ####
 
@@ -254,7 +241,7 @@ and also pick one of the genesis issuance cells and set args to a lock arg from 
 [[genesis.issued_cells]]
 capacity = 20_000_000_000_00000000
 lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-lock.args = "<your-ledger-lock-arg>"
+lock.args = "<your-new-account-lock-arg>"
 lock.hash_type = "type"
 ```
 
@@ -268,11 +255,15 @@ ckb miner &
 to start up the node and miner; the ledger account you added to
 genesis.issued\_cells should have a large quantity of CKB to spend testing.
 
-#### Getting CKB from the faucet ####
+#### Getting CKB from the miner ####
 
-Visit https://faucet.nervos.org/auth and follow the process to receive
-testnet tokens. You should use the address generated above in “Get
-Public Key” and the capacity should be 100000.
+The dev network is set up to send CKBs to the on-disk account. To get
+money onto the Ledger, you need to do a transfer. This can be done
+with an initial transfer:
+
+```
+$ ckb-cli wallet transfer --from-account <your-new-account-lock-arg> --to-address <ledger-address> --capacity 1000 --tx-fee 0.001
+```
 
 #### Verify address balance ####
 
@@ -365,6 +356,67 @@ total_capacity: 10200000000
 
 Remember the value above for one of live cells under “tx\_hash” and “output\_index”.
 
+##### Starting a local dev network #####
+
+First, make a directory and init it for a dev network:
+``` sh
+$ nix run -f nix/dep/ckb # to make ckb available
+$ mkdir devnet
+$ cd devnet
+$ ckb init --chain dev
+```
+
+then modify the value at the end of ckb-miner.toml to be small:
+
+```
+value = 20
+```
+
+and uncomment the block_assembler block at the end of ckb.toml and change the 'message' to '0x':
+
+```
+[block_assembler]
+code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
+args = "0xb57dd485a1b0c0a57c377e896a1a924d7ed02ab9"
+hash_type = "type"
+message = "0x"
+```
+
+providing some lock argument in place of args.
+
+finally, in specs/dev.toml, set genesis_epoch_length to 1 and uncomment permanent_difficulty_in_dummy:
+
+```
+genesis_epoch_length = 1
+# For development and testing purposes only.
+# Keep difficulty be permanent if the pow is Dummy. (default: false)
+permanent_difficulty_in_dummy = true
+```
+
+and also pick one of the genesis issuance cells and set args to a lock arg from your ledger:
+
+```
+[[genesis.issued_cells]]
+capacity = 20_000_000_000_00000000
+lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
+lock.args = "<your-ledger-lock-arg>"
+lock.hash_type = "type"
+```
+
+Then you can run 
+
+```
+ckb run &
+ckb miner
+```
+
+to start up the node and miner; the ledger account you added to
+genesis.issued\_cells should have a large quantity of CKB to spend testing.
+
+Note that you may have to suspend your miner to avoid hitting the
+maximum amount of deposited cells. You can do this with Ctrl-Z. Type
+‘fg’ followed by enter to continue running it later.
+
 ##### Prepare #####
 
 Prepare a cell for withdrawal from the DAO:
@@ -404,7 +456,7 @@ Remember the value above for one of live cells under “tx\_hash” and “outpu
 Withdraw a prepared cell:
 
 ``` sh
-$ ckb-cli dao withdraw --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.00001
+$ ckb-cli dao withdraw --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.00001 --path "m/44'/309'/0'/1/0"
 ```
 
 At this point, either
@@ -418,3 +470,27 @@ will be reported, showing that the prepared cell is not yet available to withdra
 ## Application Build Failure ##
 
 If you run into issues building the Ledger application using `nix-shell -A wallet.s --run 'make SHELL=sh all'`, we recommend trying `nix-shell -A wallet.s --run 'make SHELL=sh clean all`.
+
+## Devnet stops at 59594 blocks ##
+
+At some point, you hit an issue where the node can’t hold the capacity of the miner. This can be resolved by, clearing your devnet and restarting like so:
+
+``` sh
+CTRL-C
+$ rm -rf data/
+$ ckb run &
+$ ckb miner
+```
+
+## Invalid cell status ##
+
+This can happen when you have switched networks between ckb-cli usage.
+If this is the case, it can be fixed by clearing your cache. This can
+be done on the command line.
+
+First, quit out of ckb-cli so that we can modify our index. Then,
+clear your cache with:
+
+``` sh
+$ rm -rf $HOME/.ckb-cli/index-v1/
+```

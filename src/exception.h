@@ -20,6 +20,7 @@
 #define EXC_HID_REQUIRED              0x6983
 #define EXC_CLASS                     0x6E00
 #define EXC_MEMORY_ERROR              0x9200
+#define EXC_STACK_ERROR               0xA000
 
 // Crashes can be harder to debug than exceptions and latency isn't a big concern
 static inline void check_null(void volatile const *const ptr) {
