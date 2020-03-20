@@ -103,7 +103,7 @@ and load the Nervos app, confirming the unsafe prompt.
 Build a version of the ckb-cli:
 
 ``` sh
-$ nix-shell -p '(import ./nix/dep/ckb-cli {})'
+$ nix run -f nix/dep/ckb-cli
 ```
 
 Now, make sure the Ledger is:
@@ -214,7 +214,7 @@ then modify the value at the end of ckb-miner.toml to be small:
 value = 20
 ```
 
-and uncomment the block_assembler block at the end of ckb.toml and change the 'message' to '0x':
+and also add this block to the end of the file:
 
 ```
 [block_assembler]
@@ -226,7 +226,8 @@ message = "0x"
 
 providing some lock argument in place of args.
 
-finally, in specs/dev.toml, set genesis_epoch_length to 1 and uncomment permanent_difficulty_in_dummy:
+finally, in specs/dev.toml, set genesis\_epoch\_length to 1 and
+uncomment permanent\_difficulty\_in\_dummy:
 
 ```
 genesis_epoch_length = 1
@@ -235,7 +236,8 @@ genesis_epoch_length = 1
 permanent_difficulty_in_dummy = true
 ```
 
-and also pick one of the genesis issuance cells and set args to a lock arg from your ledger:
+and also pick one of the genesis issuance cells and set args to a lock
+arg from your newly created account:
 
 ```
 [[genesis.issued_cells]]
@@ -249,11 +251,12 @@ Then you can run
 
 ```
 ckb run &
-ckb miner &
+ckb miner
 ```
 
 to start up the node and miner; the ledger account you added to
-genesis.issued\_cells should have a large quantity of CKB to spend testing.
+genesis.issued\_cells should have a large quantity of CKB to spend
+testing.
 
 #### Getting CKB from the miner ####
 
@@ -355,67 +358,6 @@ total_capacity: 10200000000
 ```
 
 Remember the value above for one of live cells under “tx\_hash” and “output\_index”.
-
-##### Starting a local dev network #####
-
-First, make a directory and init it for a dev network:
-``` sh
-$ nix run -f nix/dep/ckb # to make ckb available
-$ mkdir devnet
-$ cd devnet
-$ ckb init --chain dev
-```
-
-then modify the value at the end of ckb-miner.toml to be small:
-
-```
-value = 20
-```
-
-and uncomment the block_assembler block at the end of ckb.toml and change the 'message' to '0x':
-
-```
-[block_assembler]
-code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-args = "0xb57dd485a1b0c0a57c377e896a1a924d7ed02ab9"
-hash_type = "type"
-message = "0x"
-```
-
-providing some lock argument in place of args.
-
-finally, in specs/dev.toml, set genesis_epoch_length to 1 and uncomment permanent_difficulty_in_dummy:
-
-```
-genesis_epoch_length = 1
-# For development and testing purposes only.
-# Keep difficulty be permanent if the pow is Dummy. (default: false)
-permanent_difficulty_in_dummy = true
-```
-
-and also pick one of the genesis issuance cells and set args to a lock arg from your ledger:
-
-```
-[[genesis.issued_cells]]
-capacity = 20_000_000_000_00000000
-lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-lock.args = "<your-ledger-lock-arg>"
-lock.hash_type = "type"
-```
-
-Then you can run 
-
-```
-ckb run &
-ckb miner
-```
-
-to start up the node and miner; the ledger account you added to
-genesis.issued\_cells should have a large quantity of CKB to spend testing.
-
-Note that you may have to suspend your miner to avoid hitting the
-maximum amount of deposited cells. You can do this with Ctrl-Z. Type
-‘fg’ followed by enter to continue running it later.
 
 ##### Prepare #####
 
