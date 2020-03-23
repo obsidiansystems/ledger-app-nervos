@@ -103,8 +103,11 @@ and load the Nervos app, confirming the unsafe prompt.
 Build a version of the ckb-cli:
 
 ``` sh
-$ nix-shell -p '(import ./nix/dep/ckb-cli {})'
+$ nix run -f nix/dep/ckb-cli -c ckb-cli
 ```
+
+All commands that follow prefixed with ‘CKB>’ should be run in the
+prompt provided by the above command.
 
 Now, make sure the Ledger is:
 
@@ -117,7 +120,7 @@ Now, make sure the Ledger is:
 List the wallets:
 
 ``` sh
-$ ckb-cli account list
+CKB> account list
 - "#": 0
   account_source: ledger hardware wallet
   ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
@@ -131,7 +134,7 @@ used for ```<ledger-id>``` later on.
 Get the public key:
 
 ``` sh
-$ ckb-cli account extended-address --path "m/44'/309'/0'/1/0" --account-id <ledger-id>
+CKB> account extended-address --path "m/44'/309'/0'/1/0" --account-id <ledger-id>
 ```
 
 This should show up on the ledger as (in 4 screens):
@@ -176,14 +179,14 @@ Now, you must also create an account from ckb-cli so that an account
 can get the issued cells. This can be done with:
 
 ```
-$ ckb-cli account new
+CKB> account new
 ```
 
 Follow the prompts and choose a password to continue. Next, get the
 lock_arg for your account with:
 
 ```
-$ ckb-cli account list
+CKB> account list
 - "#": 0
   account_source: on-disk password-protected key store
   address:
@@ -214,7 +217,7 @@ then modify the value at the end of ckb-miner.toml to be small:
 value = 20
 ```
 
-and uncomment the block_assembler block at the end of ckb.toml and change the 'message' to '0x':
+and also add this block to the end of the file:
 
 ```
 [block_assembler]
@@ -226,7 +229,8 @@ message = "0x"
 
 providing some lock argument in place of args.
 
-finally, in specs/dev.toml, set genesis_epoch_length to 1 and uncomment permanent_difficulty_in_dummy:
+finally, in specs/dev.toml, set genesis\_epoch\_length to 1 and
+uncomment permanent\_difficulty\_in\_dummy:
 
 ```
 genesis_epoch_length = 1
@@ -235,7 +239,8 @@ genesis_epoch_length = 1
 permanent_difficulty_in_dummy = true
 ```
 
-and also pick one of the genesis issuance cells and set args to a lock arg from your ledger:
+and also pick one of the genesis issuance cells and set args to a lock
+arg from your newly created account:
 
 ```
 [[genesis.issued_cells]]
@@ -249,11 +254,17 @@ Then you can run
 
 ```
 ckb run &
-ckb miner &
+ckb miner
 ```
 
 to start up the node and miner; the ledger account you added to
-genesis.issued\_cells should have a large quantity of CKB to spend testing.
+genesis.issued\_cells should have a large quantity of CKB to spend
+testing.
+
+Note that you may have to suspend your miner to avoid hitting the
+maximum amount of deposited cells. You can do this with Ctrl-Z. Type
+‘fg’ followed by enter to continue running it later. The miner should
+be running when running any ckb-cli commands.
 
 #### Getting CKB from the miner ####
 
@@ -262,7 +273,7 @@ money onto the Ledger, you need to do a transfer. This can be done
 with an initial transfer:
 
 ```
-$ ckb-cli wallet transfer --from-account <your-new-account-lock-arg> --to-address <ledger-address> --capacity 1000 --tx-fee 0.001
+CKB> wallet transfer --from-account <your-new-account-lock-arg> --to-address <ledger-address> --capacity 1000 --tx-fee 0.001
 ```
 
 #### Verify address balance ####
@@ -270,7 +281,7 @@ $ ckb-cli wallet transfer --from-account <your-new-account-lock-arg> --to-addres
 To continue, you need at least 100 CKB in your wallet. Do this with:
 
 ``` sh
-$ ckb-cli wallet get-capacity --address <ledger-address>
+CKB> wallet get-capacity --address <ledger-address>
 total: 100.0 (CKB)
 ```
 
@@ -285,7 +296,7 @@ derive-change-address value from “List Ledger Wallets” and “Get Public
 Key” above).
 
 ``` sh
-$ ckb-cli wallet transfer \
+CKB> wallet transfer \
     --from-account <ledger-id> \
     --to-address <ledger-address> \
     --capacity 102 --tx-fee 0.00001 \
@@ -299,7 +310,7 @@ $ ckb-cli wallet transfer \
 Get live cells:
 
 ``` sh
-$ ckb-cli wallet get-live-cells --address <ledger-address>
+CKB> wallet get-live-cells --address <ledger-address>
 current_capacity: 2000.0 (CKB)
 current_count: 1
 live_cells:
@@ -325,7 +336,7 @@ total_count: 1
 You can deposit to the dao like:
 
 ``` sh
-$ ckb-cli dao deposit \
+CKB> dao deposit \
     --capacity 102 \
     --from-account <ledger-id> \
     --tx-fee 0.00001 \
@@ -337,7 +348,7 @@ $ ckb-cli dao deposit \
 Get deposited cells:
 
 ``` sh
-$ ckb-cli dao query-deposited-cells --address <ledger-address>
+CKB> dao query-deposited-cells --address <ledger-address>
 live_cells:
   - capacity: 10200000000
     data_bytes: 8
@@ -356,73 +367,12 @@ total_capacity: 10200000000
 
 Remember the value above for one of live cells under “tx\_hash” and “output\_index”.
 
-##### Starting a local dev network #####
-
-First, make a directory and init it for a dev network:
-``` sh
-$ nix run -f nix/dep/ckb # to make ckb available
-$ mkdir devnet
-$ cd devnet
-$ ckb init --chain dev
-```
-
-then modify the value at the end of ckb-miner.toml to be small:
-
-```
-value = 20
-```
-
-and uncomment the block_assembler block at the end of ckb.toml and change the 'message' to '0x':
-
-```
-[block_assembler]
-code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-args = "0xb57dd485a1b0c0a57c377e896a1a924d7ed02ab9"
-hash_type = "type"
-message = "0x"
-```
-
-providing some lock argument in place of args.
-
-finally, in specs/dev.toml, set genesis_epoch_length to 1 and uncomment permanent_difficulty_in_dummy:
-
-```
-genesis_epoch_length = 1
-# For development and testing purposes only.
-# Keep difficulty be permanent if the pow is Dummy. (default: false)
-permanent_difficulty_in_dummy = true
-```
-
-and also pick one of the genesis issuance cells and set args to a lock arg from your ledger:
-
-```
-[[genesis.issued_cells]]
-capacity = 20_000_000_000_00000000
-lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-lock.args = "<your-ledger-lock-arg>"
-lock.hash_type = "type"
-```
-
-Then you can run 
-
-```
-ckb run &
-ckb miner
-```
-
-to start up the node and miner; the ledger account you added to
-genesis.issued\_cells should have a large quantity of CKB to spend testing.
-
-Note that you may have to suspend your miner to avoid hitting the
-maximum amount of deposited cells. You can do this with Ctrl-Z. Type
-‘fg’ followed by enter to continue running it later.
-
 ##### Prepare #####
 
 Prepare a cell for withdrawal from the DAO:
 
 ``` sh
-$ ckb-cli dao prepare --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.0001 --path "m/44'/309'/0'/1/0"
+CKB> dao prepare --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.0001 --path "m/44'/309'/0'/1/0"
 0xae91f2a310f2cfeada391e5f76d0addcc56d99c91a39734c292c930a1cfc67c2
 ```
 
@@ -431,7 +381,7 @@ $ ckb-cli dao prepare --from-account <ledger-id> --out-point <tx_hash>-<output_i
 Get prepared cells:
 
 ``` sh
-$ ckb-cli dao query-prepared-cells --address <ledger-address>
+CKB> dao query-prepared-cells --address <ledger-address>
 live_cells:
   - capacity: 10500000000
     data_bytes: 8
@@ -456,7 +406,7 @@ Remember the value above for one of live cells under “tx\_hash” and “outpu
 Withdraw a prepared cell:
 
 ``` sh
-$ ckb-cli dao withdraw --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.00001 --path "m/44'/309'/0'/1/0"
+CKB> dao withdraw --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.00001 --path "m/44'/309'/0'/1/0"
 ```
 
 At this point, either
@@ -484,12 +434,12 @@ $ ckb miner
 
 ## Invalid cell status ##
 
-This can happen when you have switched networks between ckb-cli usage.
-If this is the case, it can be fixed by clearing your cache. This can
-be done on the command line.
+This can happen when you have switched networks between running
+ckb-cli. If this is the case, it can be fixed by clearing your cache.
+This can be done on the command line.
 
-First, quit out of ckb-cli so that we can modify our index. Then,
-clear your cache with:
+First, quit out of ckb-cli so that we can modify our index by typing
+‘quit’. Then, clear your cache with:
 
 ``` sh
 $ rm -rf $HOME/.ckb-cli/index-v1/
