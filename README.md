@@ -415,6 +415,47 @@ JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c7
 ```
 will be reported, showing that the prepared cell is not yet available to withdraw, or a transaction hash if it is.
 
+# Running the testnet #
+
+You can also run the above commands in the testnet instead of a
+devnet. This allows you to make transactions that are sent to the
+wider test network. Note that this means you will have to wait the 30
+day period for doing a DAO withdraw.
+
+Get ckb in your shell:
+
+``` sh
+$ nix run -f ./nix/dep/ckb
+```
+
+Create a testnet directory
+
+```
+$ mkdir -p testnet
+$ cd testnet/
+```
+
+Get aggron.toml:
+
+``` sh
+$ curl -o aggron.toml https://gist.githubusercontent.com/doitian/573513c345165c0fe4f3504ebc1c8f9f/raw/3032bed68550e0a50e91df2c706481e80b579c70/aggron.toml
+```
+
+Init the testnet toml:
+
+``` sh
+$ ckb init --import-spec ./aggron.toml --chain testnet
+```
+
+Run the node with:
+
+```
+$ ckb run
+```
+
+Leave this open in a separate terminal as you continue on the next steps.
+
+
 # Troubleshooting #
 
 ## Application Build Failure ##
