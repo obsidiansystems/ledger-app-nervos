@@ -420,7 +420,7 @@ will be reported, showing that the prepared cell is not yet available to withdra
 You can also run the above commands in the testnet instead of a
 devnet. This allows you to make transactions that are sent to the
 wider test network. Note that this means you will have to wait the 30
-day period for 
+day period for doing a DAO withdraw.
 
 Get ckb in your shell:
 
