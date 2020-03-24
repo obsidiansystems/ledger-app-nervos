@@ -93,7 +93,8 @@ doSign() {
 
 promptsCheck() {
   if [ "$DEBUG" != "1" ]; then return 0; fi;
-  diff <(egrep -A2 'Prompt [0-9]:' speculos.log | tail -n $(($1*3))) $2
+  egrep -A2 'Prompt [0-9]:' speculos.log | tail -n $(($1*3))
+  diff $2 <(egrep -A2 'Prompt [0-9]:' speculos.log | tail -n $(($1*3)))
 }
 
 rejectionMessageCheck() {
