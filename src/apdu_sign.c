@@ -321,6 +321,7 @@ void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ k
 void hash_32_as_64(cx_blake2b_t *hash_state, uint32_t num) {
     uint64_t val=num;
     cx_hash((cx_hash_t *)hash_state, 0, (uint8_t*) &val, sizeof(val), NULL, 0);
+    PRINTF("doublehash int: %.*h\n", sizeof(val), &val);
 }
 
 void add_default_first_witnessarg(cx_blake2b_t *double_state) {
@@ -334,6 +335,7 @@ void add_default_first_witnessarg(cx_blake2b_t *double_state) {
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
             cx_hash((cx_hash_t *)double_state, 0, self_witness, sizeof(self_witness), NULL, 0);
+            PRINTF("Default first witness: %.*h\n", sizeof(self_witness), self_witness);
 }
 void add_first_witnessarg(cx_blake2b_t *double_state, mol_seg_t witness_bytes) {
                         uint32_t lock_length;
@@ -358,6 +360,7 @@ void add_first_witnessarg(cx_blake2b_t *double_state, mol_seg_t witness_bytes) {
 
                         hash_32_as_64(double_state, new_witness_header[0]);
                         cx_hash((cx_hash_t *)double_state, 0, (uint8_t*) new_witness_header, 16, NULL, 0);
+                        PRINTF("First witness: %.*h%.*h%.*h\n", sizeof(new_witness_header), new_witness_header, 69, zero_bytes, witness_bytes.size-after_lock_offset, witness_bytes.ptr+after_lock_offset);
 
                         cx_hash((cx_hash_t *)double_state, 0, zero_bytes, 69, NULL, 0);
 
@@ -407,6 +410,7 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
     cx_blake2b_init2(&double_state, SIGN_HASH_SIZE * 8, NULL, 0, (uint8_t *)blake2b_personalization,
                      sizeof(blake2b_personalization) - 1);
     cx_hash((cx_hash_t *)&double_state, 0, G.final_hash, sizeof(G.final_hash), NULL, 0);
+    PRINTF("Txn hash: %.*h\n", sizeof(G.final_hash), G.final_hash);
 
     { // New context for stack.
 
@@ -451,6 +455,7 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
                     } else {
                         hash_32_as_64(&double_state, witness_bytes.size);
                         cx_hash((cx_hash_t *)&double_state, 0, witness_bytes.ptr, witness_bytes.size, NULL, 0);
+                        PRINTF("Witness: %.*h\n", witness_bytes.size, witness_bytes.ptr);
                     }
                 }
                 G.maybe_transaction.v.group_input_count++;
@@ -479,6 +484,7 @@ void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_
 
         // We're done with the final double_state; hash it into the final hash.
         cx_hash((cx_hash_t *)&double_state, CX_LAST, NULL, 0, G.final_hash, sizeof(G.final_hash));
+	PRINTF("Final (double) hash: %.*h\n", sizeof(G.final_hash), G.final_hash);
 
         mol_seg_t outputs = MolReader_RawTransaction_get_outputs(&seg);
         mol_seg_t outputs_data = MolReader_RawTransaction_get_outputs_data(&seg);
@@ -620,6 +626,8 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
         // Default the change lock arg to the one we're currently going to sign for
         memcpy(&G.change_lock_arg, G.current_lock_arg, 20);
 
+	PRINTF("First: %.*h\n", buff_size, buff);
+
 
         return finalize_successful_send(0);
     }
@@ -629,6 +637,8 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
         read_bip32_path(&change_key, buff, buff_size);
 
         prep_lock_arg(&change_key, &G.change_lock_arg);
+	
+	PRINTF("Change: %.*h\n", buff_size, buff);
 
         return finalize_successful_send(0);
     }
@@ -662,6 +672,8 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
             G.maybe_transaction.is_valid = false;
 
             if (is_ctxd) {
+	        PRINTF("Context: %.*h\n", G.to_parse_fill_idx, G.to_parse);
+
                 if(G.context_transactions_fill_idx>=MAX_CONTEXT_TRANSACTIONS) {
                     G.maybe_transaction.parse_failed = true;
                     G.maybe_transaction.is_valid = false;
@@ -676,6 +688,7 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
                 G.to_parse_fill_idx = 0;
                 G.hash_state.initialized = false;
             } else {
+	        PRINTF("Txn: %.*h\n", G.to_parse_fill_idx, G.to_parse);
                 parse_operation(&G.maybe_transaction, &G.key, G.to_parse, G.to_parse_fill_idx);
                 if (G.maybe_transaction.is_valid == false && (p1 & P1_NO_FALLBACK)) {
                     if(p1 & P1_NO_FALLBACK) {
