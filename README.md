@@ -217,7 +217,7 @@ then modify the value at the end of ckb-miner.toml to be small:
 value = 20
 ```
 
-and also add this block to the end of the file:
+and also add this block to the end of ckb.toml:
 
 ```
 [block_assembler]
@@ -226,8 +226,6 @@ args = "0xb57dd485a1b0c0a57c377e896a1a924d7ed02ab9"
 hash_type = "type"
 message = "0x"
 ```
-
-providing some lock argument in place of args.
 
 finally, in specs/dev.toml, set genesis\_epoch\_length to 1 and
 uncomment permanent\_difficulty\_in\_dummy:
@@ -240,7 +238,7 @@ permanent_difficulty_in_dummy = true
 ```
 
 and also pick one of the genesis issuance cells and set args to a lock
-arg from your newly created account:
+arg from password-protected account above:
 
 ```
 [[genesis.issued_cells]]
