@@ -19,6 +19,8 @@ while getopts "hsv" opt; do
       ;;
     v)
       speculos_output_cmd="tee"
+      ;;
+    *) ;;
   esac
 done
 
