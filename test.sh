@@ -31,9 +31,7 @@ if [ -n "$LEDGER_PROXY_PORT" ] ; then
   speculos --display headless bin/app.elf --button-port 5667 --deterministic-rng 42 |& $speculos_output_cmd $speculos_output_file &
   trap killSpeculos EXIT
 else
-  # Should get this into the shell.
-  # usbtool -v 0x2c97 log
-  echo "Don't have usbtool"
+  nix run -f ./nix/dep/usbtool.nix -c usbtool -v 0x2c97 log
 fi
 
 appPid=$!
