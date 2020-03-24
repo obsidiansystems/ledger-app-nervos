@@ -27,9 +27,7 @@ blake2b_lock_hash () {
 
 check_signature () {
   sig=$(tr -d -c '[:xdigit:]' <<<"$3")
-  echo "$sig" >> sigval
   r_val=$(head -c64 <<<"$sig")
-  echo "$r_val" > RVAL_PRE
   s_val=$(tail -c+65 <<<"$sig" | head -c64)
 
   # Check the high bit, add a zero byte if needed.
@@ -40,12 +38,9 @@ check_signature () {
   slen=$((${#s_val}/2))
 
   rfmt="02 $(printf "%x" $rlen) ${r_val}"
-  echo $rfmt > RFMT
   sfmt="02 $(printf "%x" $slen) ${s_val}"
-  echo $sfmt > SFMT
 
   SIG="30 $(printf "%x" $(($rlen+$slen+4))) $rfmt $sfmt"
-  echo $SIG > sigdump
 
   xxd -r -ps <<<"$2" | tee dumpfile0 | blake2b_p | tee hashfile | xxd -p -r | openssl pkeyutl -verify -pubin -inkey <(get_key_in_pem $1) -sigfile <(xxd -r -ps <<<"$SIG")
 }
