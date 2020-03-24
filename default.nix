@@ -39,7 +39,7 @@ let
       };
     };
 
-  src = pkgs.lib.sources.sourceFilesBySuffices (pkgs.lib.sources.cleanSource ./.) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".pem"];
+  src = pkgs.lib.sources.sourceFilesBySuffices (pkgs.lib.sources.cleanSource ./.) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".der"];
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
 
