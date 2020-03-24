@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 export LEDGER_PROXY_ADDRESS=127.0.0.1 LEDGER_PROXY_PORT=9999
 speculos_output_file="speculos.log"
