@@ -22,7 +22,7 @@ while getopts "hsv" opt; do
 done
 
 killSpeculos() {
-  echo rRrRrlRL > /dev/tcp/localhost/5667
+  echo rRrRrRrRrlRLrRrRrRrRrlRLrlRL > /dev/tcp/localhost/5667
   sleep 0.3
   kill $appPid >& /dev/null
 }
