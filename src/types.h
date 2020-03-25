@@ -163,8 +163,14 @@ struct parsed_transaction {
         ____a_ < ____b_ ? ____a_ : ____b_;                                                                             \
     })
 
+#define ADDRESS_TYPE_MASK 1
+typedef enum {
+	ADDRESS_MAINNET=0,
+	ADDRESS_TESTNET
+} address_type_t;
+
 typedef struct {
 	bool initialized;
-	bool show_testnet;
+	address_type_t address_type;
 	char network_prompt[10];
 } nvram_data;

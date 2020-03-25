@@ -15,7 +15,7 @@
 #include <string.h>
 
 #define G global.apdu.u.pubkey
-#define GP global.apdu.priv
+#define GPriv global.apdu.priv
 
 static bool pubkey_ok(void) {
     delayed_send(provide_pubkey(G_io_apdu_buffer, &G.public_key));
@@ -62,7 +62,8 @@ void render_pkh(char *const out, size_t const out_size,
                       1)) {
         THROW(EXC_MEMORY_ERROR);
     }
-    if (!bech32_encode(out, out_size, N_data.show_testnet?"ckt":"ckb", base32_buf, base32_len)) {
+    static const char hrbs[][3] = {"ckb", "ckt"};
+    if (!bech32_encode(out, out_size, hrbs[N_data.address_type&ADDRESS_TYPE_MASK], base32_buf, base32_len)) {
         THROW(EXC_MEMORY_ERROR);
     }
 }
@@ -80,12 +81,12 @@ __attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callba
     };
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
     register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
-    register_ui_callback(ADDRESS_INDEX, render_pkh, &GP.prefixed_public_key_hash);
+    register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.prefixed_public_key_hash);
     ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
-_Static_assert(sizeof GP.prefixed_public_key_hash == 22, "address will be wrong length");
-_Static_assert(sizeof GP.prefixed_public_key_hash.entire == 22, "address will be wrong length");
+_Static_assert(sizeof GPriv.prefixed_public_key_hash == 22, "address will be wrong length");
+_Static_assert(sizeof GPriv.prefixed_public_key_hash.entire == 22, "address will be wrong length");
 
 size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     const uint8_t *const dataBuffer = G_io_apdu_buffer + OFFSET_CDATA;
@@ -100,11 +101,11 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     generate_public_key(&G.public_key, &G.key);
 
     // write tags
-    GP.prefixed_public_key_hash.address_type_is_short = 0x01;
-    GP.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
+    GPriv.prefixed_public_key_hash.address_type_is_short = 0x01;
+    GPriv.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
 
     // write lock arg
-    generate_lock_arg_for_pubkey(&G.public_key, &GP.prefixed_public_key_hash.hash);
+    generate_lock_arg_for_pubkey(&G.public_key, &GPriv.prefixed_public_key_hash.hash);
 
     // instruction == INS_PROMPT_PUBLIC_KEY || instruction == INS_AUTHORIZE_BAKING
     // INS_PROMPT_PUBLIC_KEY

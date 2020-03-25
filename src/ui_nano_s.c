@@ -273,14 +273,14 @@ void switch_network(__attribute__((unused)) unsigned int cb) {
     static const nvram_data data[]={
       {
         true,
-        true,
+        ADDRESS_TESTNET,
         "testnet"
       }, {
         true,
-        false,
+        ADDRESS_MAINNET,
         "mainnet"
       }};
-    nvm_write((void*)&N_data, (void*)&data[N_data.show_testnet&1], sizeof(N_data));
+    nvm_write((void*)&N_data, (void*)&data[N_data.address_type&1], sizeof(N_data));
     UX_MENU_DISPLAY(0, configuration_menu_data, NULL);
 }
 
