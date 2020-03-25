@@ -9,6 +9,8 @@ let
 
   blake2_simd = import ./nix/dep/b2sum.nix { };
 
+  usbtool = import ./nix/dep/usbtool.nix { };
+
   targets =
     {
       s = rec {
@@ -59,6 +61,7 @@ let
           pkgs.xxd
           pkgs.openssl
           blake2_simd
+          usbtool
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
