@@ -90,7 +90,7 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     THROW(EXC_WRONG_LENGTH);
                 }
 
-		int canary=app_stack_canary;
+		unsigned int canary=app_stack_canary;
 
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
                 apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
