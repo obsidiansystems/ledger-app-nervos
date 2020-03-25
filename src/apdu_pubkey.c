@@ -62,7 +62,7 @@ void render_pkh(char *const out, size_t const out_size,
                       1)) {
         THROW(EXC_MEMORY_ERROR);
     }
-    static const char hrbs[][3] = {"ckb", "ckt"};
+    static const char hrbs[][4] = {"ckb", "ckt"};
     if (!bech32_encode(out, out_size, hrbs[N_data.address_type&ADDRESS_TYPE_MASK], base32_buf, base32_len)) {
         THROW(EXC_MEMORY_ERROR);
     }
