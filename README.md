@@ -20,6 +20,12 @@ $ nix-shell -A wallet.s --run 'make SHELL=sh all'
 $ nix-shell -A wallet.s --run 'make SHELL=sh load'
 ```
 
+### Release build and load ###
+
+``` sh
+./nix/install.sh s
+```
+
 ## Developing on the Ledger Nano X ##
 
 ### Build ###
