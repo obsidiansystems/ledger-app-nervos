@@ -73,7 +73,6 @@ sendTransaction() {
   bytes=$(printf "%02x" $(($(wc -c <<<"$toSend")/2)))
   echo TO SEND: $toSend
   if [ -z "$2" ]; then
-    echo "8003c100$bytes$toSend" "rR"
     apdu_with_clicks "8003c100$bytes$toSend" "rR"
 
   elif [ "$2" = "--expectReject" ]; then
