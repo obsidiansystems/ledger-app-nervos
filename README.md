@@ -20,12 +20,6 @@ $ nix-shell -A wallet.s --run 'make SHELL=sh all'
 $ nix-shell -A wallet.s --run 'make SHELL=sh load'
 ```
 
-### Release build and load ###
-
-``` sh
-./nix/install.sh s
-```
-
 ## Developing on the Ledger Nano X ##
 
 ### Build ###
@@ -120,6 +114,15 @@ Now, make sure the Ledger is:
 - connected
 - unlocked
 - has the “Nervos” app open (shows “Use wallet to view accounts”)
+
+Finally, run
+
+``` sh
+./check-installed-version.sh
+git rev-parse --short HEAD
+```
+
+and verify that the results match.
 
 ### List Ledger Wallets ###
 
