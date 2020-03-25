@@ -37,10 +37,10 @@ check_signature () {
   rlen=$((${#r_val}/2))
   slen=$((${#s_val}/2))
 
-  rfmt="02 $(printf "%x" $rlen) ${r_val}"
-  sfmt="02 $(printf "%x" $slen) ${s_val}"
+  rfmt="02 $(printf "%02x" $rlen) ${r_val}"
+  sfmt="02 $(printf "%02x" $slen) ${s_val}"
 
-  SIG="30 $(printf "%x" $(($rlen+$slen+4))) $rfmt $sfmt"
+  SIG="30 $(printf "%02x" $(($rlen+$slen+4))) $rfmt $sfmt"
 
   xxd -r -ps <<<"$2" | tee dumpfile0 | blake2b_p | tee hashfile | xxd -p -r | openssl pkeyutl -verify -pubin -inkey <(get_key_in_pem $1) -sigfile <(xxd -r -ps <<<"$SIG")
 }
@@ -63,10 +63,14 @@ sendTransaction() {
     # grep -q "<= b''9000" <(echo "$output")
     toSend="$(tail -c+461 <<<"$toSend")";
     bytesToSign=$(($(wc -c <<<"$toSend")/2))
+    echo $bytesToSign
   done
-  bytes=$(printf "%x" $(($(wc -c <<<"$toSend")/2)))
+  bytes=$(printf "%02x" $(($(wc -c <<<"$toSend")/2)))
+  echo TO SEND: $toSend
   if [ -z "$2" ]; then
+    echo "8003c100$bytes$toSend" "rR"
     apdu_with_clicks "8003c100$bytes$toSend" "rR"
+    echo "APDUed"
   else
     apdu_fixed "8003e100$bytes$toSend"
   fi
@@ -86,7 +90,7 @@ doSign() {
     toSend="$(tail -c+461 <<<"$toSend")";
     bytesToSign=$(($(wc -c <<<"$toSend")/2))
   done
-  bytes=$(printf "%x" $(($(wc -c <<<"$toSend")/2)))
+  bytes=$(printf "%02x" $(($(wc -c <<<"$toSend")/2)))
   run apdu_with_clicks "8003c100$bytes$toSend" "rR"
 }
 
