@@ -7,11 +7,16 @@ apdu_fixed () {
   echo "$*" | apdu | sed 's/HID //'
 }
 
+clicks() {
+  echo "$1" > /dev/tcp/localhost/5667
+}
+
 apdu_with_clicks () {
   echo "$1" | apdu &
   sleep 1
-  echo "$2" > /dev/tcp/localhost/5667
+  clicks "$2"
 }
+
 
 
 COMMIT="$(echo "$GIT_DESCRIBE" | sed 's/-dirty/*/')"
@@ -70,8 +75,10 @@ sendTransaction() {
   if [ -z "$2" ]; then
     echo "8003c100$bytes$toSend" "rR"
     apdu_with_clicks "8003c100$bytes$toSend" "rR"
-    echo "APDUed"
-  else
+
+  elif [ "$2" = "--expectReject" ]; then
+    apdu_fixed "8003c100$bytes$toSend"
+  else # [ "$2" = "--isCtxd" ]
     apdu_fixed "8003e100$bytes$toSend"
   fi
 }

@@ -85,14 +85,6 @@ typedef struct {
     bip32_path_t key;
     cx_ecfp_public_key_t public_key;
     cx_blake2b_t hash_state;
-    union {
-        uint8_t entire[2 + sizeof(standard_lock_arg_t)];
-        struct {
-            uint8_t address_type_is_short;
-            uint8_t key_hash_type_is_sighash;
-            standard_lock_arg_t hash;
-        };
-    } prefixed_public_key_hash;
 } apdu_pubkey_state_t;
 
 typedef struct {
@@ -137,8 +129,10 @@ typedef struct {
 
         struct {
             struct priv_generate_key_pair generate_key_pair;
+	    prefixed_public_key_hash_t prefixed_public_key_hash;
         } priv;
     } apdu;
+    nvram_data new_data;
 } globals_t;
 
 extern globals_t global;
@@ -166,17 +160,25 @@ static inline void throw_stack_size() {
 void calculate_baking_idle_screens_data(void);
 void update_baking_idle_screens(void);
 
+#ifdef TARGET_NANOX
+    extern nvram_data const N_data_real;
+#   define N_data (*(volatile nvram_data *)PIC(&N_data_real))
+#else
+    extern nvram_data N_data_real;
+#   define N_data (*(nvram_data*)PIC(&N_data_real))
+#endif
+
+
 // Properly updates NVRAM data to prevent any clobbering of data.
 // 'out_param' defines the name of a pointer to the nvram_data struct
 // that 'body' can change to apply updates.
 #define UPDATE_NVRAM(out_name, body)                                                                                   \
     ({                                                                                                                 \
-        nvram_data *const out_name = &global.apdu.baking_auth.new_data;                                                \
-        memcpy(&global.apdu.baking_auth.new_data, (nvram_data const *const) & N_data,                                  \
-               sizeof(global.apdu.baking_auth.new_data));                                                              \
+        nvram_data *const out_name = &global.new_data;                                                \
+        memcpy(&global.new_data, (nvram_data const *const) & N_data,                                  \
+               sizeof(global.new_data));                                                              \
         body;                                                                                                          \
-        nvm_write((void *)&N_data, &global.apdu.baking_auth.new_data, sizeof(N_data));                                 \
-        update_baking_idle_screens();                                                                                  \
+        nvm_write((void *)&N_data, &global.new_data, sizeof(N_data));                                 \
     })
 
 #ifdef NERVOS_DEBUG

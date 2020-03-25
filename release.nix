@@ -6,4 +6,5 @@ in {
   debug-build = (import ./. {debug=1;}).nano.s.release.all;
   ckb-cli = import ./nix/dep/ckb-cli {};
   ckb = import ./nix/dep/ckb {};
+  usbtool = import ./nix/dep/usbtool.nix {};
 }
