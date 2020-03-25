@@ -2,17 +2,11 @@ Prompt 0:
 Confirm DAO
 Withdrawal
 Prompt 1:
-Amount
-102.11229002
-Prompt 2:
-Destination
-AD9144F3B893D1E46AAF31B9F0866EC44A4BF516
-Prompt 3:
 Deposit
-102.11223344
-Prompt 4:
+1000
+Prompt 2:
 Return
-0.00005658
-Prompt 5:
+2.89011952
+Prompt 3:
 Source
-4CB6874775D45DC34D8FDEF092AA566F235D7C20
+ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7sugcvv9

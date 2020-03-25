@@ -12,5 +12,13 @@ __attribute__((noreturn)) void app_main(void) {
     global.handlers[APDU_INS(INS_PROMPT_PUBLIC_KEY)] = handle_apdu_get_public_key;
     global.handlers[APDU_INS(INS_SIGN)] = handle_apdu_sign;
     global.handlers[APDU_INS(INS_GIT)] = handle_apdu_git;
+    if(!N_data.initialized) {
+	    nvram_data data={
+		    true,
+		    false,
+		    "mainnet"
+	    };
+	    nvm_write((void*)&N_data, (void*)&data, sizeof(N_data));
+    }
     main_loop(global.handlers, sizeof(global.handlers));
 }

@@ -15,6 +15,7 @@
 #include <string.h>
 
 #define G global.apdu.u.pubkey
+#define GPriv global.apdu.priv
 
 static bool pubkey_ok(void) {
     delayed_send(provide_pubkey(G_io_apdu_buffer, &G.public_key));
@@ -49,53 +50,43 @@ static void bip32_path_to_string(char *const out, size_t const out_size, apdu_pu
     }
 }
 
-static void render_pkh(const char *const hrb, char *const out, size_t const out_size,
-                       apdu_pubkey_state_t const *const pubkey) {
+void render_pkh(char *const out, size_t const out_size,
+                       prefixed_public_key_hash_t const *const pubkey) {
     const size_t base32_max = 256;
     uint8_t base32_buf[base32_max];
     size_t base32_len = 0;
     if (!convert_bits(base32_buf, base32_max, &base32_len,
                       5,
-                      pubkey->prefixed_public_key_hash.entire, sizeof(pubkey->prefixed_public_key_hash.entire),
+                      pubkey->entire, sizeof(pubkey->entire),
                       8,
                       1)) {
         THROW(EXC_MEMORY_ERROR);
     }
-    if (!bech32_encode(out, out_size, hrb, base32_buf, base32_len)) {
+    static const char hrbs[][3] = {"ckb", "ckt"};
+    if (!bech32_encode(out, out_size, hrbs[N_data.address_type&ADDRESS_TYPE_MASK], base32_buf, base32_len)) {
         THROW(EXC_MEMORY_ERROR);
     }
-}
-
-static void render_pkh_mainnet(char *const out, size_t const out_size, apdu_pubkey_state_t const *const pubkey) {
-    render_pkh("ckb", out, out_size, pubkey);
-}
-
-static void render_pkh_testnet(char *const out, size_t const out_size, apdu_pubkey_state_t const *const pubkey) {
-    render_pkh("ckt", out, out_size, pubkey);
 }
 
 __attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callback_t cxl_cb) {
     static size_t const TYPE_INDEX = 0;
     static size_t const DRV_PATH_INDEX = 1;
-    static size_t const MAIN_NET_INDEX = 2;
-    static size_t const TEST_NET_INDEX = 3;
+    static size_t const ADDRESS_INDEX = 2;
 
     static const char *const pubkey_labels[] = {
         PROMPT("Provide"),
         PROMPT("Derivation Path"),
-        PROMPT("Mainnet Address"),
-        PROMPT("Testnet Address"),
+        PROMPT("Address"),
         NULL,
     };
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
     register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
-    register_ui_callback(MAIN_NET_INDEX, render_pkh_mainnet, &G);
-    register_ui_callback(TEST_NET_INDEX, render_pkh_testnet, &G);
+    register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.prefixed_public_key_hash);
     ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
-_Static_assert(sizeof G.prefixed_public_key_hash == 22, "address will be wrong length");
-_Static_assert(sizeof G.prefixed_public_key_hash.entire == 22, "address will be wrong length");
+_Static_assert(sizeof GPriv.prefixed_public_key_hash == 22, "address will be wrong length");
+_Static_assert(sizeof GPriv.prefixed_public_key_hash.entire == 22, "address will be wrong length");
 
 size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     const uint8_t *const dataBuffer = G_io_apdu_buffer + OFFSET_CDATA;
@@ -110,11 +101,11 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     generate_public_key(&G.public_key, &G.key);
 
     // write tags
-    G.prefixed_public_key_hash.address_type_is_short = 0x01;
-    G.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
+    GPriv.prefixed_public_key_hash.address_type_is_short = 0x01;
+    GPriv.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
 
     // write lock arg
-    generate_lock_arg_for_pubkey(&G.public_key, &G.prefixed_public_key_hash.hash);
+    generate_lock_arg_for_pubkey(&G.public_key, &GPriv.prefixed_public_key_hash.hash);
 
     // instruction == INS_PROMPT_PUBLIC_KEY || instruction == INS_AUTHORIZE_BAKING
     // INS_PROMPT_PUBLIC_KEY

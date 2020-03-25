@@ -96,8 +96,8 @@ static size_t sign_complete(uint8_t instruction) {
         static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"),      PROMPT("Fee"),
                                                           PROMPT("Source"),  PROMPT("Destination"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
-        register_ui_callback(SOURCE_INDEX, lock_arg_to_string, &G.maybe_transaction.v.source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_string, &G.maybe_transaction.v.destination);
+        register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
 
@@ -113,8 +113,8 @@ static size_t sign_complete(uint8_t instruction) {
         static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"), PROMPT("Amount"), PROMPT("Fee"),
                                                           PROMPT("Source"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
-        register_ui_callback(SOURCE_INDEX, lock_arg_to_string, &G.maybe_transaction.v.source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_string, &G.maybe_transaction.v.destination);
+        register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
 
@@ -137,9 +137,9 @@ static size_t sign_complete(uint8_t instruction) {
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Prepare");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(SOURCE_INDEX, lock_arg_to_string, &G.maybe_transaction.v.dao_source);
-        register_ui_callback(PAYER_INDEX, lock_arg_to_string, &G.maybe_transaction.v.source);
-        register_ui_callback(CHANGE_TO_INDEX, lock_arg_to_string, &G.maybe_transaction.v.destination);
+        register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.dao_source);
+        register_ui_callback(PAYER_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
+        register_ui_callback(CHANGE_TO_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
         register_ui_callback(CHANGE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
 
         ui_prompt(G.maybe_transaction.v.flags & HAS_CHANGE_ADDRESS ? prepare_prompts_full : prepare_prompts_no_change,
@@ -159,7 +159,7 @@ static size_t sign_complete(uint8_t instruction) {
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Withdrawal");
         register_ui_callback(DEPOSIT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
         register_ui_callback(RETURN_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(SOURCE_INDEX, lock_arg_to_string, &G.maybe_transaction.v.dao_source);
+        register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.dao_source);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 

@@ -106,6 +106,16 @@ typedef struct public_key_hash {
     char *hash_ptr; // caching.
 } public_key_hash_t;
 
+typedef union {
+    uint8_t entire[2 + sizeof(standard_lock_arg_t)];
+    struct {
+        uint8_t address_type_is_short;
+        uint8_t key_hash_type_is_sighash;
+        standard_lock_arg_t hash;
+    };
+} prefixed_public_key_hash_t;
+
+
 #define HAS_DESTINATION_ADDRESS 0x01
 #define HAS_CHANGE_ADDRESS      0x02
 
@@ -152,3 +162,15 @@ struct parsed_transaction {
         __typeof__(b) ____b_ = (b);                                                                                    \
         ____a_ < ____b_ ? ____a_ : ____b_;                                                                             \
     })
+
+#define ADDRESS_TYPE_MASK 1
+typedef enum {
+	ADDRESS_MAINNET=0,
+	ADDRESS_TESTNET
+} address_type_t;
+
+typedef struct {
+	bool initialized;
+	address_type_t address_type;
+	char network_prompt[10];
+} nvram_data;

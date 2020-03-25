@@ -2,6 +2,7 @@
 
 #include "apdu.h"
 #include "keys.h"
+#include "globals.h"
 
 #include <string.h>
 
@@ -179,4 +180,15 @@ void buffer_to_hex(char *const out, size_t const out_size, buffer_t const *const
     check_null(in);
     buffer_t const *const src = (buffer_t const *)PIC(in);
     bin_to_hex(out, out_size, src->bytes, src->length);
+}
+
+void lock_arg_to_address(char *const dest, size_t const buff_size, uint8_t const *const lockarg) {
+    // write tags
+    global.apdu.priv.prefixed_public_key_hash.address_type_is_short = 0x01;
+    global.apdu.priv.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
+
+    // write lock arg
+    memcpy(&global.apdu.priv.prefixed_public_key_hash.hash, lockarg, sizeof(global.apdu.priv.prefixed_public_key_hash.hash));
+
+    render_pkh(dest, buff_size, &global.apdu.priv.prefixed_public_key_hash);
 }

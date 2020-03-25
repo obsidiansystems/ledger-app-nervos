@@ -3,10 +3,10 @@ Confirm DAO
 Deposit
 Prompt 1:
 Amount
-10
+1000
 Prompt 2:
 Fee
-0
+0.01
 Prompt 3:
 Source
-A3912C9414BFD45B830478C05385DFA4D560C859
+ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7sugcvv9

@@ -24,7 +24,7 @@ while getopts "hsv" opt; do
 done
 
 killSpeculos() {
-  { echo rRrRrlRL > /dev/tcp/localhost/5667; } > /dev/null 2>&1 || :
+  { echo rRrRrRrRrlRLrRrRrRrRrlRLrlRL > /dev/tcp/localhost/5667; } > /dev/null 2>&1 || :
   sleep 0.3
   kill $appPid >& /dev/null
 }
@@ -41,7 +41,7 @@ appPid=$!
 sleep 1
 echo "Starting bats"
 if [ -n "$DEBUG" ] ; then echo "In debug mode (testing prompts)"; fi;
-# bats -p tests/
+bats -p tests/
 bats_result=$?
 echo "Done with bats"
 
