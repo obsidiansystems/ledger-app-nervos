@@ -18,11 +18,13 @@ while getopts "hsv" opt; do
       ;;
     v)
       speculos_output_cmd="tee"
+      ;;
+    *) ;;
   esac
 done
 
 killSpeculos() {
-  echo rRrRrRrRrlRLrRrRrRrRrlRLrlRL > /dev/tcp/localhost/5667
+  { echo rRrRrRrRrlRLrRrRrRrRrlRLrlRL > /dev/tcp/localhost/5667; } > /dev/null 2>&1 || :
   sleep 0.3
   kill $appPid >& /dev/null
 }
@@ -31,9 +33,7 @@ if [ -n "$LEDGER_PROXY_PORT" ] ; then
   speculos --display headless bin/app.elf --button-port 5667 --deterministic-rng 42 |& $speculos_output_cmd $speculos_output_file &
   trap killSpeculos EXIT
 else
-  # Should get this into the shell.
-  # usbtool -v 0x2c97 log
-  echo "Don't have usbtool"
+  usbtool -v 0x2c97 log
 fi
 
 appPid=$!

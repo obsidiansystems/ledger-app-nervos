@@ -217,7 +217,7 @@ then modify the value at the end of ckb-miner.toml to be small:
 value = 20
 ```
 
-and also add this block to the end of the file:
+and also add this block to the end of ckb.toml:
 
 ```
 [block_assembler]
@@ -226,8 +226,6 @@ args = "0xb57dd485a1b0c0a57c377e896a1a924d7ed02ab9"
 hash_type = "type"
 message = "0x"
 ```
-
-providing some lock argument in place of args.
 
 finally, in specs/dev.toml, set genesis\_epoch\_length to 1 and
 uncomment permanent\_difficulty\_in\_dummy:
@@ -240,7 +238,7 @@ permanent_difficulty_in_dummy = true
 ```
 
 and also pick one of the genesis issuance cells and set args to a lock
-arg from your newly created account:
+arg from password-protected account above:
 
 ```
 [[genesis.issued_cells]]
@@ -414,6 +412,47 @@ At this point, either
 JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c71b5dc71fcbf1638bb72c8fb16f8fffdfd5172456a56167fea0a3)))
 ```
 will be reported, showing that the prepared cell is not yet available to withdraw, or a transaction hash if it is.
+
+# Running the testnet #
+
+You can also run the above commands in the testnet instead of a
+devnet. This allows you to make transactions that are sent to the
+wider test network. Note that this means you will have to wait the 30
+day period for doing a DAO withdraw.
+
+Get ckb in your shell:
+
+``` sh
+$ nix run -f ./nix/dep/ckb
+```
+
+Create a testnet directory
+
+```
+$ mkdir -p testnet
+$ cd testnet/
+```
+
+Get aggron.toml:
+
+``` sh
+$ curl -o aggron.toml https://gist.githubusercontent.com/doitian/573513c345165c0fe4f3504ebc1c8f9f/raw/3032bed68550e0a50e91df2c706481e80b579c70/aggron.toml
+```
+
+Init the testnet toml:
+
+``` sh
+$ ckb init --import-spec ./aggron.toml --chain testnet
+```
+
+Run the node with:
+
+```
+$ ckb run
+```
+
+Leave this open in a separate terminal as you continue on the next steps.
+
 
 # Troubleshooting #
 
