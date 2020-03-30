@@ -146,7 +146,7 @@ Get the public key:
 CKB> account extended-address --path "m/44'/309'/0'/1/0" --account-id <ledger-id>
 ```
 
-This should show up on the ledger as (in 4 screens):
+This should show up on the ledger as (in 3 screens):
 
 ``` text
 Provide 
@@ -160,6 +160,8 @@ Derivation Path
 Mainnet Address:
 ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
 ```
+If you've changed the Ledger's configuration to show testnet address, the last screen will instead look like this:
+
 ``` text
 Testnet Address:
 ckt1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsa64fqt
