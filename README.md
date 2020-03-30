@@ -363,7 +363,7 @@ live_cells:
 total_capacity: 10200000000
 ```
 
-Remember the values above for one of live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `prepare` operation below which prepares a cell for withdrawal from the NervosDAO.
+Remember the values above for one of the live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `prepare` operation below which prepares a cell for withdrawal from the NervosDAO.
 
 ##### Prepare #####
 
