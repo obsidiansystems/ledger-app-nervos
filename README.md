@@ -351,7 +351,23 @@ CKB> dao deposit \
     --tx-fee 0.00001 \
     --path "m/44'/309'/0'/1/0"
 ```
-
+Prompts on the Ledger device are as follows:
+``` text
+Confirm DAO
+Deposit
+```
+``` text
+Amount
+102
+```
+``` text
+Fee
+0.00001
+```
+``` text
+Source
+ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
+```
 ##### Get deposited cells #####
 
 Get deposited cells:
@@ -381,8 +397,32 @@ Remember the value above for one of live cells under “tx\_hash” and “outpu
 Prepare a cell for withdrawal from the DAO:
 
 ``` sh
-CKB> dao prepare --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.0001 --path "m/44'/309'/0'/1/0"
-0xae91f2a310f2cfeada391e5f76d0addcc56d99c91a39734c292c930a1cfc67c2
+CKB> dao prepare \
+    --from-account <ledger-id> \
+    --out-point <tx_hash>-<output_index> \
+    --tx-fee 0.0001 \
+    --path "m/44'/309'/0'/1/0"
+```
+Prompts on the Ledger device are as follows:
+``` text
+Confirm DAO
+Prepare
+```
+``` text
+Amount
+102
+```
+``` text
+Fee
+0.00001
+```
+``` text
+Owner
+ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
+```
+``` text
+Fee payer
+ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
 ```
 
 ##### Get prepared cells #####
@@ -415,14 +455,43 @@ Remember the value above for one of live cells under “tx\_hash” and “outpu
 Withdraw a prepared cell:
 
 ``` sh
-CKB> dao withdraw --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.00001 --path "m/44'/309'/0'/1/0"
+CKB> dao withdraw \
+    --from-account <ledger-id> \
+    --out-point <tx_hash>-<output_index> \
+    --tx-fee 0.00001 \
+    --path "m/44'/309'/0'/1/0"
+```
+Prompts on the Ledger device are as follows:
+``` text
+Confirm DAO
+Withdraw
+```
+``` text
+Amount
+102
+```
+``` text
+Fee
+0.00001
+```
+``` text
+Owner
+ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
+```
+``` text
+Fee payer
+ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
 ```
 
-At this point, either
+If you attempt to withdraw from the Nervos DAO prematurely, you'll see an error such as 
+```
+JSON-RPC 2.0 Error: Server error (Transaction: Immature)
+```
+or 
 ```
 JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c71b5dc71fcbf1638bb72c8fb16f8fffdfd5172456a56167fea0a3)))
 ```
-will be reported, showing that the prepared cell is not yet available to withdraw, or a transaction hash if it is.
+This means your prepared cell is not yet available to withdraw. You'll need to wait for the conclusion of your current deposit period before withdrawing.
 
 # Running the testnet #
 
