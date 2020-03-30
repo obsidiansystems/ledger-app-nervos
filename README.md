@@ -396,7 +396,7 @@ live_cells:
 total_maximum_withdraw: 10500154580
 ```
 
-Remember the values above for one of live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `withdraw` operation below which withdraw's CKB from the NervosDAO.
+Remember the values above for one of the live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `withdraw` operation below which withdraws CKB from the NervosDAO.
 
 ##### Withdraw #####
 
