@@ -372,15 +372,14 @@ live_cells:
 total_capacity: 10200000000
 ```
 
-Remember the value above for one of live cells under “tx\_hash” and “output\_index”.
+Remember the values above for one of the live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `prepare` operation below which prepares a cell for withdrawal from the NervosDAO.
 
 ##### Prepare #####
 
-Prepare a cell for withdrawal from the DAO:
+Prepare a cell for withdrawal from the NervosDAO:
 
 ``` sh
 CKB> dao prepare --from-account <ledger-id> --out-point <tx_hash>-<output_index> --tx-fee 0.0001 --path "m/44'/309'/0'/1/0"
-0xae91f2a310f2cfeada391e5f76d0addcc56d99c91a39734c292c930a1cfc67c2
 ```
 
 ##### Get prepared cells #####
@@ -406,7 +405,7 @@ live_cells:
 total_maximum_withdraw: 10500154580
 ```
 
-Remember the value above for one of live cells under “tx\_hash” and “output\_index”.
+Remember the values above for one of the live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `withdraw` operation below which withdraws CKB from the NervosDAO.
 
 ##### Withdraw #####
 
