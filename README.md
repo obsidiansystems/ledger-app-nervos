@@ -74,7 +74,7 @@ using the ckb command line:
 ## Prepare machine to talk to ledger.
 
 On Linux, the "udev" rules must be set up to allow your user to communicate with the ledger device.
-On NixOS, one can easily do this with:
+On NixOS, one can easily do this with by adding the following to configuration.nix:
 ``` nix
 {
   # ...
