@@ -4,11 +4,21 @@ This repository contains the Nervos BOLOS application for the Ledger Nano S and 
 
 This application has been developed against our forks of [CKB-CLI](https://github.com/obsidiansystems/ckb-cli) and [CKB](https://github.com/obsidiansystems/ckb). Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS.
 
+# Installation on the Nano S #
+
+To install from the source directory, ensure that you have nix installed, run
+
+```
+$ ./nix/install.sh s
+```
+
+and accept the prompts on your ledger device.
+
 # Development #
 
 ## Developing on the Ledger Nano S ##
 
-### Build ###
+### Incremental Build ###
 
 ``` sh
 $ nix-shell -A wallet.s --run 'make SHELL=sh all'
@@ -22,7 +32,7 @@ $ nix-shell -A wallet.s --run 'make SHELL=sh load'
 
 ## Developing on the Ledger Nano X ##
 
-### Build ###
+### Incremental Build ###
 
 ``` sh
 $ nix-shell -A wallet.x --run 'make SHELL=sh all'
@@ -32,7 +42,6 @@ $ nix-shell -A wallet.x --run 'make SHELL=sh all'
 
 Ledger Nano X does not currently have a way to load unsigned apps.
 Testing need to be done through Ledger Live.
-
 
 # Testing #
 
@@ -100,7 +109,22 @@ connected properly and then try it again with sudo: “sudo
 You have to accept a few prompts on the Ledger. Then you must select
 and load the Nervos app, confirming the unsafe prompt.
 
-Build a version of the ckb-cli:
+Now, make sure the Ledger is:
+
+- connected
+- unlocked
+- has the “Nervos” app open (shows “Use wallet to view accounts”)
+
+run
+
+``` sh
+./check-installed-version.sh
+git rev-parse --short HEAD
+```
+
+and verify that the results match to check that installation was successful.
+
+Finally, build and start a version of the ckb-cli:
 
 ``` sh
 $ nix run -f nix/dep/ckb-cli -c ckb-cli
@@ -109,20 +133,6 @@ $ nix run -f nix/dep/ckb-cli -c ckb-cli
 All commands that follow prefixed with ‘CKB>’ should be run in the
 prompt provided by the above command.
 
-Now, make sure the Ledger is:
-
-- connected
-- unlocked
-- has the “Nervos” app open (shows “Use wallet to view accounts”)
-
-Finally, run
-
-``` sh
-./check-installed-version.sh
-git rev-parse --short HEAD
-```
-
-and verify that the results match.
 
 ### List Ledger Wallets ###
 
