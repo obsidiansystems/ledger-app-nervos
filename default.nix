@@ -106,7 +106,7 @@ let
       inherit app;
 
       release = rec {
-        app = mkRelease "nervos_wallet" "Nervos Wallet" ledgerApp;
+        app = mkRelease "nervos" "Nervos" ledgerApp;
         all = pkgs.runCommand "ledger-app-nervos-${bolos.name}.tar.gz" {} ''
           mkdir ledger-app-nervos-${bolos.name}
 
@@ -179,7 +179,7 @@ let
        installPhase = ''
         {
           echo "<html><title>Analyzer Report</title><body><h1>Clang Static Analyzer Results</h1>"
-          printf "<p>App: <code>"nervos_wallet"</code></p>"
+          printf "<p>App: <code>"nervos"</code></p>"
           printf "<h2>File-results:</h2>"
           for html in "$out"/report*.html ; do
             echo "<p>"
