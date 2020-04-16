@@ -23,11 +23,5 @@ install() {
   bash "$root/release-installer.sh" "$release_file"
 }
 
-if [ $# -eq 0 ]; then
-  install wallet "$@"
-  # install baking "$@"
-else
-  app="$1"
-  shift
-  install "$app" "$@"
-fi
+install wallet "$@"
+

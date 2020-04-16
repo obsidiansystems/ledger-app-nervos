@@ -181,6 +181,8 @@ void update_baking_idle_screens(void);
         nvm_write((void *)&N_data, &global.new_data, sizeof(N_data));                                 \
     })
 
+void switch_network();
+
 #ifdef NERVOS_DEBUG
 // Aid for tracking down app crashes
 #define STRINGIFY(x) #x

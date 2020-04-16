@@ -57,3 +57,16 @@ nvram_data const N_data_real;
 nvram_data N_data_real;
 #endif
 
+void switch_network() {
+    static const nvram_data data[]={
+      {
+        true,
+        ADDRESS_TESTNET,
+        "testnet"
+      }, {
+        true,
+        ADDRESS_MAINNET,
+        "mainnet"
+      }};
+    nvm_write((void*)&N_data, (void*)&data[N_data.address_type&1], sizeof(N_data));
+}

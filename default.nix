@@ -19,6 +19,7 @@ let
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 4; };
         target = "TARGET_NANOS";
         targetId = "0x31100004";
+        test = true;
         iconHex = pkgs.runCommand "nano-s-icon-hex" {
           nativeBuildInputs = [ (pkgs.python.withPackages (ps: [ps.pillow])) ];
         } ''
@@ -33,6 +34,7 @@ let
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 7; };
         target = "TARGET_NANOX";
         targetId = "0x33000004";
+        test = false;
         iconHex = pkgs.runCommand "${name}-icon-hex" {
           nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ps.pillow])) ];
         } ''
@@ -62,6 +64,7 @@ let
           pkgs.openssl
           blake2_simd
           usbtool
+          bolos.env.clang
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
@@ -78,7 +81,7 @@ let
           size $out/bin/app.elf
         '';
 
-        doCheck = true;
+        doCheck = bolos.test;
         checkTarget = "test";
       };
       nvramDataSize = appDir: pkgs.runCommand "nvram-data-size" {} ''
