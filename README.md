@@ -4,7 +4,7 @@ This repository contains the Nervos BOLOS application for the Ledger Nano S and 
 
 This application has been developed against our forks of [CKB-CLI](https://github.com/obsidiansystems/ckb-cli) and [CKB](https://github.com/obsidiansystems/ckb). Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS. Application and wallet developers who would like to support Ledger can do so with [LedgerJS](https://github.com/obsidiansystems/ledgerjs/tree/nervos).
 
-# Prepare machine to talk to ledger.
+# Prepare machine to talk to ledger
 
 On Linux, the "udev" rules must be set up to allow your user to communicate with the ledger device.
 
@@ -171,7 +171,9 @@ To load a new version of the Nervos application onto the Ledger device in the fu
 you can run the command again, and it will automatically remove any
 previously-loaded version.
 
-# Prepare ledger and client from source
+# Installing Ledger App from Source
+
+Alternatively, you can install the Ledger app from source.
 
 Make sure you have Nix installed. Load the latest version of the Nervos
 app, confirming the unsafe prompt:
@@ -203,7 +205,12 @@ git rev-parse --short HEAD
 
 and verify that the results match to check that installation was successful.
 
-Finally, build and start a version of the ckb-cli:
+# Using the Client
+
+## Installing the Client
+
+To use the CKB command line utility with the Ledger, you must currently use the Obsidian
+fork of the client. To build and start it, run:
 
 ``` sh
 $ nix run -f nix/dep/ckb-cli -c ckb-cli
@@ -211,8 +218,6 @@ $ nix run -f nix/dep/ckb-cli -c ckb-cli
 
 All commands that follow prefixed with ‘CKB>’ should be run in the
 prompt provided by the above command.
-
-# Using the Client
 
 ## List Ledger Wallets ###
 
