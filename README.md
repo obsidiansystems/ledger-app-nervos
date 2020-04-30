@@ -4,7 +4,7 @@ This repository contains the Nervos BOLOS application for the Ledger Nano S and 
 
 This application has been developed against our forks of [CKB-CLI](https://github.com/obsidiansystems/ckb-cli) and [CKB](https://github.com/obsidiansystems/ckb). Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS. Application and wallet developers who would like to support Ledger can do so with [LedgerJS](https://github.com/obsidiansystems/ledgerjs/tree/nervos).
 
-# Prepare machine to talk to ledger
+# Preparing your machine to talk to ledger devices
 
 On Linux, the "udev" rules must be set up to allow your user to communicate with the ledger device.
 
@@ -23,7 +23,7 @@ On NixOS, one can easily do this with by adding the following to configuration.n
 
 For non-NixOS distros, LedgerHQ provides a 
 [script](https://raw.githubusercontent.com/LedgerHQ/udev-rules/master/add_udev_rules.sh)
-for this purpose. Download this script, read it, customize it, and run it as root:
+for this purpose, in its own [specialized repo](https://github.com/LedgerHQ/udev-rules). Download this script, read it, customize it, and run it as root:
 
 ```
 $ wget https://raw.githubusercontent.com/LedgerHQ/udev-rules/master/add_udev_rules.sh
@@ -39,6 +39,8 @@ $ sudo ./add_udev_rules.sh
 
 Subsequently, unplug your ledger hardware wallet, and plug it in again for the changes to take
 effect.
+
+For more details, see [Ledger's documentation](https://support.ledger.com/hc/en-us/articles/115005165269-Fix-connection-issues).
 
 # Installing Ledger App from Release
 
