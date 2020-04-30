@@ -4,85 +4,12 @@ This repository contains the Nervos BOLOS application for the Ledger Nano S and 
 
 This application has been developed against our forks of [CKB-CLI](https://github.com/obsidiansystems/ckb-cli) and [CKB](https://github.com/obsidiansystems/ckb). Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS. Application and wallet developers who would like to support Ledger can do so with [LedgerJS](https://github.com/obsidiansystems/ledgerjs/tree/nervos).
 
-# Installation on the Nano S #
-
-To install from the source directory, ensure that you have nix installed, run
-
-```
-$ ./nix/install.sh s
-```
-
-and accept the prompts on your ledger device.
-
-# Development #
-
-## Developing on the Ledger Nano S ##
-
-### Incremental Build ###
-
-``` sh
-$ nix-shell -A wallet.s --run 'make SHELL=sh all'
-```
-
-### Load ###
-
-``` sh
-$ nix-shell -A wallet.s --run 'make SHELL=sh load'
-```
-
-## Developing on the Ledger Nano X ##
-
-### Incremental Build ###
-
-``` sh
-$ nix-shell -A wallet.x --run 'make SHELL=sh all'
-```
-
-### Load ###
-
-Ledger Nano X does not currently have a way to load unsigned apps.
-Testing need to be done through Ledger Live.
-
-# Testing #
-
-
-## Automated Testing ##
-
-You can run automated tests through speculos via the ./test.sh script. Just run
-this:
-
-``` sh
-$ nix-shell -A wallet.s --run 'make SHELL=sh test'
-```
-
-Running the same test suite on a live ledger currently requires that the ledger
-be configured with the recovery phrase
-
-```
-glory promote mansion idle axis finger extra february uncover one trip resource
-lawn turtle enact monster seven myth punch hobby comfort wild raise skin
-```
-
-and then you can (with the ledger connected) run
-
-```
-nix-shell -A wallet.s --run 'make; ./test.sh -h'
-```
-
-The test suite currently does not test any rejections, so just accept every
-prompt that happens.
-
-## Manual Testing ##
-
-Not everything is coverd by the automated tests, so manual testing is
-also necessary. This enables end-to-end testing of the ckb
-
-Here is how to set up an environment to test the Ledger app on Nano S
-using the ckb command line:
-
-## Prepare machine to talk to ledger.
+# Preparing your machine to talk to ledger devices
 
 On Linux, the "udev" rules must be set up to allow your user to communicate with the ledger device.
+
+## NixOS
+
 On NixOS, one can easily do this with by adding the following to configuration.nix:
 ``` nix
 {
@@ -92,19 +19,175 @@ On NixOS, one can easily do this with by adding the following to configuration.n
 }
 ```
 
-### Prepare ledger and client
+## Non-NixOS Distros
 
-Load the latest version of the Nervos app, confirming the unsafe
-prompt:
+For non-NixOS distros, LedgerHQ provides a 
+[script](https://raw.githubusercontent.com/LedgerHQ/udev-rules/master/add_udev_rules.sh)
+for this purpose, in its own [specialized repo](https://github.com/LedgerHQ/udev-rules). Download this script, read it, customize it, and run it as root:
+
+```
+$ wget https://raw.githubusercontent.com/LedgerHQ/udev-rules/master/add_udev_rules.sh
+$ chmod +x add_udev_rules.sh
+```
+
+We recommend against running the next command without reviewing the
+script and modifying it to match your configuration.
+
+```
+$ sudo ./add_udev_rules.sh
+```
+
+Subsequently, unplug your ledger hardware wallet, and plug it in again for the changes to take
+effect.
+
+For more details, see [Ledger's documentation](https://support.ledger.com/hc/en-us/articles/115005165269-Fix-connection-issues).
+
+# Installing Ledger App from Release
+
+You can download `.hex` files from the
+from the [releases](https://github.com/obsidiansystems/ledger-app-nervos/releases)
+page of this repo. You will need to install some other tools from
+the Ledger project to install them.
+
+## Installing BOLOS Python Loader
+
+Install `libusb` and `libudev`, with the relevant headers. On Debian-based
+distros, including Ubuntu, the packages with the headers are suffixed with
+`-dev`. Other distros will have their own conventions. So, for example, on
+Ubuntu, you can do this with:
+
+```
+$ sudo apt-get install libusb-1.0.0-dev libudev-dev # Ubuntu example
+```
+
+Then, install `pip3`. You must install `pip3` for this and not `pip`. On Ubuntu:
+
+```
+$ sudo apt-get install python3-pip # Ubuntu example
+```
+
+Now, on any operating system, install `virtualenv` using `pip3`. It is important
+to use `pip3` and not `pip` for this, as this module requires `python3` support.
+
+```
+$ sudo pip3 install virtualenv # Any OS
+```
+
+Then create a Python virtual environment (abbreviated *virtualenv*). You could
+call it anything, but we shall call it "ledger". This will create a directory
+called "ledger" containing the virtualenv:
+
+```
+$ virtualenv ledger # Any OS
+```
+
+Then, you must enter the `virtualenv`. If you do not successfully enter the `virtualenv`,
+future commands will fail. You can tell you have entered the virtualenv when your prompt is
+prefixed with `(ledger)`.
+
+```
+$ source ledger/bin/activate
+```
+
+Your terminal session -- and only that terminal session -- will now be in the
+virtual env. To have a new terminal session enter the virtualenv, run the above
+`source` command only in the same directory in the new terminal session.
+
+## ledgerblue: The Python Module for Ledger Nano S/X
+
+We can now install `ledgerblue`, which is a Python module designed originally for
+Ledger Blue, but also is needed for the Ledger Nano S/X.
+
+Although we do not yet support Ledger Blue, you must still install the following python package.
+Within the virtualenv environment -- making sure that `(ledger)` is showing up
+before your prompt -- use pip to install the `ledgerblue`
+[Python package](https://pypi.org/project/ledgerblue/).
+This will install the Ledger Python packages into the virtualenv; they will be
+available only in a shell where the virtualenv has been activated.
+
+```
+$ pip install ledgerblue
+```
+
+If you have to use `sudo` or `pip3` here, that is an indication that you have
+not correctly set up `virtualenv`. It will still work in such a situation, but
+please research other material on troubleshooting `virtualenv` setup.
+
+## Load the application onto the Ledger device
+
+Next you'll use the installation script to install the application on your Ledger device.
+
+The Ledger device must be in the following state:
+
+  * Plugged into your computer
+  * Unlocked (enter your PIN)
+  * On the home screen (do not have any application open)
+  * Not asleep (you should not see *vires in numeris* is scrolling across the
+    screen)
+
+If you are already in an application or the Ledger device is asleep, your installation process
+will fail.
+
+We recommend staying at your computer and keeping an eye on the Ledger device's screen
+as you continue. You may want to read the rest of these instructions before you
+begin installing, as you will need to confirm and verify a few things during the
+process.
+
+Still within the virtualenv, run the `./install.sh` command included in the `release.tar.gz`
+that you downloaded.
+
+This `./install.sh` script takes the path to an application directory. The only such directory
+included in the downloaded `release.tar.gz` will be `app`, so install the app like this: `./install.sh app`.
+
+The first thing that should come up in your terminal is a message that looks
+like this:
+
+```
+Generated random root public key : <long string of digits and letters>
+```
+
+Look at your Ledger device's screen and verify that the digits of that key match the
+digits you can see on your terminal. What you see on your Ledger hardware wallet's screen
+should be just the beginning and ending few characters of the longer string that
+printed in your terminal.
+
+You will need to push confirmation buttons on your Ledger device a few times
+during the installation process and re-enter your PIN code near the end of the
+process. You should finally see the Nervos logo appear on the screen.
+
+If you see the "Generated random root public key" message and then something
+that looks like this:
+
+```
+Traceback (most recent call last):
+File "/usr/lib/python3.6/runpy.py", line 193, in _run_module_as_main
+<...more file names...>
+OSError: open failed
+```
+
+the most likely cause is that your `udev` rules are not set up correctly, or you
+did not unplug your Ledger hardware wallet between setting up the rules and attempting to
+install. Please confirm the correctness of your `udev` rules.
+
+To load a new version of the Nervos application onto the Ledger device in the future,
+you can run the command again, and it will automatically remove any
+previously-loaded version.
+
+# Installing Ledger App from Source
+
+Alternatively, you can install the Ledger app from source.
+
+Make sure you have Nix installed. Load the latest version of the Nervos
+app, confirming the unsafe prompt:
 
 ``` sh
 $ ./nix/install.sh s
 ```
 
-If you get a “permission denied” error, you’re computer is not
+If you get a “permission denied” error, your computer is not
 detecting the Ledger device correctly. Make sure the Ledger is
-connected properly and then try it again with sudo: “sudo
-./nix-install.sh s”.
+connected properly, that it was plugged in since updating the `udev`
+rules.
 
 You have to accept a few prompts on the Ledger. Then you must select
 and load the Nervos app, confirming the unsafe prompt.
@@ -124,7 +207,12 @@ git rev-parse --short HEAD
 
 and verify that the results match to check that installation was successful.
 
-Finally, build and start a version of the ckb-cli:
+# Using the Client
+
+## Installing the Client
+
+To use the CKB command line utility with the Ledger, you must currently use the Obsidian
+fork of the client. To build and start it, run:
 
 ``` sh
 $ nix run -f nix/dep/ckb-cli -c ckb-cli
@@ -133,8 +221,7 @@ $ nix run -f nix/dep/ckb-cli -c ckb-cli
 All commands that follow prefixed with ‘CKB>’ should be run in the
 prompt provided by the above command.
 
-
-### List Ledger Wallets ###
+## List Ledger Wallets ###
 
 List the wallets:
 
@@ -192,9 +279,9 @@ Make sure the two addresses match.  The “testnet” address is the one you
 need to save. Keep it for later, as it will be used for
 `<ledger-address>`.
 
-### Transfering ###
+## Transfering ###
 
-#### Creating a new account for local dev network ####
+### Creating a new account for local dev network ####
 
 Now, you must also create an account from ckb-cli so that an account
 can get the issued cells. This can be done with:
@@ -222,7 +309,7 @@ CKB> account list
 
 The value of “lock_arg: ...” is your-new-account-lock-arg.
 
-#### Starting a local dev network ####
+### Starting a local dev network ####
 
 First, make a directory and init it for a dev network:
 ``` sh
@@ -285,7 +372,7 @@ maximum amount of deposited cells. You can do this with Ctrl-Z. Type
 ‘fg’ followed by enter to continue running it later. The miner should
 be running when running any ckb-cli commands.
 
-#### Getting CKB from the miner ####
+### Getting CKB from the miner ####
 
 The dev network is set up to send CKBs to the on-disk account. To get
 money onto the Ledger, you need to do a transfer. This can be done
@@ -295,7 +382,7 @@ with an initial transfer:
 CKB> wallet transfer --from-account <your-new-account-lock-arg> --to-address <ledger-address> --capacity 1000 --tx-fee 0.001
 ```
 
-#### Verify address balance ####
+### Verify address balance ####
 
 To continue, you need at least 100 CKB in your wallet. Do this with:
 
@@ -308,7 +395,7 @@ If your node is not synced up, this will take up to a few hours. If
 the number is less than 100, you need to somehow get the coins some
 other way.
 
-#### Transfer ####
+### Transfer ####
 
 Transfer operation (use correct --from-account and
 derive-change-address value from “List Ledger Wallets” and “Get Public
@@ -324,7 +411,7 @@ CKB> wallet transfer \
     --derive-change-address-length 1
 ```
 
-##### Get live cells ######
+#### Get live cells ######
 
 Get live cells:
 
@@ -348,9 +435,9 @@ total_capacity: 2000.0 (CKB)
 total_count: 1
 ```
 
-#### DAO ####
+### DAO ####
 
-##### Deposit #####
+#### Deposit #####
 
 You can deposit to the dao like:
 
@@ -378,7 +465,7 @@ Fee
 Source
 ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
 ```
-##### Get deposited cells #####
+#### Get deposited cells #####
 
 Get deposited cells:
 
@@ -402,7 +489,7 @@ total_capacity: 10200000000
 
 Remember the values above for one of the live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `prepare` operation below which prepares a cell for withdrawal from the NervosDAO.
 
-##### Prepare #####
+#### Prepare #####
 
 Prepare a cell for withdrawal from the NervosDAO:
 
@@ -460,7 +547,7 @@ total_maximum_withdraw: 10500154580
 
 Remember the values above for one of the live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `withdraw` operation below which withdraws CKB from the NervosDAO.
 
-##### Withdraw #####
+#### Withdraw #####
 
 Withdraw a prepared cell:
 
