@@ -9,8 +9,12 @@
 #include "protocol.h"
 #include "ui.h"
 
+#define MOL_PIC(x) ((void (*)()) PIC(x))
+#define MOL_PIC_STRUCT(t,x) (x?((t*) PIC(x)):NULL)
+#define mol_printf(...) PRINTF(__VA_ARGS__)
+
 #include "cx.h"
-#include "blockchain.h"
+#include "annotated.h"
 
 #include <string.h>
 
@@ -28,13 +32,14 @@ static inline void conditional_init_hash_state(blake2b_hash_state_t *const state
 }
 
 static void blake2b_incremental_hash(
-    /*in*/ uint8_t *const out, size_t const out_size,
+    /*in*/ const uint8_t *const out, size_t const out_size,
     /*in/out*/ blake2b_hash_state_t *const state) {
     check_null(out);
     check_null(state);
 
     conditional_init_hash_state(state);
     cx_hash((cx_hash_t *)&state->state, 0, out, out_size, NULL, 0);
+    if(state == &G.hash_state) PRINTF("TXN CHUNK: %.*h\n", out_size, out);
 }
 
 static void blake2b_finish_hash(
@@ -92,11 +97,12 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
         static const uint32_t SOURCE_INDEX = 3;
-        static const uint32_t DESTINATION_INDEX = 4;
+        static const uint32_t DESTINATION_INDEX = 3;
         static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"),      PROMPT("Fee"),
-                                                          PROMPT("Source"),  PROMPT("Destination"), NULL};
+                                                          // PROMPT("Source"),  
+							  PROMPT("Destination"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
-        register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
+        //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
         register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
@@ -109,11 +115,12 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
         static const uint32_t SOURCE_INDEX = 3;
-        static const uint32_t DESTINATION_INDEX = 4;
+        static const uint32_t DESTINATION_INDEX = 3;
         static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"), PROMPT("Amount"), PROMPT("Fee"),
-                                                          PROMPT("Source"), NULL};
+                                                          //PROMPT("Source"),
+							  NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
-        register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
+        // register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
         register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
@@ -125,24 +132,23 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t TYPE_INDEX = 0;
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
-        static const uint32_t SOURCE_INDEX = 3;
-        static const uint32_t PAYER_INDEX = 4;
-        static const uint32_t CHANGE_TO_INDEX = 5;
-        static const uint32_t CHANGE_INDEX = 6;
         static const char *const prepare_prompts_full[] = {
-            PROMPT("Confirm DAO"), PROMPT("Amount"),    PROMPT("Fee"),    PROMPT("Owner"),
-            PROMPT("Fee payer"),   PROMPT("Change to"), PROMPT("Change"), NULL};
-        static const char *const prepare_prompts_no_change[] = {
-            PROMPT("Confirm DAO"), PROMPT("Amount"), PROMPT("Fee"), PROMPT("Owner"), PROMPT("Fee payer"), NULL};
+            PROMPT("Confirm DAO"), PROMPT("Amount"),    PROMPT("Fee"), NULL };
+		    //,    PROMPT("Owner"),
+            // PROMPT("Fee payer"),
+	    //PROMPT("Change to"), PROMPT("Change"), NULL};
+        //static const char *const prepare_prompts_no_change[] = {
+          //  PROMPT("Confirm DAO"), PROMPT("Amount"), PROMPT("Fee"), PROMPT("Owner"), NULL }; // PROMPT("Fee payer"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Prepare");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.dao_source);
-        register_ui_callback(PAYER_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-        register_ui_callback(CHANGE_TO_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
-        register_ui_callback(CHANGE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
+        // register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.dao_source);
+        // register_ui_callback(PAYER_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
+        //register_ui_callback(CHANGE_TO_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
+        //register_ui_callback(CHANGE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
 
-        ui_prompt(G.maybe_transaction.v.flags & HAS_CHANGE_ADDRESS ? prepare_prompts_full : prepare_prompts_no_change,
+        //ui_prompt(G.maybe_transaction.v.flags & HAS_CHANGE_ADDRESS ? prepare_prompts_full : prepare_prompts_no_change,
+	ui_prompt(prepare_prompts_full,
                   ok_c, sign_reject);
         break;
     }
@@ -150,16 +156,16 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t TYPE_INDEX = 0;
         static const uint32_t DEPOSIT_INDEX = 1;
         static const uint32_t RETURN_INDEX = 2;
-        static const uint32_t SOURCE_INDEX = 3;
+        //static const uint32_t SOURCE_INDEX = 3;
         static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"),
                                                           PROMPT("Deposit"),
                                                           PROMPT("Return"),
-                                                          PROMPT("Source"),
+        //                                                  PROMPT("Source"),
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Withdrawal");
         register_ui_callback(DEPOSIT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
         register_ui_callback(RETURN_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.dao_source);
+        //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.dao_source);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -180,419 +186,16 @@ unsafe:
 #define REJECT(msg, ...)                                                                                               \
     {                                                                                                                  \
         PRINTF("Rejecting: " msg "\n", ##__VA_ARGS__);                                                                 \
-        G.maybe_transaction.is_valid = false;                                                                          \
+        G.maybe_transaction.unsafe = true;                                                                             \
         return;                                                                                                        \
     }
 
-bool is_standard_lock_script(mol_seg_t *lockScript) {
-    static const uint8_t defaultLockScript[] = {0x9b, 0xd7, 0xe0, 0x6f, 0x3e, 0xcf, 0x4b, 0xe0, 0xf2, 0xfc, 0xd2,
-                                                0x18, 0x8b, 0x23, 0xf1, 0xb9, 0xfc, 0xc8, 0x8e, 0x5d, 0x4b, 0x65,
-                                                0xa8, 0x63, 0x7b, 0x17, 0x72, 0x3b, 0xbd, 0xa3, 0xcc, 0xe8};
-    mol_seg_t hash_type = MolReader_Script_get_hash_type(lockScript);
-    if (*hash_type.ptr != 1)
-        return false;
-    mol_seg_t codeHash = MolReader_Script_get_code_hash(lockScript);
-    return memcmp(defaultLockScript, codeHash.ptr, 32) == 0;
-}
-
-bool is_dao_type_script(mol_seg_t *typeScript) {
-    static const uint8_t defaultTypeScript[] = {0x82, 0xd7, 0x6d, 0x1b, 0x75, 0xfe, 0x2f, 0xd9, 0xa2, 0x7d, 0xfb,
-                                                0xaa, 0x65, 0xa0, 0x39, 0x22, 0x1a, 0x38, 0x0d, 0x76, 0xc9, 0x26,
-                                                0xf3, 0x78, 0xd3, 0xf8, 0x1c, 0xf3, 0xe7, 0xe1, 0x3f, 0x2e};
-    mol_seg_t hash_type = MolReader_Script_get_hash_type(typeScript);
-    if (*hash_type.ptr != 1)
-        return false;
-    mol_seg_t codeHash = MolReader_Script_get_code_hash(typeScript);
-    return memcmp(defaultTypeScript, codeHash.ptr, 32) == 0;
-}
-
-enum output_type_type {
-    OUTPUT_TYPE_INVALID = 0,
-    OUTPUT_TYPE_PLAIN_TRANSFER,
-    OUTPUT_TYPE_DAO_DEPOSIT,
-    OUTPUT_TYPE_DAO_PREPARED,
-};
-
-enum output_type_type get_output_type_type(mol_seg_t *outputs_data, int i) {
-    mol_seg_res_t data = MolReader_BytesVec_get(outputs_data, i);
-    if (data.errno != MOL_OK)
-        return OUTPUT_TYPE_INVALID;
-    mol_seg_t rawData = MolReader_Bytes_raw_bytes(&data.seg);
-    static const uint8_t eightZeros[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    if (MolReader_Bytes_length(&data.seg) == 0)
-        return OUTPUT_TYPE_PLAIN_TRANSFER;
-    if (MolReader_Bytes_length(&data.seg) != 8)
-        return OUTPUT_TYPE_INVALID;
-    if (memcmp(rawData.ptr, eightZeros, 8) == 0)
-        return OUTPUT_TYPE_DAO_DEPOSIT;
-    return OUTPUT_TYPE_DAO_PREPARED;
-}
-
-void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
-                         uint16_t const buff_size, uint32_t idx);
-
-void parse_context(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
-                   uint16_t const buff_size) {
-    mol_seg_t seg;
-    seg.ptr = buff+4;
-    seg.size = buff_size - 4;
-    uint32_t idx;
-    memcpy(&idx, buff, 4);
-    uint8_t mol_result = MolReader_RawTransaction_verify(&seg, true);
-    if (mol_result != MOL_OK)
-        REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
-
-    parse_context_inner(dest, key_derivation, buff+4, buff_size-4, idx);
-}
-
-void parse_context_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
-                         uint16_t const buff_size, uint32_t idx) {
-    mol_seg_t seg;
-    seg.ptr = buff;
-    seg.size = buff_size;
-
-    mol_seg_t outputs = MolReader_RawTransaction_get_outputs(&seg);
-    unsigned int outputs_len = MolReader_CellOutputVec_length(&outputs);
-
-    mol_seg_t outputs_data = MolReader_RawTransaction_get_outputs_data(&seg);
-
-    if (idx > outputs_len)
-	    REJECT("Context transaction doesn't have that output");
-    mol_seg_res_t output = MolReader_CellOutputVec_get(&outputs, idx);
-
-    if(output.errno != MOL_OK)
-	    PRINTF("Molecule error on output: %x\n", output.errno);
-
-    mol_seg_t capacity = MolReader_CellOutput_get_capacity(&output.seg);
-
-    // Need to do a memcpy because of alignment issues.
-    memcpy(&G.context_transactions[G.context_transactions_fill_idx].output.amount, capacity.ptr, 8);
-
-    G.context_transactions[G.context_transactions_fill_idx].index=idx;
-
-    mol_seg_t lockScript = MolReader_CellOutput_get_lock(&output.seg);
-    mol_seg_t lockArg = MolReader_Script_get_args(&lockScript);
-    mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
-
-    if (!is_standard_lock_script(&lockScript)) {
-        REJECT("Cannot parse nonstandard lock script");
-    } else {
-        G.context_transactions[G.context_transactions_fill_idx].output.flags |= OUTPUT_FLAGS_KNOWN_LOCK;
+#define REJECT_HARD(msg, ...)                                                                                          \
+    {                                                                                                                  \
+        PRINTF("Can't sign: " msg "\n", ##__VA_ARGS__);                                                                   \
+        G.maybe_transaction.hard_reject = true;                                                                        \
+        return;                                                                                                        \
     }
-
-    memcpy(G.context_transactions[G.context_transactions_fill_idx].output.lock_arg, lockArgBytes.ptr, 20);
-
-    mol_seg_t type_script = MolReader_CellOutput_get_type_(&output.seg);
-
-    bool isDao;
-    if (!MolReader_ScriptOpt_is_none(&type_script)) {
-        if (is_dao_type_script(&type_script)) {
-            isDao = true;
-        } else {
-            REJECT("Cannot parse transactions with non-DAO type scripts");
-        }
-    } else {
-        isDao = false;
-    }
-
-    if (isDao) {
-        G.context_transactions[G.context_transactions_fill_idx].output.flags |= OUTPUT_FLAGS_IS_DAO;
-    }
-    switch (get_output_type_type(&outputs_data, idx)) {
-        case OUTPUT_TYPE_INVALID:
-            REJECT("Invalid output data");
-        case OUTPUT_TYPE_PLAIN_TRANSFER:
-            if (isDao)
-                REJECT("output data cannot be empty for DAO");
-            break;
-        case OUTPUT_TYPE_DAO_DEPOSIT:
-            if (!isDao)
-                REJECT("only DAO script can have DAO output");
-            G.context_transactions[G.context_transactions_fill_idx].output.flags |=
-                OUTPUT_FLAGS_IS_DAO_DEPOSIT;
-            break;
-        case OUTPUT_TYPE_DAO_PREPARED:
-            if (!isDao)
-                REJECT("only DAO script can have DAO output");
-            break;
-    }
-}
-
-void hash_32_as_64(cx_blake2b_t *hash_state, uint32_t num) {
-    uint64_t val=num;
-    cx_hash((cx_hash_t *)hash_state, 0, (uint8_t*) &val, sizeof(val), NULL, 0);
-}
-
-void add_default_first_witnessarg(cx_blake2b_t *double_state) {
-            static const uint8_t self_witness[] = {
-                0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             // Length of WitnessArg,
-                0x55, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x55, 0x00, // WitnessArg
-                0x00, 0x00, 0x55, 0x00, 0x00, 0x00, 0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-            cx_hash((cx_hash_t *)double_state, 0, self_witness, sizeof(self_witness), NULL, 0);
-}
-void add_first_witnessarg(cx_blake2b_t *double_state, mol_seg_t witness_bytes) {
-                        uint32_t lock_length;
-                        uint32_t after_lock_offset;
-                        static uint32_t new_witness_header[4];
-
-                        static const uint8_t zero_bytes[]={
-				65,0,0,0,
-				0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-				0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-				0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-				0,0,0,0,0
-			};
-
-                        memcpy(new_witness_header, witness_bytes.ptr, 16);
-                        lock_length=new_witness_header[2]-new_witness_header[1];
-                        after_lock_offset=new_witness_header[2];
-
-                        new_witness_header[0]+=69-lock_length;
-                        new_witness_header[2]+=69-lock_length;
-                        new_witness_header[3]+=69-lock_length;
-
-                        hash_32_as_64(double_state, new_witness_header[0]);
-                        cx_hash((cx_hash_t *)double_state, 0, (uint8_t*) new_witness_header, 16, NULL, 0);
-
-                        cx_hash((cx_hash_t *)double_state, 0, zero_bytes, 69, NULL, 0);
-
-                        cx_hash((cx_hash_t *)double_state, 0, witness_bytes.ptr+after_lock_offset, witness_bytes.size-after_lock_offset, NULL, 0);
-}
-
-bool is_change(mol_seg_t *lockScript) {
-    if (!is_standard_lock_script(lockScript))
-        return false;
-    mol_seg_t lockArg = MolReader_Script_get_args(lockScript);
-    mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
-
-    return memcmp(G.change_lock_arg, lockArgBytes.ptr, 20) == 0;
-}
-
-void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
-                           uint16_t const buff_size);
-
-void parse_operation(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
-                     uint16_t const buff_size) {
-    mol_seg_t seg;
-    seg.ptr = buff;
-    seg.size = buff_size;
-    uint8_t mol_result = MolReader_Transaction_verify(&seg, true);
-    if (mol_result != MOL_OK)
-        REJECT("Transaction verification returned %d; parse failed\nbody: %.*h\n", mol_result, buff_size, buff);
-
-    parse_operation_inner(dest, key_derivation, buff, buff_size);
-}
-
-void parse_operation_inner(struct maybe_transaction *_U_ dest, bip32_path_t *_U_ key_derivation, uint8_t *const buff,
-                           uint16_t const buff_size) {
-    mol_seg_t transaction_seg;
-    transaction_seg.ptr = buff;
-    transaction_seg.size = buff_size;
-
-    mol_seg_t seg=MolReader_Transaction_get_raw(&transaction_seg);
-
-    mol_seg_t witnesses=MolReader_Transaction_get_witnesses(&transaction_seg);
-    uint32_t witness_count=MolReader_BytesVec_length(&witnesses);
-
-    // Need to do this here now because we see more stuff in this block of APDUs.
-    blake2b_incremental_hash(seg.ptr, seg.size, &G.hash_state);
-    blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), &G.hash_state);
-
-    cx_blake2b_t double_state;
-    cx_blake2b_init2(&double_state, SIGN_HASH_SIZE * 8, NULL, 0, (uint8_t *)blake2b_personalization,
-                     sizeof(blake2b_personalization) - 1);
-    cx_hash((cx_hash_t *)&double_state, 0, G.final_hash, sizeof(G.final_hash), NULL, 0);
-
-    { // New context for stack.
-
-        mol_seg_t inputs = MolReader_RawTransaction_get_inputs(&seg);
-        unsigned int inputs_len = MolReader_CellInputVec_length(&inputs);
-
-        G.maybe_transaction.v.group_input_count = 0;
-        G.maybe_transaction.input_count = inputs_len; // for fallback code on parse failures.
-
-        if (inputs_len > 5)
-            REJECT("Too many input cells");
-        if (inputs_len > G.context_transactions_fill_idx)
-            REJECT("Not enough context transactions for inputs");
-
-        uint64_t amount = 0;
-
-        uint64_t withdraw_amount = 0;
-
-        for (mol_num_t i = 0; i < inputs_len; i++) {
-            mol_seg_res_t input = MolReader_CellInputVec_get(&inputs, i);
-            mol_seg_t outpoint = MolReader_CellInput_get_previous_output(&input.seg);
-            mol_seg_t txhash = MolReader_OutPoint_get_tx_hash(&outpoint);
-
-	    // Verify the output we're looking for is the one we've got
-            mol_seg_t out_idx_seg = MolReader_OutPoint_get_index(&outpoint);
-	    // memcmp becuase of alignment
-	    if(memcmp(&G.context_transactions[i].index, out_idx_seg.ptr, 4) != 0) REJECT("Transaction asks for different output than provided");
-
-            if (memcmp(G.context_transactions[i].output.lock_arg, G.current_lock_arg, 20) ==
-                    0) { // Is the input in the group we are signing for right now
-                if(i<witness_count) {
-                    mol_seg_res_t witness=MolReader_BytesVec_get(&witnesses, i);
-                    mol_seg_t witness_bytes=MolReader_Bytes_raw_bytes(&witness.seg);
-                    if(G.maybe_transaction.v.group_input_count==0) {
-                        if(witness_bytes.size == 0) {
-                            add_default_first_witnessarg(&double_state);
-                        } else {
-                            if(MolReader_WitnessArgs_verify(&witness_bytes, true) != MOL_OK)
-                                REJECT("First witness is not a WitnessArgs; failing.");
-                            add_first_witnessarg(&double_state, witness_bytes);
-                        }
-                    } else {
-                        hash_32_as_64(&double_state, witness_bytes.size);
-                        cx_hash((cx_hash_t *)&double_state, 0, witness_bytes.ptr, witness_bytes.size, NULL, 0);
-                    }
-                }
-                G.maybe_transaction.v.group_input_count++;
-            }
-            if (memcmp(txhash.ptr, G.context_transactions[i].hash, SIGN_HASH_SIZE) != 0)
-                REJECT("Hash of context %d does not match input transaction hash", i);
-            amount += G.context_transactions[i].output.amount;
-            if (G.context_transactions[i].output.flags & OUTPUT_FLAGS_IS_DAO) {
-                memcpy(G.maybe_transaction.v.dao_source, G.context_transactions[i].output.lock_arg, 20);
-                if (G.context_transactions[i].output.flags & OUTPUT_FLAGS_IS_DAO_DEPOSIT) {
-                    // prepare_amounts[i]=amount;
-                } else {
-                    withdraw_amount += G.context_transactions[i].output.amount;
-                }
-            } else {
-                memcpy(G.maybe_transaction.v.source, G.context_transactions[i].output.lock_arg, 20);
-            }
-        }
-
-        // Add witnesses from no input to the hash.
-        for (mol_num_t i = inputs_len; i < witness_count; i++) {
-                    mol_seg_res_t witness=MolReader_BytesVec_get(&witnesses, i);
-                    hash_32_as_64(&double_state, witness.seg.size);
-                    cx_hash((cx_hash_t *)&double_state, 0, witness.seg.ptr, witness.seg.size, NULL, 0);
-        }
-
-        // We're done with the final double_state; hash it into the final hash.
-        cx_hash((cx_hash_t *)&double_state, CX_LAST, NULL, 0, G.final_hash, sizeof(G.final_hash));
-
-        mol_seg_t outputs = MolReader_RawTransaction_get_outputs(&seg);
-        mol_seg_t outputs_data = MolReader_RawTransaction_get_outputs_data(&seg);
-
-        uint64_t output_amounts = 0;
-        uint64_t sent_amounts = 0;
-        uint64_t dao_deposit_amount = 0;
-        uint64_t total_prepare_amount = 0;
-
-
-        for (unsigned int i = 0; i < MolReader_CellOutputVec_length(&outputs); i++) {
-            mol_seg_res_t output = MolReader_CellOutputVec_get(&outputs, i);
-            mol_seg_t capacity = MolReader_CellOutput_get_capacity(&output.seg);
-            uint64_t capacity_val;
-            memcpy(&capacity_val, capacity.ptr, 8);
-
-            output_amounts += capacity_val;
-            mol_seg_t lockScript = MolReader_CellOutput_get_lock(&output.seg);
-            mol_seg_t type_script = MolReader_CellOutput_get_type_(&output.seg);
-
-            bool isChange = is_change(&lockScript);
-
-            bool isDao = false;
-            if (!MolReader_ScriptOpt_is_none(&type_script)) {
-                if (is_dao_type_script(&type_script)) {
-                    isDao = true;
-                } else {
-                    REJECT("Cannot parse transactions with non-DAO type scripts");
-                }
-            }
-
-            mol_seg_t lockArg = MolReader_Script_get_args(&lockScript);
-            mol_seg_t lockArgBytes = MolReader_Bytes_raw_bytes(&lockArg);
-
-            if (!isChange && !isDao) {
-                sent_amounts += capacity_val;
-                // There must be one destination address which is the one from
-                // the lock arg. If it's unset, set it. But if it's already set
-                // to something else, abort rather than change it.
-                if (G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) {
-                    if (memcmp(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20) != 0)
-                        REJECT("Can't handle transactions with multiple destinations\n");
-                } else {
-                    memcpy(G.maybe_transaction.v.destination, lockArgBytes.ptr, 20);
-                    G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-                }
-            }
-            switch (get_output_type_type(&outputs_data, i)) {
-            case OUTPUT_TYPE_INVALID:
-                REJECT("DAO cells require eight bytes of data");
-            case OUTPUT_TYPE_PLAIN_TRANSFER:
-                if (isDao)
-                    REJECT("output data cannot be empty for DAO");
-                break;
-            case OUTPUT_TYPE_DAO_DEPOSIT:
-                if (!isDao)
-                    REJECT("only DAO script can have DAO output");
-                dao_deposit_amount += capacity_val;
-                memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
-                break;
-            case OUTPUT_TYPE_DAO_PREPARED:
-                if (!isDao)
-                    REJECT("only DAO script can have DAO output");
-                if (capacity_val != G.context_transactions[i].output.amount)
-                    REJECT("Input and output capacity has to match for a prepare: %d vs %d", capacity_val,
-                           G.context_transactions[i].output.amount);
-                total_prepare_amount += capacity_val;
-                memcpy(G.maybe_transaction.v.dao_destination, lockArgBytes.ptr, 20);
-            }
-        }
-
-        if (((sent_amounts != 0) + (dao_deposit_amount != 0) + (total_prepare_amount != 0) + (withdraw_amount != 0)) >
-            1) {
-            // REJECT("Only handle one of dao deposit, prepare, withdraw, and normal transfer in the same transaction");
-        }
-
-        G.maybe_transaction.v.total_fee = amount - output_amounts;
-
-        if (dao_deposit_amount != 0) {
-            G.maybe_transaction.v.tag = OPERATION_TAG_DAO_DEPOSIT;
-            G.maybe_transaction.v.dao_amount = dao_deposit_amount;
-            if (sent_amounts != 0)
-                REJECT("Deposit with change to a different account is not supported");
-        } else if (total_prepare_amount != 0) {
-            G.maybe_transaction.v.tag = OPERATION_TAG_DAO_PREPARE;
-            G.maybe_transaction.v.dao_amount = total_prepare_amount;
-            G.maybe_transaction.v.amount = sent_amounts;
-            if (sent_amounts != 0)
-                G.maybe_transaction.v.flags |= HAS_CHANGE_ADDRESS;
-        } else if (withdraw_amount != 0) {
-            G.maybe_transaction.v.tag = OPERATION_TAG_DAO_WITHDRAW;
-            G.maybe_transaction.v.amount = sent_amounts;
-            G.maybe_transaction.v.dao_amount = withdraw_amount;
-            // Can't currently calculate fee because that requires knowing total return; this is return claimed by the
-            // transaction instead.
-            G.maybe_transaction.v.total_fee = -G.maybe_transaction.v.total_fee;
-        } else {
-            G.maybe_transaction.v.tag = OPERATION_TAG_PLAIN_TRANSFER;
-            G.maybe_transaction.v.amount = sent_amounts;
-        }
-
-        G.maybe_transaction.is_valid = true;
-    }
-}
-
-#define P1_FIRST            0x00
-#define P1_NEXT             0x01
-#define P1_HASH_ONLY_NEXT   0x03 // You only need it once
-#define P1_CHANGE_PATH      0x10
-#define P1_CHANGE_PATH_CASE 0x11
-#define P1_IS_CONTEXT       0x20
-#define P1_NO_FALLBACK      0x40
-#define P1_LAST_MARKER      0x80
-#define P1_MASK             (~(P1_LAST_MARKER | P1_NO_FALLBACK | P1_IS_CONTEXT))
 
 void prep_lock_arg(bip32_path_t *key, standard_lock_arg_t *destination) {
     cx_ecfp_public_key_t public_key;
@@ -600,7 +203,438 @@ void prep_lock_arg(bip32_path_t *key, standard_lock_arg_t *destination) {
     generate_lock_arg_for_pubkey(&public_key, destination);
 }
 
-static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, uint8_t const instruction) {
+/* Start of parser callbacks */
+
+void blake2b_chunk(uint8_t* buf, mol_num_t len) {
+    blake2b_incremental_hash(buf, len, &G.hash_state);
+}
+
+void input_start() {
+    explicit_bzero(&G.cell_state, sizeof(G.cell_state));
+    explicit_bzero((void*)&G.input_state, sizeof(G.input_state));
+}
+
+void input_save_tx_hash(uint8_t *hash, mol_num_t hash_length) {
+    (void) hash_length;// hash_length guaranteed by parser
+    memcpy(G.input_state.tx_hash, hash, sizeof(G.input_state.tx_hash));
+}
+
+void input_save_index(uint8_t *index, mol_num_t index_length) {
+    (void) index_length; // guaranteed by parser
+    memcpy(&G.input_state.index, index, sizeof(G.input_state.index));
+}
+
+void context_blake2b_chunk(uint8_t *chunk, mol_num_t length) {
+    blake2b_incremental_hash(chunk, length, &G.input_state.hash_state);
+}
+
+void validate_context_txn(void) {
+    uint8_t tx_hash[32];
+    blake2b_finish_hash(tx_hash, 32, &G.input_state.hash_state);
+    if(memcmp(tx_hash, G.input_state.tx_hash, 32))
+        REJECT_HARD("Context transaction does not match hash");
+}
+
+void input_context_start_idx(mol_num_t idx) {
+    // Enable/disable the remaining input callbacks based on whether we're on that output.
+    G.cell_state.active = idx == G.input_state.index;
+}
+
+void cell_capacity(uint8_t* capacity, mol_num_t len) {
+    (void)len; // constant from the parser
+    if(!G.cell_state.active) return;
+    G.cell_state.capacity = *(uint64_t*) capacity;
+}
+
+void cell_lock_code_hash(uint8_t* buf, mol_num_t len) {
+    (void)len;
+    if(!G.cell_state.active) return;
+    static const uint8_t defaultLockScript[] = {0x9b, 0xd7, 0xe0, 0x6f, 0x3e, 0xcf, 0x4b, 0xe0, 0xf2, 0xfc, 0xd2,
+                                                0x18, 0x8b, 0x23, 0xf1, 0xb9, 0xfc, 0xc8, 0x8e, 0x5d, 0x4b, 0x65,
+                                                0xa8, 0x63, 0x7b, 0x17, 0x72, 0x3b, 0xbd, 0xa3, 0xcc, 0xe8};
+
+    if(memcmp(buf, defaultLockScript, 32)) REJECT("Only the standard lock script is currently supported");
+}
+
+void cell_script_hash_type(uint8_t hash_type) {
+    if(!G.cell_state.active) return;
+    if (hash_type != 1) REJECT("Incorrect hash type for standard lock or dao script");
+}
+
+void script_arg_start_input() {
+    if(!G.cell_state.active) return;
+    G.cell_state.lock_arg_index = 0;
+    G.cell_state.lock_arg_nonequal = 0;
+    G.lock_arg_cmp = G.current_lock_arg;
+}
+
+void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
+    if(!G.cell_state.active) return;
+    if(G.cell_state.lock_arg_index+buflen > 20) { // Probably not possible.
+        G.cell_state.lock_arg_nonequal |= true;
+        return;
+    }
+    memcpy(G.lock_arg_tmp+G.cell_state.lock_arg_index, buf, buflen);
+    if(!G.lock_arg_cmp) {
+        G.cell_state.lock_arg_nonequal=true;
+        return;
+    }
+    for(mol_num_t i=0;i<buflen;i++) {
+        G.cell_state.lock_arg_nonequal |= (G.lock_arg_cmp[G.cell_state.lock_arg_index+i] != buf[i]);
+        if(G.cell_state.lock_arg_nonequal) return;
+    }
+    G.cell_state.lock_arg_index+=buflen;
+}
+
+void input_lock_arg_end() {
+    if(!G.cell_state.active) return;
+    if(G.cell_state.lock_arg_nonequal)
+        REJECT("Can't securely sign transactions containing inputs we don't control");
+}
+
+void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
+    if(!G.cell_state.active) return;
+    (void) len; // Guaranteed to be 32
+    static const uint8_t dao_type_script_hash[] = {0x82, 0xd7, 0x6d, 0x1b, 0x75, 0xfe, 0x2f, 0xd9, 0xa2, 0x7d, 0xfb,
+                                                   0xaa, 0x65, 0xa0, 0x39, 0x22, 0x1a, 0x38, 0x0d, 0x76, 0xc9, 0x26,
+                                                   0xf3, 0x78, 0xd3, 0xf8, 0x1c, 0xf3, 0xe7, 0xe1, 0x3f, 0x2e};
+	if(!G.cell_state.active) return;
+	
+    // If this exists, we require it to be the DAO for now. Verify.
+	if(memcmp(buf, dao_type_script_hash, sizeof(dao_type_script_hash)))
+       	REJECT("Only the DAO type script is supported");
+	G.cell_state.is_dao = true;
+}
+
+void cell_type_arg_length(mol_num_t length) {
+	if(!G.cell_state.active) return;
+	// DAO is empty.
+	if(length != 4) REJECT("DAO cell has nonempty args");
+}
+				    
+void set_cell_data_size(mol_num_t size) {
+    if(!G.cell_state.active) return;
+    G.cell_state.data_size = size-4; // size includes the 4-byte size header in Bytes
+}
+
+void check_cell_data_data_chunk(uint8_t *buf, mol_num_t length) {
+	if(!G.cell_state.active) return;
+	for(mol_num_t i=0;i<length;i++)
+		G.cell_state.dao_data_is_nonzero |= buf[i];
+}
+
+void finish_input_cell_data() {
+    if(!G.cell_state.active) return;
+    if(G.cell_state.is_dao) {
+        if(G.cell_state.data_size != 8) REJECT("DAO data must be 8 bytes");
+        G.dao_input_amount += G.cell_state.capacity;
+        if(G.cell_state.dao_data_is_nonzero) {
+            if(G.maybe_transaction.v.tag != OPERATION_TAG_DAO_WITHDRAW && G.maybe_transaction.v.tag != 0) REJECT("Can't mix deposit, prepare, and withdraw in one transaction");
+            G.maybe_transaction.v.tag = OPERATION_TAG_DAO_WITHDRAW;
+        } else {
+            if(G.maybe_transaction.v.tag != OPERATION_TAG_DAO_PREPARE && G.maybe_transaction.v.tag != 0) REJECT("Can't mix deposit, prepare, and withdraw in one transaction");
+            G.maybe_transaction.v.tag = OPERATION_TAG_DAO_PREPARE;
+        }
+    } else {
+        if(G.cell_state.data_size !=0) {
+            REJECT("Data found in non-dao cell");
+        }
+        G.plain_input_amount += G.cell_state.capacity;
+    }
+}
+
+const struct byte_callbacks hash_type_cb = { cell_script_hash_type };
+
+// Process one input, provided as an AnnotatedCellInput.
+const AnnotatedCellInput_cb annotatedCellInput_callbacks = {
+    .start = input_start,
+    .input = &(CellInput_cb) {
+        .chunk = blake2b_chunk,
+        .previous_output = &(OutPoint_cb) {
+            .tx_hash = &(Byte32_cb) { { input_save_tx_hash } },
+            .index = &(Uint32_cb) { { input_save_index } } 
+        }
+    },
+    .source = &(RawTransaction_cb) {
+        .chunk = context_blake2b_chunk,
+        .outputs = &(CellOutputVec_cb) {
+            .index = input_context_start_idx,
+            .item = &(CellOutput_cb) {
+                .capacity = &(Uint64_cb) { { cell_capacity } },
+                .lock = &(Script_cb) { 
+                    .code_hash = &(Byte32_cb) { { cell_lock_code_hash } },
+                    .hash_type = &hash_type_cb,
+                    .args = &(Bytes_cb) { .start = script_arg_start_input, .body_chunk = script_arg_chunk },
+                    .end = input_lock_arg_end
+                },
+                .type_ = &(ScriptOpt_cb) { .item = &(Script_cb) {
+                    .code_hash = &(Byte32_cb) { { cell_type_code_hash } },
+                    .hash_type = &hash_type_cb,
+                    .args = &(Bytes_cb) { .size = cell_type_arg_length }
+                } }
+            }
+        },
+        .outputs_data = &(BytesVec_cb) {
+            .index = input_context_start_idx,
+            .item = &(Bytes_cb) { .size = set_cell_data_size, .body_chunk = check_cell_data_data_chunk, .end = finish_input_cell_data }
+        },
+        .end = validate_context_txn,
+    }
+};
+
+// Add the number of inputs to the raw transaction hash; used at the start of the inputs. This is the header for the implicit FixVec<CellInput> we are writing into the hash.
+void blake2b_input_count() {
+    blake2b_incremental_hash((uint8_t*) &G.input_count, 4, &G.hash_state);
+}
+
+void computeNewOffsetsToHash(struct AnnotatedRawTransaction_state *s) {
+    mol_num_t to_subtract = s->outputs_offset - s->inputs_offset - ( 44 * G.input_count + 4);
+    mol_num_t scratch;
+
+    scratch=s->total_size - to_subtract;
+    blake2b_incremental_hash((uint8_t*) &scratch, 4, &G.hash_state);
+
+    blake2b_incremental_hash((uint8_t*) &s->version_offset, 4, &G.hash_state);
+    blake2b_incremental_hash((uint8_t*) &s->cell_deps_offset, 4, &G.hash_state);
+    blake2b_incremental_hash((uint8_t*) &s->header_deps_offset, 4, &G.hash_state);
+    blake2b_incremental_hash((uint8_t*) &s->inputs_offset, 4, &G.hash_state);
+
+    scratch=s->outputs_offset - to_subtract;
+    blake2b_incremental_hash((uint8_t*) &scratch, 4, &G.hash_state);
+    scratch=s->outputs_data_offset - to_subtract;
+    blake2b_incremental_hash((uint8_t*) &scratch, 4, &G.hash_state);
+}
+
+void output_start(mol_num_t index) {
+    G.current_output_index=index;
+    explicit_bzero((void*) &G.cell_state, sizeof(G.cell_state));
+    G.cell_state.active = true;
+    G.lock_arg_cmp=G.change_lock_arg;
+}
+
+void output_end(void) {
+    if(G.cell_state.is_dao) {
+        G.dao_output_amount += G.cell_state.capacity;
+        G.dao_bitmask |= 1<<G.current_output_index;
+    } else {
+        if(G.cell_state.lock_arg_nonequal) {
+            G.plain_output_amount += G.cell_state.capacity;
+            memcpy(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20);
+        } else {
+            G.change_amount += G.cell_state.capacity;
+        }
+    }
+}
+
+void validate_output_data_start(mol_num_t idx) {
+    G.cell_state.is_dao = !((G.dao_bitmask & 1<<idx) == 0);
+}
+
+void finish_output_cell_data(void) {
+    if(G.cell_state.is_dao) {
+        if(G.cell_state.data_size != 8) REJECT("DAO data must be 8 bytes");
+        if(G.cell_state.dao_data_is_nonzero) {
+            if(G.maybe_transaction.v.tag != OPERATION_TAG_DAO_PREPARE && G.maybe_transaction.v.tag != 0) REJECT("Can't mix deposit, prepare, and withdraw in one transaction");
+            G.maybe_transaction.v.tag = OPERATION_TAG_DAO_PREPARE;
+        } else {
+            if(G.maybe_transaction.v.tag != OPERATION_TAG_DAO_DEPOSIT && G.maybe_transaction.v.tag != 0) REJECT("Can't mix deposit, prepare, and withdraw in one transaction");
+            G.maybe_transaction.v.tag = OPERATION_TAG_DAO_DEPOSIT;
+        }
+    } else {
+        if(G.cell_state.data_size !=0) REJECT("Data found in non-dao cell");
+    }
+}
+
+void finalize_raw_transaction(void) {
+    switch(G.maybe_transaction.v.tag) {
+        case 0:
+        case OPERATION_TAG_PLAIN_TRANSFER:
+            G.maybe_transaction.v.tag = OPERATION_TAG_PLAIN_TRANSFER;
+            G.maybe_transaction.v.amount = G.plain_output_amount;
+            break;
+        case OPERATION_TAG_DAO_DEPOSIT:
+            G.maybe_transaction.v.dao_amount = G.dao_output_amount;
+            break;
+        case OPERATION_TAG_DAO_PREPARE:
+            G.maybe_transaction.v.dao_amount = G.dao_output_amount;
+            if(G.dao_output_amount != G.dao_input_amount) REJECT("DAO input and output amounts do not match for prepare operation"); // Not a complete check; full DAO requirement is that _each cell_ match exactly. Just providing some fail-fast here.
+            break;
+        case OPERATION_TAG_DAO_WITHDRAW:
+            G.maybe_transaction.v.dao_amount = G.dao_input_amount;
+            if(G.dao_output_amount != 0) REJECT("Can't mix DAO withdraw and other DAO operations");
+            if(G.plain_output_amount != 0) REJECT("DAO withdrawals cannot be sent directly to another account");
+            break;
+    }
+    G.maybe_transaction.v.total_fee = (G.plain_input_amount + G.dao_input_amount) - (G.plain_output_amount + G.dao_output_amount + G.change_amount);
+    blake2b_finish_hash(G.transaction_hash, sizeof(G.transaction_hash), &G.hash_state);
+}
+
+// Process a whole transaction to sign.
+const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks = {
+    .offsets = computeNewOffsetsToHash,
+    .version = &(Uint32_cb) { { blake2b_chunk } },
+    .cell_deps = &(CellDepVec_cb) { .chunk = blake2b_chunk },
+    .header_deps = &(Byte32Vec_cb) { .chunk = blake2b_chunk },
+    .inputs = &(AnnotatedCellInputVec_cb) {
+        .start = blake2b_input_count,
+        .item = &annotatedCellInput_callbacks
+    },
+    .outputs = &(CellOutputVec_cb) { 
+        .chunk = blake2b_chunk,
+        .index = output_start,
+        .item = &(CellOutput_cb) {
+            .capacity = &(Uint64_cb) { { cell_capacity } },
+            .lock = &(Script_cb) {
+                .code_hash = &(Byte32_cb) { { cell_lock_code_hash } },
+                .hash_type = &hash_type_cb,
+                .args = &(Bytes_cb) { .body_chunk = script_arg_chunk }
+            },
+            .type_ = &(ScriptOpt_cb) {
+                .item = &(Script_cb) {
+                    .code_hash = &(Byte32_cb) { { cell_type_code_hash } },
+                    .hash_type = &hash_type_cb,
+                    .args = &(Bytes_cb) { .size = cell_type_arg_length }
+                }
+            },
+            .end = output_end
+        }
+    },
+    .outputs_data = &(BytesVec_cb) {
+        .chunk = blake2b_chunk,
+        .index = validate_output_data_start,
+        .item = &(Bytes_cb) { .size = set_cell_data_size, .body_chunk = check_cell_data_data_chunk, .end = finish_output_cell_data }
+    },
+    .end = finalize_raw_transaction
+};
+
+void init_bip32(mol_num_t size) {
+    if(size-4 > sizeof(G.key.components)) REJECT_HARD("Too many components in bip32 path");
+    G.key.length=0;
+}
+
+void bip32_component(uint8_t* buf, mol_num_t len) {
+    (void) len;
+    G.key.components[G.key.length++]=*(uint32_t*)buf;
+}
+
+void set_sign_path(void) {
+    prep_lock_arg(&G.key, &G.current_lock_arg);
+    // Default the change lock arg to the one we're currently going to sign for
+    memcpy(&G.change_lock_arg, G.current_lock_arg, 20);
+}
+
+void set_change_path(void) {
+    prep_lock_arg(&G.key, &G.change_lock_arg);
+}
+
+void witness_offsets(struct WitnessArgs_state *state) {
+    int lock_wit_len = state->input_type_offset-state->lock_offset;
+    int shift = 69-lock_wit_len;
+    mol_num_t new_header[4];
+    new_header[0] = state->total_size + shift;
+    new_header[1] = state->lock_offset;
+    new_header[2] = state->input_type_offset + shift;
+    new_header[3] = state->output_type_offset + shift;
+
+    uint64_t len64 = new_header[0];
+    blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
+    blake2b_incremental_hash((uint8_t*) new_header, sizeof(new_header), &G.hash_state);
+            static const uint8_t zero_witness[] = {
+                0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	blake2b_incremental_hash(zero_witness, sizeof(zero_witness), &G.hash_state);
+}
+
+void witness_chunk(uint8_t* chunk, mol_num_t length) {
+    blake2b_incremental_hash(chunk, length, &G.hash_state);
+}
+
+const WitnessArgs_cb WitnessArgs_rewrite_callbacks = {
+	.offsets = witness_offsets,
+	.input_type = &(BytesOpt_cb) { .chunk = witness_chunk },
+	.output_type = &(BytesOpt_cb) { .chunk = witness_chunk }
+};
+
+void begin_witness(mol_num_t index) {
+	G.witness_idx = index;
+	if(G.witness_idx==0) {
+		explicit_bzero(&G.hash_state, sizeof(G.hash_state));
+		blake2b_incremental_hash(G.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
+		MolReader_WitnessArgs_init_state(G.witness_stack+sizeof(G.witness_stack), (struct WitnessArgs_state*)G.witness_stack, &WitnessArgs_rewrite_callbacks);
+	}
+}
+
+void hash_witness_length(mol_num_t size) {
+	if(!G.witness_idx==0) {
+    uint64_t size_as_64 = size-4;
+    blake2b_incremental_hash((void*) &size_as_64, 8, &G.hash_state);
+	}
+}
+
+void process_witness(uint8_t *buff, mol_num_t buff_size) {
+  if(G.witness_idx == 0) { // First witness handling
+
+    struct mol_chunk chunk = { buff, buff_size, 0 };
+    mol_rv rv = MolReader_WitnessArgs_parse(G.witness_stack+sizeof(G.witness_stack), (struct WitnessArgs_state*)G.witness_stack, &chunk, &WitnessArgs_rewrite_callbacks, MOL_NUM_MAX);
+
+    if(rv == COMPLETE) {
+	    G.first_witness_done=1;
+    }
+  } else {
+    blake2b_incremental_hash(buff, buff_size, &G.hash_state);
+  }
+}
+
+void process_witness_end() {
+	// If something went wrong parsing the first arg, just assume that it's the usual empty one.
+	//
+	//
+	if(G.witness_idx==0 && G.first_witness_done!=1) {
+		G.first_witness_done=1;
+        explicit_bzero(&G.hash_state, sizeof(G.hash_state));
+        blake2b_incremental_hash(G.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
+        static const uint8_t self_witness[] = {
+            0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             // Length of WitnessArg,
+            0x55, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x55, 0x00, // WitnessArg
+            0x00, 0x00, 0x55, 0x00, 0x00, 0x00, 0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        blake2b_incremental_hash(self_witness, sizeof(self_witness), &G.hash_state);
+	}
+}
+
+void finalize_witnesses() {
+    blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), &G.hash_state);
+}
+
+void set_input_count(uint8_t *buf, mol_num_t len) {
+    G.input_count=*(uint32_t*) buf;
+}
+
+const struct AnnotatedTransaction_callbacks annotatedTransaction_callbacks = {
+    .signPath = &(Bip32_cb) { .size = init_bip32, .item = &(Uint32_cb) { { bip32_component } }, .end = set_sign_path },
+    .changePath = &(Bip32_cb) { .size = init_bip32, .item = &(Uint32_cb) { { bip32_component } }, .end = set_change_path },
+    .inputCount = &(Uint32_cb) { { set_input_count } },
+    .raw = &AnnotatedRawTransaction_callbacks,
+    .witnesses = &(BytesVec_cb) {
+        .index = begin_witness,
+        .item = &(Bytes_cb) { .size = hash_witness_length, .body_chunk = process_witness, .end = process_witness_end },
+        .end = finalize_witnesses
+    }
+};
+
+#define P1_FIRST            0x00
+#define P1_NEXT             0x01
+#define P1_NO_FALLBACK      0x40
+#define P1_LAST_MARKER      0x80
+#define P1_MASK             (~(P1_LAST_MARKER | P1_NO_FALLBACK))
+
+static size_t handle_apdu(uint8_t const instruction) {
 
     uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
     uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]);
@@ -609,115 +643,48 @@ static size_t handle_apdu(bool const enable_hashing, bool const enable_parsing, 
         THROW(EXC_WRONG_LENGTH_FOR_INS);
 
     bool last = (p1 & P1_LAST_MARKER) != 0;
-    bool is_ctxd = (p1 & P1_IS_CONTEXT) != 0;
+    bool secure_only = (p1 & P1_NO_FALLBACK) != 0;
+    struct mol_chunk chunk = { buff, buff_size, 0 };
+    mol_rv rv;
+
     switch (p1 & P1_MASK) {
-    case P1_FIRST: {
-        clear_data();
-        read_bip32_path(&G.key, buff, buff_size);
+        case P1_FIRST:
+            clear_data();
+            MolReader_AnnotatedTransaction_init_state(G.transaction_stack+256, (struct AnnotatedTransaction_state*)G.transaction_stack, &annotatedTransaction_callbacks);
+	    PRINTF("Initialized parser\n");
+	    // NO BREAK
+        case P1_NEXT:
+            if(G.maybe_transaction.hard_reject) THROW(EXC_PARSE_ERROR);
+            rv = MolReader_AnnotatedTransaction_parse(G.transaction_stack+256, (struct AnnotatedTransaction_state*)G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);
 
-        prep_lock_arg(&G.key, &G.current_lock_arg);
-
-        // Default the change lock arg to the one we're currently going to sign for
-        memcpy(&G.change_lock_arg, G.current_lock_arg, 20);
-
-
-        return finalize_successful_send(0);
-    }
-
-    case P1_CHANGE_PATH_CASE: {
-        bip32_path_t change_key;
-        read_bip32_path(&change_key, buff, buff_size);
-
-        prep_lock_arg(&change_key, &G.change_lock_arg);
-
-        return finalize_successful_send(0);
-    }
-
-    case P1_NEXT:
-        if (G.key.length == 0)
-            THROW(EXC_WRONG_LENGTH_FOR_INS);
-
-        // Guard against overflow
-        if (G.packet_index >= 0xFF) {
-            PRINTF("Packet overflow.\n");
-            PARSE_ERROR();
-        }
-        G.packet_index++;
-
-        break;
-    default:
-        THROW(EXC_WRONG_PARAM);
-    }
-
-    if (enable_parsing && !G.maybe_transaction.parse_failed) {
-        if (G.to_parse_fill_idx + buff_size > MAX_TOSIGN_PARSED) {
-            PRINTF("Transaction body too big; can't parse.\n");
-            G.maybe_transaction.parse_failed = true;
-        } else {
-            memcpy(G.to_parse + G.to_parse_fill_idx, buff, buff_size);
-            G.to_parse_fill_idx += buff_size;
-        }
-
-        if (last && !G.maybe_transaction.parse_failed) {
-            G.maybe_transaction.is_valid = false;
-
-            if (is_ctxd) {
-                if(G.context_transactions_fill_idx>=MAX_CONTEXT_TRANSACTIONS) {
-                    G.maybe_transaction.parse_failed = true;
-                    G.maybe_transaction.is_valid = false;
+            if(last) {
+                if(rv != COMPLETE || G.maybe_transaction.hard_reject) {
+                    PRINTF("Parse failed. %02d\n", rv);
+                    G.maybe_transaction.hard_reject = true;
                     THROW(EXC_PARSE_ERROR);
                 }
-                parse_context(&G.maybe_transaction, &G.key, G.to_parse, G.to_parse_fill_idx);
-                blake2b_incremental_hash(G.to_parse+4, G.to_parse_fill_idx-4, &G.hash_state);
-                blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), &G.hash_state);
-
-                memcpy(G.context_transactions[G.context_transactions_fill_idx].hash, G.final_hash, SIGN_HASH_SIZE);
-                G.context_transactions_fill_idx++;
-                G.to_parse_fill_idx = 0;
-                G.hash_state.initialized = false;
+                if(G.maybe_transaction.unsafe && secure_only) THROW(EXC_SECURITY);
+                G.maybe_transaction.is_valid = true;
             } else {
-                parse_operation(&G.maybe_transaction, &G.key, G.to_parse, G.to_parse_fill_idx);
-                if (G.maybe_transaction.is_valid == false && (p1 & P1_NO_FALLBACK)) {
-                    if(p1 & P1_NO_FALLBACK) {
-                        PRINTF("Strict checking requested and parse failed; bailing.\n");
-                        THROW(EXC_PARSE_ERROR);
-                    }
-                    // Fallback: assume we're signing for all inputs.
-                    PRINTF("Parse failed but still signing; assuming we sign for all inputs\n");
-                    G.maybe_transaction.v.group_input_count = G.maybe_transaction.input_count;
-                } else {
-                    // TODO: For unclear reasons, the
-                    // group_input_count calculated above is incorrect
-                    // and leading to validation failure
-                    G.maybe_transaction.v.group_input_count = G.maybe_transaction.input_count;
+                if(rv != INCOMPLETE) {
+                    G.maybe_transaction.hard_reject = true;
+                    THROW(EXC_PARSE_ERROR);
                 }
             }
-        }
+            
+            break;
     }
 
-
-    if (last) {
-        if (is_ctxd) {
-            return finalize_successful_send(0);
-        } else {
-            // We already computed the hash above, so just proceed to sign_complete.
-            return sign_complete(instruction);
-        }
+    if (last && G.maybe_transaction.is_valid) {
+        // We already computed the hash above, so just proceed to sign_complete.
+        return sign_complete(instruction);
     } else {
         return finalize_successful_send(0);
     }
 }
 
 size_t handle_apdu_sign(uint8_t instruction) {
-    bool const enable_hashing = instruction != INS_SIGN_UNSAFE;
-    bool const enable_parsing = enable_hashing;
-    return handle_apdu(enable_hashing, enable_parsing, instruction);
-}
-
-size_t handle_apdu_sign_with_hash(uint8_t instruction) {
-    bool const enable_hashing = true;
-    bool const enable_parsing = true;
-    return handle_apdu(enable_hashing, enable_parsing, instruction);
+    return handle_apdu(instruction);
 }
 
 static int perform_signature(bool const on_hash, bool const send_hash) {

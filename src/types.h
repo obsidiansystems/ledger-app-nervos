@@ -124,11 +124,10 @@ struct parsed_transaction {
     uint64_t total_fee;
     uint64_t amount; // 0 where inappropriate
     uint8_t flags;   // Interpretation depends on operation type
-    uint8_t source[20];
-    uint8_t dao_source[20];
+    uint32_t source_acct;
     uint8_t destination[20];
-    uint8_t dao_destination[20];
     uint64_t dao_amount;
+    uint64_t dao_output_amount;
     uint8_t group_input_count;
 };
 
