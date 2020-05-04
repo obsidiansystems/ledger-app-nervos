@@ -61,9 +61,11 @@ get_key_in_pem() {
 sendTransaction() {
   bytesToSign=$(($(wc -c <<<"$1")/2))
   toSend=$1
+  flag=40
   while [ "$bytesToSign" -gt 230 ] ;
   do
-    apdu_fixed "80034100e6$(head -c 460 <<<"$toSend")"
+    apdu_fixed "8003${flag}00e6$(head -c 460 <<<"$toSend")"
+    flag=41
     # [ "$status" -eq 0 ]
     # grep -q "<= b''9000" <(echo "$output")
     toSend="$(tail -c+461 <<<"$toSend")";
