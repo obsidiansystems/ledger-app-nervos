@@ -100,7 +100,9 @@ typedef struct {
 
 MOLECULE_API_DECORATOR mol_num_t mol_unpack_number(const uint8_t *src) {
     if (is_le()) {
-        return *(const uint32_t *)src;
+        uint32_t as_num;
+        memcpy(&as_num, src, 4);
+        return as_num;
     } else {
         uint32_t output = 0;
         uint8_t *dst = (uint8_t*) &output;
@@ -209,7 +211,11 @@ MOLECULE_API_DECORATOR mol_rv mol_parse_num(struct bytes_state* g, struct mol_ch
 #define parse(name) MolReader_ ## name ## _parse
 
 // Parse array
-#define STATE_PUSH(state, item) (struct item ## _state*) (state+1); if(((void*)(state+1))>stack_end) mol_printf("Stack blown; fixme\n")
+void* alignment_fix(void* in) {
+    return (void*)(((((uint32_t)in)/4)+1)*4);
+}
+
+#define STATE_PUSH(state, item) (struct item ## _state*) (alignment_fix(state+1)); if(((void*)(alignment_fix(state+1)))>stack_end) mol_printf("Stack blown; fixme, end: %x new: %x\n", stack_end, alignment_fix(state+1))
 
 #define MOL_CALL_SUBPARSER(field, type, size) { \
 	struct type ## _state *substate = STATE_PUSH(s, type); \

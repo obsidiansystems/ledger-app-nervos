@@ -71,16 +71,9 @@ typedef struct {
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
 
-    uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
-
     struct maybe_transaction maybe_transaction;
 
-    buffer_t message_data_as_buffer;
-
     blake2b_hash_state_t hash_state;
-
-    uint8_t input_tx_hash[32];
-    uint32_t input_index;
 
     uint32_t current_output_index;
 
@@ -95,18 +88,10 @@ typedef struct {
     
     uint8_t final_hash[SIGN_HASH_SIZE];
 
-    bool hash_only;
-
-    bool first_witness_done;
-    uint8_t witness_stack[128];
-    uint8_t transaction_stack[256];
+    _Alignas(uint32_t) uint8_t witness_stack[64]; 
+    _Alignas(uint32_t) uint8_t transaction_stack[512];
     
     uint64_t dao_bitmask;
-    uint64_t dao_deposit_bitmask;
-    uint64_t dao_prepare_bitmask;
-
-    uint8_t *lock_arg_cmp;
-    uint8_t lock_arg_tmp[20];
 
     uint64_t total_inputs;
     uint64_t total_outputs;
@@ -115,6 +100,13 @@ typedef struct {
     uint64_t plain_input_amount;
     uint64_t plain_output_amount;
     uint64_t change_amount;
+
+    uint8_t *lock_arg_cmp;
+    uint8_t lock_arg_tmp[20];
+    buffer_t message_data_as_buffer;
+    uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
+    bool hash_only;
+    bool first_witness_done;
 
 } apdu_sign_state_t;
 

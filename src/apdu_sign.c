@@ -650,12 +650,15 @@ static size_t handle_apdu(uint8_t const instruction) {
     switch (p1 & P1_MASK) {
         case P1_FIRST:
             clear_data();
-            MolReader_AnnotatedTransaction_init_state(G.transaction_stack+256, (struct AnnotatedTransaction_state*)G.transaction_stack, &annotatedTransaction_callbacks);
+
+            PRINTF("Initializing parser\n");
+            MolReader_AnnotatedTransaction_init_state(G.transaction_stack+sizeof(G.transaction_stack), (struct AnnotatedTransaction_state*)G.transaction_stack, &annotatedTransaction_callbacks);
             PRINTF("Initialized parser\n");
             // NO BREAK
         case P1_NEXT:
             if(G.maybe_transaction.hard_reject) THROW(EXC_PARSE_ERROR);
-            rv = MolReader_AnnotatedTransaction_parse(G.transaction_stack+256, (struct AnnotatedTransaction_state*)G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);
+            PRINTF("Calling parser\n");
+            rv = MolReader_AnnotatedTransaction_parse(G.transaction_stack+sizeof(G.transaction_stack), (struct AnnotatedTransaction_state*)G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);
 
             if(last) {
                 if(rv != COMPLETE || G.maybe_transaction.hard_reject) {
