@@ -8,8 +8,5 @@ Prompt 2:
 Fee
 0.01
 Prompt 3:
-Source
-ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7sugcvv9
-Prompt 4:
 Destination
 ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7sugcvv9
