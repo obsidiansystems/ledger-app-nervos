@@ -111,5 +111,9 @@ promptsCheck() {
 
 rejectionMessageCheck() {
   if [ "$DEBUG" != "1" ]; then return 0; fi;
-  test "$(egrep '^Rejecting: ' speculos.log | tail -n1)" = "Rejecting: $1"
+  test "$(egrep '^Rejecting: ' speculos.log | tail -n${2:-1} | head -n1)" = "Rejecting: $1"
+}
+hardRejectionMessageCheck() {
+  if [ "$DEBUG" != "1" ]; then return 0; fi;
+  test "$(egrep "^Can't sign: " speculos.log | tail -n1)" = "Can't sign: $1"
 }

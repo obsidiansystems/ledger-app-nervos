@@ -7,6 +7,3 @@ Deposit
 Prompt 2:
 Return
 2.89011952
-Prompt 3:
-Source
-ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7sugcvv9
