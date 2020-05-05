@@ -39,7 +39,6 @@ static void blake2b_incremental_hash(
 
     conditional_init_hash_state(state);
     cx_hash((cx_hash_t *)&state->state, 0, out, out_size, NULL, 0);
-    if(state == &G.hash_state) PRINTF("TXN CHUNK: %.*h\n", out_size, out);
 }
 
 static void blake2b_finish_hash(
@@ -96,11 +95,9 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t TYPE_INDEX = 0;
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
-        static const uint32_t SOURCE_INDEX = 3;
         static const uint32_t DESTINATION_INDEX = 3;
         static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"),      PROMPT("Fee"),
-                                                          // PROMPT("Source"),  
-							  PROMPT("Destination"), NULL};
+                                                          PROMPT("Destination"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
         //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
         register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
@@ -114,11 +111,9 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t TYPE_INDEX = 0;
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
-        static const uint32_t SOURCE_INDEX = 3;
         static const uint32_t DESTINATION_INDEX = 3;
         static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"), PROMPT("Amount"), PROMPT("Fee"),
-                                                          //PROMPT("Source"),
-							  NULL};
+                                                          NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
         // register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
         register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
@@ -134,21 +129,10 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t FEE_INDEX = 2;
         static const char *const prepare_prompts_full[] = {
             PROMPT("Confirm DAO"), PROMPT("Amount"),    PROMPT("Fee"), NULL };
-		    //,    PROMPT("Owner"),
-            // PROMPT("Fee payer"),
-	    //PROMPT("Change to"), PROMPT("Change"), NULL};
-        //static const char *const prepare_prompts_no_change[] = {
-          //  PROMPT("Confirm DAO"), PROMPT("Amount"), PROMPT("Fee"), PROMPT("Owner"), NULL }; // PROMPT("Fee payer"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Prepare");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        // register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.dao_source);
-        // register_ui_callback(PAYER_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-        //register_ui_callback(CHANGE_TO_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
-        //register_ui_callback(CHANGE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
-
-        //ui_prompt(G.maybe_transaction.v.flags & HAS_CHANGE_ADDRESS ? prepare_prompts_full : prepare_prompts_no_change,
-	ui_prompt(prepare_prompts_full,
+        ui_prompt(prepare_prompts_full,
                   ok_c, sign_reject);
         break;
     }
@@ -270,20 +254,22 @@ void script_arg_start_input() {
 
 void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
     if(!G.cell_state.active) return;
+    uint32_t current_offset = G.cell_state.lock_arg_index;
     if(G.cell_state.lock_arg_index+buflen > 20) { // Probably not possible.
         G.cell_state.lock_arg_nonequal |= true;
         return;
     }
-    memcpy(G.lock_arg_tmp+G.cell_state.lock_arg_index, buf, buflen);
+    memcpy(G.lock_arg_tmp+current_offset, buf, buflen);
+    G.cell_state.lock_arg_index+=buflen;
+
     if(!G.lock_arg_cmp) {
         G.cell_state.lock_arg_nonequal=true;
         return;
     }
     for(mol_num_t i=0;i<buflen;i++) {
-        G.cell_state.lock_arg_nonequal |= (G.lock_arg_cmp[G.cell_state.lock_arg_index+i] != buf[i]);
+        G.cell_state.lock_arg_nonequal |= (G.lock_arg_cmp[current_offset+i] != buf[i]);
         if(G.cell_state.lock_arg_nonequal) return;
     }
-    G.cell_state.lock_arg_index+=buflen;
 }
 
 void input_lock_arg_end() {
@@ -298,29 +284,29 @@ void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
     static const uint8_t dao_type_script_hash[] = {0x82, 0xd7, 0x6d, 0x1b, 0x75, 0xfe, 0x2f, 0xd9, 0xa2, 0x7d, 0xfb,
                                                    0xaa, 0x65, 0xa0, 0x39, 0x22, 0x1a, 0x38, 0x0d, 0x76, 0xc9, 0x26,
                                                    0xf3, 0x78, 0xd3, 0xf8, 0x1c, 0xf3, 0xe7, 0xe1, 0x3f, 0x2e};
-	if(!G.cell_state.active) return;
-	
+    if(!G.cell_state.active) return;
+
     // If this exists, we require it to be the DAO for now. Verify.
-	if(memcmp(buf, dao_type_script_hash, sizeof(dao_type_script_hash)))
-       	REJECT("Only the DAO type script is supported");
-	G.cell_state.is_dao = true;
+    if(memcmp(buf, dao_type_script_hash, sizeof(dao_type_script_hash)))
+        REJECT("Only the DAO type script is supported");
+    G.cell_state.is_dao = true;
 }
 
 void cell_type_arg_length(mol_num_t length) {
-	if(!G.cell_state.active) return;
-	// DAO is empty.
-	if(length != 4) REJECT("DAO cell has nonempty args");
+    if(!G.cell_state.active) return;
+    // DAO is empty.
+    if(length != 4) REJECT("DAO cell has nonempty args");
 }
-				    
+
 void set_cell_data_size(mol_num_t size) {
     if(!G.cell_state.active) return;
     G.cell_state.data_size = size-4; // size includes the 4-byte size header in Bytes
 }
 
 void check_cell_data_data_chunk(uint8_t *buf, mol_num_t length) {
-	if(!G.cell_state.active) return;
-	for(mol_num_t i=0;i<length;i++)
-		G.cell_state.dao_data_is_nonzero |= buf[i];
+    if(!G.cell_state.active) return;
+    for(mol_num_t i=0;i<length;i++)
+        G.cell_state.dao_data_is_nonzero |= buf[i];
 }
 
 void finish_input_cell_data() {
@@ -419,7 +405,13 @@ void output_end(void) {
     } else {
         if(G.cell_state.lock_arg_nonequal) {
             G.plain_output_amount += G.cell_state.capacity;
-            memcpy(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20);
+            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20)) {
+                REJECT("Can't handle transactions with multiple non-change destination addresses");
+            } else {
+                G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
+                memcpy(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20);
+            }
+
         } else {
             G.change_amount += G.cell_state.capacity;
         }
@@ -447,7 +439,9 @@ void finish_output_cell_data(void) {
 
 void finalize_raw_transaction(void) {
     switch(G.maybe_transaction.v.tag) {
-        case 0:
+        case OPERATION_TAG_NONE:
+            break;
+        case OPERATION_TAG_NOT_SET:
         case OPERATION_TAG_PLAIN_TRANSFER:
             G.maybe_transaction.v.tag = OPERATION_TAG_PLAIN_TRANSFER;
             G.maybe_transaction.v.amount = G.plain_output_amount;
@@ -466,6 +460,10 @@ void finalize_raw_transaction(void) {
             break;
     }
     G.maybe_transaction.v.total_fee = (G.plain_input_amount + G.dao_input_amount) - (G.plain_output_amount + G.dao_output_amount + G.change_amount);
+    if(G.maybe_transaction.v.tag == OPERATION_TAG_DAO_WITHDRAW) {
+        // Can't compute fee without a bunch more info, calculating return instead and putting that in this slot so the user can get equivalent info.
+        G.maybe_transaction.v.total_fee = -G.maybe_transaction.v.total_fee;
+    }
     blake2b_finish_hash(G.transaction_hash, sizeof(G.transaction_hash), &G.hash_state);
 }
 
@@ -508,23 +506,24 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
 };
 
 void init_bip32(mol_num_t size) {
-    if(size-4 > sizeof(G.key.components)) REJECT_HARD("Too many components in bip32 path");
-    G.key.length=0;
+    if(size-4 > sizeof(G.temp_key.components)) REJECT_HARD("Too many components in bip32 path");
+    G.temp_key.length=0;
 }
 
 void bip32_component(uint8_t* buf, mol_num_t len) {
     (void) len;
-    G.key.components[G.key.length++]=*(uint32_t*)buf;
+    G.temp_key.components[G.temp_key.length++]=*(uint32_t*)buf;
 }
 
 void set_sign_path(void) {
+    memcpy(&G.key, &G.temp_key, sizeof(G.key));
     prep_lock_arg(&G.key, &G.current_lock_arg);
     // Default the change lock arg to the one we're currently going to sign for
     memcpy(&G.change_lock_arg, G.current_lock_arg, 20);
 }
 
 void set_change_path(void) {
-    prep_lock_arg(&G.key, &G.change_lock_arg);
+    prep_lock_arg(&G.temp_key, &G.change_lock_arg);
 }
 
 void witness_offsets(struct WitnessArgs_state *state) {
@@ -539,13 +538,13 @@ void witness_offsets(struct WitnessArgs_state *state) {
     uint64_t len64 = new_header[0];
     blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
     blake2b_incremental_hash((uint8_t*) new_header, sizeof(new_header), &G.hash_state);
-            static const uint8_t zero_witness[] = {
-                0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-	blake2b_incremental_hash(zero_witness, sizeof(zero_witness), &G.hash_state);
+    static const uint8_t zero_witness[] = {
+        0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    blake2b_incremental_hash(zero_witness, sizeof(zero_witness), &G.hash_state);
 }
 
 void witness_chunk(uint8_t* chunk, mol_num_t length) {
@@ -553,25 +552,25 @@ void witness_chunk(uint8_t* chunk, mol_num_t length) {
 }
 
 const WitnessArgs_cb WitnessArgs_rewrite_callbacks = {
-	.offsets = witness_offsets,
-	.input_type = &(BytesOpt_cb) { .chunk = witness_chunk },
-	.output_type = &(BytesOpt_cb) { .chunk = witness_chunk }
+    .offsets = witness_offsets,
+    .input_type = &(BytesOpt_cb) { .chunk = witness_chunk },
+    .output_type = &(BytesOpt_cb) { .chunk = witness_chunk }
 };
 
 void begin_witness(mol_num_t index) {
-	G.witness_idx = index;
-	if(G.witness_idx==0) {
-		explicit_bzero(&G.hash_state, sizeof(G.hash_state));
-		blake2b_incremental_hash(G.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
-		MolReader_WitnessArgs_init_state(G.witness_stack+sizeof(G.witness_stack), (struct WitnessArgs_state*)G.witness_stack, &WitnessArgs_rewrite_callbacks);
-	}
+    G.witness_idx = index;
+    if(G.witness_idx==0) {
+        explicit_bzero(&G.hash_state, sizeof(G.hash_state));
+        blake2b_incremental_hash(G.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
+        MolReader_WitnessArgs_init_state(G.witness_stack+sizeof(G.witness_stack), (struct WitnessArgs_state*)G.witness_stack, &WitnessArgs_rewrite_callbacks);
+    }
 }
 
 void hash_witness_length(mol_num_t size) {
-	if(!G.witness_idx==0) {
-    uint64_t size_as_64 = size-4;
-    blake2b_incremental_hash((void*) &size_as_64, 8, &G.hash_state);
-	}
+    if(!(G.witness_idx==0)) {
+        uint64_t size_as_64 = size-4;
+        blake2b_incremental_hash((void*) &size_as_64, 8, &G.hash_state);
+    }
 }
 
 void process_witness(uint8_t *buff, mol_num_t buff_size) {
@@ -581,19 +580,19 @@ void process_witness(uint8_t *buff, mol_num_t buff_size) {
     mol_rv rv = MolReader_WitnessArgs_parse(G.witness_stack+sizeof(G.witness_stack), (struct WitnessArgs_state*)G.witness_stack, &chunk, &WitnessArgs_rewrite_callbacks, MOL_NUM_MAX);
 
     if(rv == COMPLETE) {
-	    G.first_witness_done=1;
+        G.first_witness_done=1;
     }
   } else {
-    blake2b_incremental_hash(buff, buff_size, &G.hash_state);
+      blake2b_incremental_hash(buff, buff_size, &G.hash_state);
   }
 }
 
 void process_witness_end() {
-	// If something went wrong parsing the first arg, just assume that it's the usual empty one.
-	//
-	//
-	if(G.witness_idx==0 && G.first_witness_done!=1) {
-		G.first_witness_done=1;
+    // If something went wrong parsing the first arg, just assume that it's the usual empty one.
+    //
+    //
+    if(G.witness_idx==0 && G.first_witness_done!=1) {
+        G.first_witness_done=1;
         explicit_bzero(&G.hash_state, sizeof(G.hash_state));
         blake2b_incremental_hash(G.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
         static const uint8_t self_witness[] = {
@@ -605,7 +604,7 @@ void process_witness_end() {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
         blake2b_incremental_hash(self_witness, sizeof(self_witness), &G.hash_state);
-	}
+    }
 }
 
 void finalize_witnesses() {
@@ -613,6 +612,7 @@ void finalize_witnesses() {
 }
 
 void set_input_count(uint8_t *buf, mol_num_t len) {
+    (void) len;
     G.input_count=*(uint32_t*) buf;
 }
 
@@ -651,8 +651,8 @@ static size_t handle_apdu(uint8_t const instruction) {
         case P1_FIRST:
             clear_data();
             MolReader_AnnotatedTransaction_init_state(G.transaction_stack+256, (struct AnnotatedTransaction_state*)G.transaction_stack, &annotatedTransaction_callbacks);
-	    PRINTF("Initialized parser\n");
-	    // NO BREAK
+            PRINTF("Initialized parser\n");
+            // NO BREAK
         case P1_NEXT:
             if(G.maybe_transaction.hard_reject) THROW(EXC_PARSE_ERROR);
             rv = MolReader_AnnotatedTransaction_parse(G.transaction_stack+256, (struct AnnotatedTransaction_state*)G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);

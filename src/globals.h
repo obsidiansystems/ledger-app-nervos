@@ -67,6 +67,7 @@ typedef struct {
 
 typedef struct {
     bip32_path_t key;
+    bip32_path_t temp_key;
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
 
