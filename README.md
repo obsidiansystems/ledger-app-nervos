@@ -133,11 +133,17 @@ as you continue. You may want to read the rest of these instructions before you
 begin installing, as you will need to confirm and verify a few things during the
 process.
 
-Still within the virtualenv, run the `./install.sh` command included in the `release.tar.gz`
-that you downloaded.
+Still within the virtualenv, run the `./install.sh` command included in the `nano-s-release.tar.gz`
+that you downloaded:
 
 This `./install.sh` script takes the path to an application directory. The only such directory
-included in the downloaded `release.tar.gz` will be `app`, so install the app like this: `./install.sh app`.
+included in the downloaded `release.tar.gz` will be `app`, so install the app like this:
+
+```
+tar xzf nano-s-release.tar.gz
+cd ledger-app-nervos-s
+./install.sh app
+```
 
 The first thing that should come up in your terminal is a message that looks
 like this:
