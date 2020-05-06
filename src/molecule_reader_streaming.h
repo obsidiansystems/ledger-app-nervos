@@ -133,7 +133,6 @@ struct bytes_state {
     mol_num_t fill;
     union {
        uint8_t bytes_buffer[32];
-       uint32_t bytes_as_num; // Here to force alignment.
     };
 };
 
@@ -141,7 +140,7 @@ struct bytes_state {
 struct num_state {
     mol_num_t fill;
     union {
-       mol_num_t bytes_as_num; // Here to force alignment.
+       mol_num_t bytes_as_num;
     };
 };
 
@@ -209,9 +208,10 @@ MOLECULE_API_DECORATOR mol_rv mol_parse_bytes(struct bytes_state* g, struct mol_
     return INCOMPLETE;
 }
 
-MOLECULE_API_DECORATOR mol_rv mol_parse_num(struct bytes_state* g, struct mol_chunk *chunk, uint32_t *dest) {
-    mol_rv rv = mol_parse_bytes(g, chunk, NULL, 4);
-    if(rv == COMPLETE) *dest = mol_unpack_number(g->bytes_buffer);
+MOLECULE_API_DECORATOR mol_rv mol_parse_num(struct num_state* g, struct mol_chunk *chunk, uint32_t *dest) {
+    // mol_parse_bytes won't touch more than 4 bytes of payload when passed 4, and num_state is equivalent for that long.
+    mol_rv rv = mol_parse_bytes((struct bytes_state*) g, chunk, NULL, 4);
+    if(rv == COMPLETE) *dest = mol_unpack_number((uint8_t*) &g->bytes_as_num);
     return rv;
 }
 
@@ -243,12 +243,12 @@ MOLECULE_API_DECORATOR void mol_num_init_state(struct num_state* g, const struct
     memset(g, 0, sizeof(struct num_state));
 }
 #define MOL_INIT_NUM() { \
-	struct bytes_state *nextstate = STATE_PUSH(s, num); \
+	struct num_state *nextstate = STATE_PUSH(s, num); \
 	mol_num_init_state(nextstate, NULL); \
 }
 
 #define MOL_CALL_NUM(var) { \
-	struct bytes_state *substate = STATE_PUSH(s, bytes); \
+	struct num_state *substate = STATE_PUSH(s, num); \
 	mol_rv rv = mol_parse_num(substate, chunk, &(var)); \
 	if(rv != COMPLETE) { \
 		if(cb && cb->chunk) MOL_PIC(cb->chunk)(chunk->ptr + start_idx, chunk->consumed - start_idx); \
