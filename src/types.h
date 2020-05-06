@@ -93,6 +93,7 @@ static inline bool bip32_paths_eq(bip32_path_t volatile const *const a, bip32_pa
 
 enum operation_tag {
     OPERATION_TAG_NONE = -1, // Sentinal value, as 0 is possibly used for something
+    OPERATION_TAG_NOT_SET = 0, // Used for "value not yet determined" during parsing.
     OPERATION_TAG_PLAIN_TRANSFER = 1,
     OPERATION_TAG_DAO_DEPOSIT,
     OPERATION_TAG_DAO_PREPARE,
@@ -124,11 +125,10 @@ struct parsed_transaction {
     uint64_t total_fee;
     uint64_t amount; // 0 where inappropriate
     uint8_t flags;   // Interpretation depends on operation type
-    uint8_t source[20];
-    uint8_t dao_source[20];
+    uint32_t source_acct;
     uint8_t destination[20];
-    uint8_t dao_destination[20];
     uint64_t dao_amount;
+    uint64_t dao_output_amount;
     uint8_t group_input_count;
 };
 

@@ -23,11 +23,11 @@ COMMIT="$(echo "$GIT_DESCRIBE" | sed 's/-dirty/*/')"
 HEXCOMMIT="$(echo -n ${COMMIT}|xxd -ps -g0)"
 
 blake2b_p () {
-  blake2 --length 32 --personal 636b622d64656661756c742d68617368 | tee txhashdump
+  blake2 --length 32 --personal 636b622d64656661756c742d68617368
 }
 
 blake2b_lock_hash () {
-  (blake2b_p | tee dumpfile1 ; echo -n "5500000000000000 55000000100000005500000055000000410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") | tee dumpfile | xxd -p -r | blake2b_p
+  (blake2b_p ; echo -n "5500000000000000 55000000100000005500000055000000410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") | xxd -p -r | blake2b_p
 }
 
 check_signature () {
@@ -61,12 +61,18 @@ get_key_in_pem() {
 sendTransaction() {
   bytesToSign=$(($(wc -c <<<"$1")/2))
   toSend=$1
-  while [ "$bytesToSign" -gt 230 ] ;
+  flag=40
+  chunksize=${chunk_size:-230}
+  chunksize_hex=$(($chunksize*2))
+  next_chunk_head=$(($chunksize_hex+1))
+  while [ "$bytesToSign" -gt $chunksize ] ;
   do
-    apdu_fixed "80034100e6$(head -c 460 <<<"$toSend")"
+    bytes=$(printf "%02x" $chunksize)
+    apdu_fixed "8003${flag}00$bytes$(head -c $chunksize_hex <<<"$toSend")"
+    flag=41
     # [ "$status" -eq 0 ]
     # grep -q "<= b''9000" <(echo "$output")
-    toSend="$(tail -c+461 <<<"$toSend")";
+    toSend="$(tail -c+$next_chunk_head <<<"$toSend")";
     bytesToSign=$(($(wc -c <<<"$toSend")/2))
     echo $bytesToSign
   done
@@ -82,25 +88,6 @@ sendTransaction() {
   fi
 }
 
-doSign() {
-  run apdu_fixed "8003400011048000002c800001358000000080000000"
-  [ "$status" -eq 0 ]
-  grep -q "<= b''9000" <(echo "$output")
-  bytesToSign=$(($(wc -c <<<"$1")/2))
-  toSend=$1
-  while [ "$bytesToSign" -gt 230 ] ;
-  do
-    apdu_fixed "80034100e6$(head -c 460 <<<"$toSend")"
-    # [ "$status" -eq 0 ]
-    # grep -q "<= b''9000" <(echo "$output")
-    toSend="$(tail -c+461 <<<"$toSend")";
-    bytesToSign=$(($(wc -c <<<"$toSend")/2))
-  done
-  bytes=$(printf "%02x" $(($(wc -c <<<"$toSend")/2)))
-  run apdu_with_clicks "8003c100$bytes$toSend" "rR"
-}
-
-
 promptsCheck() {
   if [ "$DEBUG" != "1" ]; then return 0; fi;
   egrep -A2 'Prompt [0-9]:' speculos.log | tail -n $(($1*3))
@@ -109,5 +96,9 @@ promptsCheck() {
 
 rejectionMessageCheck() {
   if [ "$DEBUG" != "1" ]; then return 0; fi;
-  test "$(egrep '^Rejecting: ' speculos.log | tail -n1)" = "Rejecting: $1"
+  test "$(egrep '^Rejecting: ' speculos.log | tail -n${2:-1} | head -n1)" = "Rejecting: $1"
+}
+hardRejectionMessageCheck() {
+  if [ "$DEBUG" != "1" ]; then return 0; fi;
+  test "$(egrep "^Can't sign: " speculos.log | tail -n1)" = "Can't sign: $1"
 }

@@ -32,9 +32,9 @@ typedef struct {
 
 struct maybe_transaction {
     bool is_valid;
-    bool parse_failed;
+    bool unsafe;
+    bool hard_reject;
     struct parsed_transaction v;
-    uint16_t input_count;
 };
 
 #define OUTPUT_FLAGS_KNOWN_LOCK     0x01
@@ -47,38 +47,67 @@ struct tx_output {
     uint8_t flags;
 };
 
-struct tx_context {
-    uint8_t hash[32];
+typedef struct {
+    uint8_t tx_hash[32];
     uint32_t index;
-    struct tx_output output;
-};
+    blake2b_hash_state_t hash_state;
+} input_state_t;
 
-#define MAX_TOSIGN_PARSED 600
-#define MAX_CONTEXT_TRANSACTIONS 4
+typedef struct {
+    uint64_t capacity;
+    bool active;
+    bool is_dao;
+    bool is_change;
+    uint8_t dao_data_is_nonzero;
+    uint32_t arg_chunk_ctr;
+    uint32_t data_size;
+    uint32_t lock_arg_index;
+    uint8_t lock_arg_nonequal;
+} cell_state_t;
 
 typedef struct {
     bip32_path_t key;
+    bip32_path_t temp_key;
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
 
-    uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
-
-    uint8_t to_parse[MAX_TOSIGN_PARSED];
-    uint16_t to_parse_fill_idx;
-
-    struct tx_context context_transactions[MAX_CONTEXT_TRANSACTIONS];
-    uint8_t context_transactions_fill_idx;
-
     struct maybe_transaction maybe_transaction;
 
-    // uint8_t message_data[NERVOS_BUFSIZE];
-    // uint32_t message_data_length;
-    buffer_t message_data_as_buffer;
-
     blake2b_hash_state_t hash_state;
+
+    uint32_t current_output_index;
+
+    uint32_t input_count;
+
+    input_state_t input_state;
+    cell_state_t cell_state;
+
+    uint32_t witness_idx;
+    
+    uint8_t transaction_hash[SIGN_HASH_SIZE];
+    
     uint8_t final_hash[SIGN_HASH_SIZE];
 
+    _Alignas(uint32_t) uint8_t witness_stack[64]; 
+    _Alignas(uint32_t) uint8_t transaction_stack[512];
+    
+    uint64_t dao_bitmask;
+
+    uint64_t total_inputs;
+    uint64_t total_outputs;
+    uint64_t dao_input_amount;
+    uint64_t dao_output_amount;
+    uint64_t plain_input_amount;
+    uint64_t plain_output_amount;
+    uint64_t change_amount;
+
+    uint8_t *lock_arg_cmp;
+    uint8_t lock_arg_tmp[20];
+    buffer_t message_data_as_buffer;
+    uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
     bool hash_only;
+    bool first_witness_done;
+
 } apdu_sign_state_t;
 
 typedef struct {
