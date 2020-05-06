@@ -62,13 +62,17 @@ sendTransaction() {
   bytesToSign=$(($(wc -c <<<"$1")/2))
   toSend=$1
   flag=40
-  while [ "$bytesToSign" -gt 230 ] ;
+  chunksize=${chunk_size:-230}
+  chunksize_hex=$(($chunksize*2))
+  next_chunk_head=$(($chunksize_hex+1))
+  while [ "$bytesToSign" -gt $chunksize ] ;
   do
-    apdu_fixed "8003${flag}00e6$(head -c 460 <<<"$toSend")"
+    bytes=$(printf "%02x" $chunksize)
+    apdu_fixed "8003${flag}00$bytes$(head -c $chunksize_hex <<<"$toSend")"
     flag=41
     # [ "$status" -eq 0 ]
     # grep -q "<= b''9000" <(echo "$output")
-    toSend="$(tail -c+461 <<<"$toSend")";
+    toSend="$(tail -c+$next_chunk_head <<<"$toSend")";
     bytesToSign=$(($(wc -c <<<"$toSend")/2))
     echo $bytesToSign
   done
@@ -83,25 +87,6 @@ sendTransaction() {
     apdu_fixed "8003e100$bytes$toSend"
   fi
 }
-
-doSign() {
-  run apdu_fixed "8003400011048000002c800001358000000080000000"
-  [ "$status" -eq 0 ]
-  grep -q "<= b''9000" <(echo "$output")
-  bytesToSign=$(($(wc -c <<<"$1")/2))
-  toSend=$1
-  while [ "$bytesToSign" -gt 230 ] ;
-  do
-    apdu_fixed "80034100e6$(head -c 460 <<<"$toSend")"
-    # [ "$status" -eq 0 ]
-    # grep -q "<= b''9000" <(echo "$output")
-    toSend="$(tail -c+461 <<<"$toSend")";
-    bytesToSign=$(($(wc -c <<<"$toSend")/2))
-  done
-  bytes=$(printf "%02x" $(($(wc -c <<<"$toSend")/2)))
-  run apdu_with_clicks "8003c100$bytes$toSend" "rR"
-}
-
 
 promptsCheck() {
   if [ "$DEBUG" != "1" ]; then return 0; fi;
