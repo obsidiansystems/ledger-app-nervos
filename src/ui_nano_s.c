@@ -119,18 +119,10 @@ void ui_display(const bagl_element_t *elems, size_t sz, ui_callback_t ok_c, ui_c
     if (!is_idling()) {
         switch_screen(0);
     }
-    #if CX_APILEVEL < 10
     ux.elements = elems;
     ux.elements_count = sz;
     ux.button_push_handler = button_handler;
     ux.elements_preprocessor = prepro;
-    #else
-        ux.stack[0].element_arrays[0].element_array = elems;
-        ux.stack[0].element_arrays[0].element_array_count = sz;
-        ux.stack[0].element_arrays_count=1;
-        ux.stack[0].button_push_callback = button_handler;
-        G_ux.stack[0].screen_before_element_display_callback = prepro;
-    #endif
     UX_WAKE_UP();
     UX_REDISPLAY();
 }
@@ -279,11 +271,6 @@ static const ux_menu_entry_t main_menu_data[] = {
     {configuration_menu_data, NULL, 0, NULL, "Configuration", NULL, 0, 0},
     {NULL, exit_app_cb, 0, NULL, "Quit app", NULL, 50, 29}, // TODO: Put icon for "dashboard" in
     UX_MENU_END};
-
-void switch_network_cb(__attribute__((unused)) unsigned int cb) {
-    switch_network();
-    UX_MENU_DISPLAY(0, configuration_menu_data, NULL);
-}
 
 static const ux_menu_entry_t configuration_menu_data[] = {
     {NULL, switch_network, 0, NULL, "Addresses for", N_data_real.network_prompt, 0, 0},
