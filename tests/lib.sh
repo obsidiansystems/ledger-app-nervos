@@ -81,6 +81,8 @@ sendTransaction() {
   if [ -z "$2" ]; then
     apdu_with_clicks "8003c100$bytes$toSend" "rR"
 
+  elif [ "$2" = "--no-hard-check" ]; then
+    apdu_with_clicks "80038100$bytes$toSend" "rR"
   elif [ "$2" = "--expectReject" ]; then
     apdu_fixed "8003c100$bytes$toSend"
   else # [ "$2" = "--isCtxd" ]

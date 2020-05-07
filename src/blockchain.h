@@ -298,6 +298,7 @@ struct BytesVec_callbacks {
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
     void (*size)(mol_num_t);
+    void (*length)(mol_num_t);
     void (*index)(mol_num_t);
     void (*offset)(mol_num_t);
     const struct Bytes_callbacks *item;
@@ -341,6 +342,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesVec_parse                
             MOL_INIT_SUBPARSER(item, Bytes)
             s->field_idx=0;
             s->state_num++;
+            if(cb && cb->length) MOL_PIC(cb->length)((s->first_offset>>2)-1);
             if(cb && cb->index) MOL_PIC(cb->index)(s->field_idx);
         case 3:
             while(s->field_idx < (s->first_offset>>2)-1) {
@@ -428,6 +430,7 @@ struct UncleBlockVec_callbacks {
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
     void (*size)(mol_num_t);
+    void (*length)(mol_num_t);
     void (*index)(mol_num_t);
     void (*offset)(mol_num_t);
     const struct UncleBlock_callbacks *item;
@@ -471,6 +474,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_UncleBlockVec_parse           
             MOL_INIT_SUBPARSER(item, UncleBlock)
             s->field_idx=0;
             s->state_num++;
+            if(cb && cb->length) MOL_PIC(cb->length)((s->first_offset>>2)-1);
             if(cb && cb->index) MOL_PIC(cb->index)(s->field_idx);
         case 3:
             while(s->field_idx < (s->first_offset>>2)-1) {
@@ -495,6 +499,7 @@ struct TransactionVec_callbacks {
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
     void (*size)(mol_num_t);
+    void (*length)(mol_num_t);
     void (*index)(mol_num_t);
     void (*offset)(mol_num_t);
     const struct Transaction_callbacks *item;
@@ -538,6 +543,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_TransactionVec_parse          
             MOL_INIT_SUBPARSER(item, Transaction)
             s->field_idx=0;
             s->state_num++;
+            if(cb && cb->length) MOL_PIC(cb->length)((s->first_offset>>2)-1);
             if(cb && cb->index) MOL_PIC(cb->index)(s->field_idx);
         case 3:
             while(s->field_idx < (s->first_offset>>2)-1) {
@@ -661,6 +667,7 @@ struct CellOutputVec_callbacks {
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
     void (*size)(mol_num_t);
+    void (*length)(mol_num_t);
     void (*index)(mol_num_t);
     void (*offset)(mol_num_t);
     const struct CellOutput_callbacks *item;
@@ -704,6 +711,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutputVec_parse           
             MOL_INIT_SUBPARSER(item, CellOutput)
             s->field_idx=0;
             s->state_num++;
+            if(cb && cb->length) MOL_PIC(cb->length)((s->first_offset>>2)-1);
             if(cb && cb->index) MOL_PIC(cb->index)(s->field_idx);
         case 3:
             while(s->field_idx < (s->first_offset>>2)-1) {
