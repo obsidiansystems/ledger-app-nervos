@@ -272,8 +272,14 @@ static const ux_menu_entry_t main_menu_data[] = {
     {NULL, exit_app_cb, 0, NULL, "Quit app", NULL, 50, 29}, // TODO: Put icon for "dashboard" in
     UX_MENU_END};
 
+
+void switch_network_cb(unsigned int cb) {
+    switch_network(cb);
+    UX_MENU_DISPLAY(0, configuration_menu_data, NULL);
+}
+
 static const ux_menu_entry_t configuration_menu_data[] = {
-    {NULL, switch_network, 0, NULL, "Addresses for", N_data_real.network_prompt, 0, 0},
+    {NULL, switch_network_cb, 0, NULL, "Addresses for", N_data_real.network_prompt, 0, 0},
     {main_menu_data, NULL, 1, NULL, "Back", NULL, 61, 40}, // TODO: Put icon for "back" in
     UX_MENU_END};
 
