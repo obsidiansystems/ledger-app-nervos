@@ -184,6 +184,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInputVec_parse   
             s->field_idx=0;
             s->state_num++;
             if(cb && cb->length) MOL_PIC(cb->length)((s->first_offset>>2)-1);
+            if(cb && cb->index) MOL_PIC(cb->index)(s->field_idx);
         case 3:
             while(s->field_idx < (s->first_offset>>2)-1) {
                 MOL_CALL_SUBPARSER(item, AnnotatedCellInput, -1)

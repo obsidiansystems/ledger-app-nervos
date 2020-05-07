@@ -668,6 +668,8 @@ static size_t handle_apdu(uint8_t const instruction) {
                     THROW(EXC_PARSE_ERROR);
                 }
                 if(G.maybe_transaction.unsafe && secure_only) THROW(EXC_SECURITY);
+                // Override if we have an unsafe but valid transaction, so we don't prompt the user like it's a transfer.
+                if(G.maybe_transaction.unsafe) G.maybe_transaction.v.tag=OPERATION_TAG_NONE;
                 G.maybe_transaction.is_valid = true;
             } else {
                 if(rv != INCOMPLETE) {
