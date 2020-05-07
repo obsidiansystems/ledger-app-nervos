@@ -139,6 +139,7 @@ struct AnnotatedCellInputVec_callbacks {
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
     void (*size)(mol_num_t);
+    void (*length)(mol_num_t);
     void (*index)(mol_num_t);
     void (*offset)(mol_num_t);
     const struct AnnotatedCellInput_callbacks *item;
@@ -182,7 +183,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInputVec_parse   
             MOL_INIT_SUBPARSER(item, AnnotatedCellInput)
             s->field_idx=0;
             s->state_num++;
-            if(cb && cb->index) MOL_PIC(cb->index)(s->field_idx);
+            if(cb && cb->length) MOL_PIC(cb->length)((s->first_offset>>2)-1);
         case 3:
             while(s->field_idx < (s->first_offset>>2)-1) {
                 MOL_CALL_SUBPARSER(item, AnnotatedCellInput, -1)

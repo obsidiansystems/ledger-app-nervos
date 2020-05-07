@@ -369,7 +369,8 @@ const AnnotatedCellInput_cb annotatedCellInput_callbacks = {
 };
 
 // Add the number of inputs to the raw transaction hash; used at the start of the inputs. This is the header for the implicit FixVec<CellInput> we are writing into the hash.
-void blake2b_input_count() {
+void blake2b_input_count(mol_num_t length) {
+    if(length != G.input_count) REJECT_HARD("Number of input cells reported in AnnotatedTransaction does not match the actual number of input cells");
     blake2b_incremental_hash((uint8_t*) &G.input_count, 4, &G.hash_state);
 }
 
@@ -474,7 +475,7 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
     .cell_deps = &(CellDepVec_cb) { .chunk = blake2b_chunk },
     .header_deps = &(Byte32Vec_cb) { .chunk = blake2b_chunk },
     .inputs = &(AnnotatedCellInputVec_cb) {
-        .start = blake2b_input_count,
+        .length = blake2b_input_count,
         .item = &annotatedCellInput_callbacks
     },
     .outputs = &(CellOutputVec_cb) { 
