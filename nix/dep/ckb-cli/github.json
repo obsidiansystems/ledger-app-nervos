@@ -1,8 +1,8 @@
 {
   "owner": "obsidiansystems",
   "repo": "ckb-cli",
-  "branch": "ledger-app",
+  "branch": "jg-allow-non-0-account-number",
   "private": false,
-  "rev": "24743861dcd7502f0fe72c11784725b7270ad72a",
-  "sha256": "11fp7v33f1q5k0n9iq2q5r769r68pjhrwgbhcf6248h9z1asascs"
+  "rev": "50d05b8d682bee0cb196d74af416cb01a1eb1b83",
+  "sha256": "1yrgy0l5n0wbgzy1817d98fs0gp0pmch7f5jzpjc0q5l0w2n0anc"
 }
