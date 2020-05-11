@@ -285,7 +285,7 @@ Make sure the two addresses match.  The “testnet” address is the one you
 need to save. Keep it for later, as it will be used for
 `<ledger-address>`.
 
-## Transfering ###
+## Transferring ###
 
 ### Creating a new account for local dev network ####
 
