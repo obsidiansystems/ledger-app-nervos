@@ -44,10 +44,10 @@ For more details, see [Ledger's documentation](https://support.ledger.com/hc/en-
 
 # Installing Ledger App from Release
 
-You can download `.hex` files from the
+Please download `.hex` files from the
 from the [releases](https://github.com/obsidiansystems/ledger-app-nervos/releases)
-page of this repo. You will need to install some other tools from
-the Ledger project to install them.
+page of this repo. The following sections describe how to install them, including
+acquiring other tools from the Ledger project.
 
 ## Installing BOLOS Python Loader
 
@@ -133,13 +133,15 @@ as you continue. You may want to read the rest of these instructions before you
 begin installing, as you will need to confirm and verify a few things during the
 process.
 
-Still within the virtualenv, run the `./install.sh` command included in the `nano-s-release.tar.gz`
-that you downloaded:
-
-This `./install.sh` script takes the path to an application directory. The only such directory
-included in the downloaded `release.tar.gz` will be `app`, so install the app like this:
+Still within the virtualenv, run the `./install.sh` command included
+in the `nano-s-release.tar.gz` that you downloaded. This `./install.sh`
+script takes the path to an application directory. The only such directory
+included in the downloaded `release.tar.gz` will be `app`, so install
+the app like this, replacing `~/Downloads/` with whatever directory you
+downloaded the file into:
 
 ```
+cd ~/Downloads/
 tar xzf nano-s-release.tar.gz
 cd ledger-app-nervos-s
 ./install.sh app
