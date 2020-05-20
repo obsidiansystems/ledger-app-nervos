@@ -44,8 +44,8 @@ For more details, see [Ledger's documentation](https://support.ledger.com/hc/en-
 
 # Installing Ledger App from Release
 
-Please download `nano-s-release.tar.gz` files from the
-from the [releases](https://github.com/obsidiansystems/ledger-app-nervos/releases)
+Please download `nano-s-release.tar.gz` from the latest release on 
+the [releases](https://github.com/obsidiansystems/ledger-app-nervos/releases)
 page of this repo, which contains a pre-compiled app or `.hex` file ready
 to install on the Ledger. The following sections describe how to install it, including
 acquiring other tools from the Ledger project.
