@@ -85,7 +85,6 @@ static inline bool bip32_paths_eq(bip32_path_t volatile const *const a, bip32_pa
 // Operations
 #define PROTOCOL_HASH_SIZE 32
 
-// TODO: Rename to KEY_HASH_SIZE
 #define KEY_HASH_SIZE 20
 
 // HASH_SIZE encoded in base-58 ASCII
