@@ -39,6 +39,18 @@ typedef struct {
     cx_ecfp_private_key_t private_key;
 } key_pair_t;
 
+#define CHAIN_CODE_DATA_SIZE 32
+
+typedef struct {
+  cx_ecfp_public_key_t public_key;
+  uint8_t chain_code[CHAIN_CODE_DATA_SIZE];
+} extended_public_key_t;
+
+typedef struct {
+    extended_public_key_t extended_public_key;
+    key_pair_t key_pair;
+} extended_key_pair_t;
+
 #define MAX_BIP32_PATH 10
 
 typedef struct {

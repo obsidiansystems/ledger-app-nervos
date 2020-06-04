@@ -182,9 +182,9 @@ unsafe:
     }
 
 void prep_lock_arg(bip32_path_t *key, standard_lock_arg_t *destination) {
-    cx_ecfp_public_key_t public_key;
-    generate_public_key(&public_key, key);
-    generate_lock_arg_for_pubkey(&public_key, destination);
+    extended_public_key_t ext_public_key;
+    generate_public_key(&ext_public_key, key);
+    generate_lock_arg_for_pubkey(&ext_public_key.public_key, destination);
 }
 
 /* Start of parser callbacks */

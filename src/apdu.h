@@ -28,7 +28,7 @@
 #define INS_GET_WALLET_ID             0x01
 #define INS_PROMPT_PUBLIC_KEY         0x02
 #define INS_SIGN                      0x03
-#define INS_SIGN_UNSAFE               0x05 // Data that is already hashed.
+#define INS_PROMPT_EXT_PUBLIC_KEY     0x04
 #define INS_RESET                     0x06
 #define INS_QUERY_AUTH_KEY            0x07
 #define INS_QUERY_MAIN_HWM            0x08
@@ -68,6 +68,7 @@ static inline void require_hid(void) {
 }
 
 size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey);
+size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const *const pubkey);
 
 size_t handle_apdu_error(uint8_t instruction);
 size_t handle_apdu_version(uint8_t instruction);

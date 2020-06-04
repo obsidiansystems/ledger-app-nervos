@@ -22,7 +22,7 @@ void init_globals(void);
 
 struct priv_generate_key_pair {
     uint8_t private_key_data[PRIVATE_KEY_DATA_SIZE];
-    key_pair_t res;
+    extended_key_pair_t res;
 };
 
 typedef struct {
@@ -112,7 +112,7 @@ typedef struct {
 
 typedef struct {
     bip32_path_t key;
-    cx_ecfp_public_key_t public_key;
+    extended_public_key_t ext_public_key;
     cx_blake2b_t hash_state;
 } apdu_pubkey_state_t;
 
@@ -158,7 +158,7 @@ typedef struct {
 
         struct {
             struct priv_generate_key_pair generate_key_pair;
-	    prefixed_public_key_hash_t prefixed_public_key_hash;
+	          prefixed_public_key_hash_t prefixed_public_key_hash;
         } priv;
     } apdu;
     nvram_data new_data;
