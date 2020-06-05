@@ -74,20 +74,20 @@ void render_pkh(char *const out, size_t const out_size,
 }
 
 __attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callback_t cxl_cb) {
-  static size_t const TYPE_INDEX = 0;
-  static size_t const DRV_PATH_INDEX = 1;
-  static size_t const ADDRESS_INDEX = 2;
+    static size_t const TYPE_INDEX = 0;
+    static size_t const DRV_PATH_INDEX = 1;
+    static size_t const ADDRESS_INDEX = 2;
 
-  static const char *const pubkey_labels[] = {
-                                              PROMPT("Provide"),
-                                              PROMPT("Derivation Path"),
-                                              PROMPT("Address"),
-                                              NULL,
-  };
-  REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
-  register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
-  register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.prefixed_public_key_hash);
-  ui_prompt(pubkey_labels, ok_cb, cxl_cb);
+    static const char *const pubkey_labels[] = {
+        PROMPT("Provide"),
+        PROMPT("Derivation Path"),
+        PROMPT("Address"),
+        NULL,
+    };
+    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
+    register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
+    register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.prefixed_public_key_hash);
+    ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
 __attribute__((noreturn)) static void prompt_ext_path(ui_callback_t ok_cb, ui_callback_t cxl_cb) {

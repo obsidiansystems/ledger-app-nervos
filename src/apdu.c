@@ -19,17 +19,17 @@ size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *cons
 }
 
 size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const *const ext_pubkey) {
-  check_null(io_buffer);
-  check_null(ext_pubkey);
-  size_t tx = 0;
-  size_t keySize = ext_pubkey->public_key.W_len;
-  io_buffer[tx++] = keySize;
-  memmove(io_buffer + tx, ext_pubkey->public_key.W, keySize);
-  tx += keySize;
-  io_buffer[tx++] = CHAIN_CODE_DATA_SIZE;
-  memmove(io_buffer + tx, ext_pubkey->chain_code, CHAIN_CODE_DATA_SIZE);
-  tx += CHAIN_CODE_DATA_SIZE;
-  return finalize_successful_send(tx);
+    check_null(io_buffer);
+    check_null(ext_pubkey);
+    size_t tx = 0;
+    size_t keySize = ext_pubkey->public_key.W_len;
+    io_buffer[tx++] = keySize;
+    memmove(io_buffer + tx, ext_pubkey->public_key.W, keySize);
+    tx += keySize;
+    io_buffer[tx++] = CHAIN_CODE_DATA_SIZE;
+    memmove(io_buffer + tx, ext_pubkey->chain_code, CHAIN_CODE_DATA_SIZE);
+    tx += CHAIN_CODE_DATA_SIZE;
+    return finalize_successful_send(tx);
 }
 
 size_t handle_apdu_error(uint8_t __attribute__((unused)) instruction) {

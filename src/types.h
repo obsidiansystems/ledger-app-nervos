@@ -42,8 +42,8 @@ typedef struct {
 #define CHAIN_CODE_DATA_SIZE 32
 
 typedef struct {
-  cx_ecfp_public_key_t public_key;
-  uint8_t chain_code[CHAIN_CODE_DATA_SIZE];
+    cx_ecfp_public_key_t public_key;
+    uint8_t chain_code[CHAIN_CODE_DATA_SIZE];
 } extended_public_key_t;
 
 typedef struct {

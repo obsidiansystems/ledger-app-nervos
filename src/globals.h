@@ -158,7 +158,7 @@ typedef struct {
 
         struct {
             struct priv_generate_key_pair generate_key_pair;
-	          prefixed_public_key_hash_t prefixed_public_key_hash;
+            prefixed_public_key_hash_t prefixed_public_key_hash;
         } priv;
     } apdu;
     nvram_data new_data;

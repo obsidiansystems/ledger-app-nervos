@@ -62,8 +62,8 @@ extended_key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const
             cx_ecfp_generate_pair(cx_curve, &priv->res.extended_public_key.public_key, &priv->res.key_pair.private_key, 1);
 
             if (cx_curve == CX_CURVE_Ed25519) {
-              cx_edward_compress_point(CX_CURVE_Ed25519, priv->res.extended_public_key.public_key.W, priv->res.extended_public_key.public_key.W_len);
-              priv->res.extended_public_key.public_key.W_len = 33;
+                cx_edward_compress_point(CX_CURVE_Ed25519, priv->res.extended_public_key.public_key.W, priv->res.extended_public_key.public_key.W_len);
+                priv->res.extended_public_key.public_key.W_len = 33;
             }
             priv->res.key_pair.public_key = priv->res.extended_public_key.public_key;
         }
