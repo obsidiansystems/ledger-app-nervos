@@ -1,6 +1,12 @@
 
 . tests/lib.sh
 
+# Path m/44'/309'/1'/1
+# 8000002c
+# 80000135
+# 80000001
+# 80000001
+
 @test "Ledger app produces a public key upon request" {
   run apdu_with_clicks "8002000011048000002c800001358000000080000000" "rR"
   [ "$status" -eq 0 ]
