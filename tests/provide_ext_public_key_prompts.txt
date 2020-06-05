@@ -1,0 +1,9 @@
+Prompt 0:
+Provide
+Extended Public Key
+Prompt 1:
+Derivation Path
+44'/309'/0'/0
+Prompt 2:
+Address
+ckb1qyqvcvxfnekgjnyk5cwwujq3867vu3jul0aq3dsltv
