@@ -19,7 +19,6 @@
 #define OFFSET_CLA   0
 #define OFFSET_INS   1 // instruction code
 #define OFFSET_P1    2 // user-defined 1-byte parameter
-#define OFFSET_CURVE 3
 #define OFFSET_LC    4 // length of CDATA
 #define OFFSET_CDATA 5 // payload
 
@@ -29,15 +28,7 @@
 #define INS_PROMPT_PUBLIC_KEY         0x02
 #define INS_SIGN                      0x03
 #define INS_PROMPT_EXT_PUBLIC_KEY     0x04
-#define INS_RESET                     0x06
-#define INS_QUERY_AUTH_KEY            0x07
-#define INS_QUERY_MAIN_HWM            0x08
 #define INS_GIT                       0x09
-#define INS_SETUP                     0x0A
-#define INS_QUERY_ALL_HWM             0x0B
-#define INS_DEAUTHORIZE               0x0C
-#define INS_QUERY_AUTH_KEY_WITH_CURVE 0x0D
-#define INS_HMAC                      0x0E
 #define INS_SIGN_WITH_HASH            0x0F
 
 __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, size_t const handlers_size);

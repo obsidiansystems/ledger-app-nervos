@@ -8,9 +8,6 @@
 #include "to_string.h"
 #include "ui.h"
 #include "segwit_addr.h"
-#ifdef BAKING_APP
-#include "baking_auth.h"
-#endif // BAKING_APP
 
 #include <string.h>
 
@@ -129,8 +126,6 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     // write lock arg
     generate_lock_arg_for_pubkey(&G.ext_public_key.public_key, &GPriv.prefixed_public_key_hash.hash);
 
-    // instruction == INS_PROMPT_PUBLIC_KEY || instruction == INS_AUTHORIZE_BAKING
-    // INS_PROMPT_PUBLIC_KEY
     if (instruction == INS_PROMPT_EXT_PUBLIC_KEY) {
       ui_callback_t cb = ext_pubkey_ok;
       prompt_ext_path(cb, delay_reject);
