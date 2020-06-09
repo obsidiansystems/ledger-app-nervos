@@ -28,6 +28,7 @@
 #define INS_PROMPT_PUBLIC_KEY         0x02
 #define INS_SIGN                      0x03
 #define INS_PROMPT_EXT_PUBLIC_KEY     0x04
+#define INS_ACCOUNT_IMPORT            0x05
 #define INS_GIT                       0x09
 #define INS_SIGN_WITH_HASH            0x0F
 
@@ -60,8 +61,10 @@ static inline void require_hid(void) {
 
 size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey);
 size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const *const pubkey);
+size_t provide_account_import(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey, extended_public_key_t const *const normal_pubkey, extended_public_key_t const *const change_pubkey);
 
 size_t handle_apdu_error(uint8_t instruction);
 size_t handle_apdu_version(uint8_t instruction);
 size_t handle_apdu_git(uint8_t instruction);
 size_t handle_apdu_get_wallet_id(uint8_t instruction);
+size_t handle_apdu_account_import(uint8_t instruction);
