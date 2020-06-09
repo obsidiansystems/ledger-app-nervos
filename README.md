@@ -232,7 +232,7 @@ prompt provided by the above command.
 
 ## List Ledger Wallets ###
 
-List the wallets:
+Use the `account list` command to see connected Ledger devices. Be sure to have the Nervos application open on the device, otherwise it will not be detected:
 
 ``` sh
 CKB> account list
@@ -241,7 +241,7 @@ CKB> account list
   ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
 ```
 
-Remember the ledger\_id given above for the latest commands. It will be
+The `ledger_id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. Remember the `ledger\_id` given above for the latest commands. It will be
 used for ```<ledger-id>``` later on.
 
 ### Get Public Key ###
