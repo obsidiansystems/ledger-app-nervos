@@ -22,23 +22,26 @@ struct bip32_path_wire {
 size_t read_bip32_path(bip32_path_t *const out, uint8_t const *const in, size_t const in_size);
 
 // Non-reentrant
+extended_key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const *const bip32_path);
+
+// Non-reentrant
 key_pair_t *generate_key_pair_return_global(bip32_path_t const *const bip32_path);
 
 // Non-reentrant
 static inline void generate_key_pair(key_pair_t *const out, bip32_path_t const *const bip32_path) {
     check_null(out);
-    key_pair_t *const result = generate_key_pair_return_global(bip32_path);
+    extended_key_pair_t *const result = generate_extended_key_pair_return_global(bip32_path);
     memcpy(out, result, sizeof(*out));
     explicit_bzero(result, sizeof(*result));
 }
 
 // Non-reentrant
-cx_ecfp_public_key_t const *generate_public_key_return_global(bip32_path_t const *const bip32_path);
+extended_public_key_t const *generate_public_key_return_global(bip32_path_t const *const bip32_path);
 
 // Non-reentrant
-static inline void generate_public_key(cx_ecfp_public_key_t *const out, bip32_path_t const *const bip32_path) {
+static inline void generate_public_key(extended_public_key_t *const out, bip32_path_t const *const bip32_path) {
     check_null(out);
-    cx_ecfp_public_key_t const *const result = generate_public_key_return_global(bip32_path);
+    extended_public_key_t const *const result = generate_public_key_return_global(bip32_path);
     memcpy(out, result, sizeof(*out));
 }
 

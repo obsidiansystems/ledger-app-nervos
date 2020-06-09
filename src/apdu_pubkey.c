@@ -8,9 +8,6 @@
 #include "to_string.h"
 #include "ui.h"
 #include "segwit_addr.h"
-#ifdef BAKING_APP
-#include "baking_auth.h"
-#endif // BAKING_APP
 
 #include <string.h>
 
@@ -18,7 +15,12 @@
 #define GPriv global.apdu.priv
 
 static bool pubkey_ok(void) {
-    delayed_send(provide_pubkey(G_io_apdu_buffer, &G.public_key));
+    delayed_send(provide_pubkey(G_io_apdu_buffer, &G.ext_public_key.public_key));
+    return true;
+}
+
+static bool ext_pubkey_ok(void) {
+    delayed_send(provide_ext_pubkey(G_io_apdu_buffer, &G.ext_public_key));
     return true;
 }
 
@@ -85,6 +87,23 @@ __attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callba
     ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
+__attribute__((noreturn)) static void prompt_ext_path(ui_callback_t ok_cb, ui_callback_t cxl_cb) {
+    static size_t const TYPE_INDEX = 0;
+    static size_t const DRV_PATH_INDEX = 1;
+    static size_t const ADDRESS_INDEX = 2;
+
+    static const char *const pubkey_labels[] = {
+        PROMPT("Provide"),
+        PROMPT("Derivation Path"),
+        PROMPT("Address"),
+        NULL,
+    };
+    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Extended Public Key");
+    register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
+    register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.prefixed_public_key_hash);
+    ui_prompt(pubkey_labels, ok_cb, cxl_cb);
+}
+
 _Static_assert(sizeof GPriv.prefixed_public_key_hash == 22, "address will be wrong length");
 _Static_assert(sizeof GPriv.prefixed_public_key_hash.entire == 22, "address will be wrong length");
 
@@ -98,17 +117,20 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
 
     read_bip32_path(&G.key, dataBuffer, cdata_size);
 
-    generate_public_key(&G.public_key, &G.key);
+    generate_public_key(&G.ext_public_key, &G.key);
 
     // write tags
     GPriv.prefixed_public_key_hash.address_type_is_short = 0x01;
     GPriv.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
 
     // write lock arg
-    generate_lock_arg_for_pubkey(&G.public_key, &GPriv.prefixed_public_key_hash.hash);
+    generate_lock_arg_for_pubkey(&G.ext_public_key.public_key, &GPriv.prefixed_public_key_hash.hash);
 
-    // instruction == INS_PROMPT_PUBLIC_KEY || instruction == INS_AUTHORIZE_BAKING
-    // INS_PROMPT_PUBLIC_KEY
-    ui_callback_t cb = pubkey_ok;
-    prompt_path(cb, delay_reject);
+    if (instruction == INS_PROMPT_EXT_PUBLIC_KEY) {
+      ui_callback_t cb = ext_pubkey_ok;
+      prompt_ext_path(cb, delay_reject);
+    } else {
+      ui_callback_t cb = pubkey_ok;
+      prompt_path(cb, delay_reject);
+    }
 }
