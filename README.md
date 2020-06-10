@@ -320,7 +320,7 @@ The value of “lock_arg: ...” is your-new-account-lock-arg.
 
 ### Starting a local dev network ####
 
-First, make a directory and init it for a dev network:
+Our instructions for starting a devnet are based on [Nervos' Dev Chain docs](https://docs.nervos.org/dev-guide/devchain.html). First, make a directory and init it for a dev network:
 ``` sh
 $ nix run -f nix/dep/ckb # to make ckb available
 $ mkdir devnet
