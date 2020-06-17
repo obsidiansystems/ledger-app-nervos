@@ -244,6 +244,20 @@ CKB> account list
 The `ledger_id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. the `ledger\_id` will be
 used for ```<ledger-id>``` argument in the `account import` command as described below.
 
+If you have already imported the Ledger account, then `account list` command will instead give the account details.
+This will be shown even if the device is not connected.
+
+``` sh
+CKB> account list
+- "#": 0
+  account_source: ledger hardware wallet
+  address:
+    mainnet: ckb1qyqry754h4tevmngdll9jrpnrnfhqqhpcccskdl3en
+    testnet: ckt1qyqry754h4tevmngdll9jrpnrnfhqqhpcccstgpw40
+  lock_arg: 0x327a95bd57966e686ffe590c331cd37002e1c631
+  lock_hash: 0xc27b9ad3414cf5b1720713663d5f754e8968793f2da90b6428feb565bf94de4e
+```
+
 ## Import Ledger Wallet account ###
 
 Use the `account import --ledger <ledger_id>` command to import the account to the `ckb-cli`.
@@ -265,9 +279,9 @@ CKB> account import --ledger 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc89125
 
 Use the `account bip44-addresses` command to obtain the BIP44 addresses for the mainnet.
 
-Note that this command is provided as a convenience by the `ckb-cli` to get a list of derived addresses with the derivation path quickly.
+Note that this command is provided as a convenience by the `ckb-cli` to get a list of addresses with the derivation path quickly.
 
-** It is highly recommended to verify the account provided by this command through the ledger device using the `account extended-address` command as described next. **
+**It is highly recommended to verify the account provided by this command on the Ledger device using the `account extended-address` command as described next.**
 
 ``` sh
 CKB> account bip44-addresses --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
@@ -277,7 +291,7 @@ CKB> account bip44-addresses --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c6
 
 The `account extended-address` command should be used to
 
-- Verify the public key obtained via `account bip44-addresses` command on the ledger device
+- Verify the public key obtained via `account bip44-addresses` command on the Ledger device
 - Obtain the public key for any arbitrary BIP44 derivation path
 
 ``` sh
