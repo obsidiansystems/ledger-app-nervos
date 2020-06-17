@@ -241,15 +241,47 @@ CKB> account list
   ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
 ```
 
-The `ledger_id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. Remember the `ledger\_id` given above for the latest commands. It will be
-used for ```<ledger-id>``` later on.
+The `ledger_id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. the `ledger\_id` will be
+used for ```<ledger-id>``` argument in the `account import` command as described below.
 
-### Get Public Key ###
+## Import Ledger Wallet account ###
 
-Get the public key:
+Use the `account import --ledger <ledger_id>` command to import the account to the `ckb-cli`.
+You will receive a confirmation prompt on the device which should say `Import Account` and `Account 1`.
+Confirm this to import the account. This operation will provide the extended root public key (m/44'/309'/0') to the `ckb-cli`.
 
 ``` sh
-CKB> account extended-address --path "m/44'/309'/0'/1/0" --account-id <ledger-id>
+CKB> account import --ledger 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
+- "#": 0
+  account_source: ledger hardware wallet
+  address:
+    mainnet: ckb1qyqry754h4tevmngdll9jrpnrnfhqqhpcccskdl3en
+    testnet: ckt1qyqry754h4tevmngdll9jrpnrnfhqqhpcccstgpw40
+  lock_arg: 0x327a95bd57966e686ffe590c331cd37002e1c631
+  lock_hash: 0xc27b9ad3414cf5b1720713663d5f754e8968793f2da90b6428feb565bf94de4e
+```
+
+### Get BIP44 Wallet Public Keys ###
+
+Use the `account bip44-addresses` command to obtain the BIP44 addresses for the mainnet.
+
+Note that this command is provided as a convenience by the `ckb-cli` to get a list of derived addresses with the derivation path quickly.
+
+** It is highly recommended to verify the account provided by this command through the ledger device using the `account extended-address` command as described next. **
+
+``` sh
+CKB> account bip44-addresses --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
+```
+
+### Obtain / Verify Public Key ###
+
+The `account extended-address` command should be used to
+
+- Verify the public key obtained via `account bip44-addresses` command on the ledger device
+- Obtain the public key for any arbitrary BIP44 derivation path
+
+``` sh
+CKB> account extended-address --path "m/44'/309'/0'/1/0" --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
 ```
 
 This should show up on the ledger as (in 3 screens):
@@ -277,11 +309,11 @@ Accept it on the Ledger and verify ckb prints the
 resulting address. The result should look like:
 
 ``` text
-account_source: on-disk password-protected key store
 address:
   mainnet: ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
   testnet: ckt1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsa64fqt
 lock_arg: 0x632c444199275d00b7c1fb65bf001d70bc609599
+lock_hash: 0xee0283c2d991992d6e015a4680c54318ad42c820ca0dc862c0a1d68c415499a8
 ```
 
 Make sure the two addresses match.  The “testnet” address is the one you
@@ -313,7 +345,11 @@ CKB> account list
   lock_hash: 0x21ad4eee4fb0f079f5f8166f42f0d4fbd1fd63b8f36a7ccfb9d3657f9a5aed43
 - "#": 1
   account_source: ledger hardware wallet
-  ledger_id: 0x27fe5acb022cd7b8be0eb7009d42ff4600c597d28b6affefcab6f7396d1311c2
+  address:
+    mainnet: ckb1qyqry754h4tevmngdll9jrpnrnfhqqhpcccskdl3en
+    testnet: ckt1qyqry754h4tevmngdll9jrpnrnfhqqhpcccstgpw40
+  lock_arg: 0x327a95bd57966e686ffe590c331cd37002e1c631
+  lock_hash: 0xc27b9ad3414cf5b1720713663d5f754e8968793f2da90b6428feb565bf94de4e
 ```
 
 The value of “lock_arg: ...” is your-new-account-lock-arg.
@@ -412,7 +448,7 @@ Key” above).
 
 ``` sh
 CKB> wallet transfer \
-    --from-account <ledger-id> \
+    --from-account <ledger-account-lock-arg> \
     --to-address <ledger-address> \
     --capacity 102 --tx-fee 0.00001 \
     --derive-change-address <ledger-address> \
