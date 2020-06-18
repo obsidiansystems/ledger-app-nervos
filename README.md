@@ -261,8 +261,8 @@ CKB> account list
 ## Import Ledger Wallet account ###
 
 Use the `account import --ledger <ledger_id>` command to import the account to the `ckb-cli`.
-You will receive a confirmation prompt on the device which should say `Import Account` and `Account 1`.
-Confirm this to import the account. This operation will provide the extended root public key (m/44'/309'/0') to the `ckb-cli`.
+You will receive a confirmation prompt on the device which should say `Import Account` followed by `Account 1`.
+Confirm this to import the account. This operation will provide the extended public key of path `m/44'/309'/0'` to the `ckb-cli`.
 
 ``` sh
 CKB> account import --ledger 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
@@ -274,6 +274,8 @@ CKB> account import --ledger 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc89125
   lock_arg: 0x327a95bd57966e686ffe590c331cd37002e1c631
   lock_hash: 0xc27b9ad3414cf5b1720713663d5f754e8968793f2da90b6428feb565bf94de4e
 ```
+
+Now that the account has been imported, it is remembered by the client and is visible when you run `account list`.
 
 ### Get BIP44 Wallet Public Keys ###
 
@@ -295,7 +297,7 @@ The `account extended-address` command should be used to
 - Obtain the public key for any arbitrary BIP44 derivation path
 
 ``` sh
-CKB> account extended-address --path "m/44'/309'/0'/1/0" --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
+CKB> account extended-address --path "m/44'/309'/0'/0/1" --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
 ```
 
 This should show up on the ledger as (in 3 screens):
@@ -306,22 +308,21 @@ Public Key
 ```
 ``` text
 Derivation Path
-44’/309’/0’/1/0.
+44’/309’/0’/0/1.
 ```
 ``` text
-Mainnet Address:
+Address:
 ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
 ```
 If you've changed the Ledger's configuration to show testnet address, the last screen will instead look like this:
 
 ``` text
-Testnet Address:
+Address:
 ckt1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsa64fqt
 ```
 
-Accept it on the Ledger and verify ckb prints the
-resulting address. The result should look like:
-
+After accepting the prompt on the Ledger the output on `ckb-cli` should look like:
+ 
 ``` text
 address:
   mainnet: ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
@@ -330,9 +331,9 @@ lock_arg: 0x632c444199275d00b7c1fb65bf001d70bc609599
 lock_hash: 0xee0283c2d991992d6e015a4680c54318ad42c820ca0dc862c0a1d68c415499a8
 ```
 
-Make sure the two addresses match.  The “testnet” address is the one you
-need to save. Keep it for later, as it will be used for
-`<ledger-address>`.
+**It is highly recommended to verify that output address printed by `ckb-cli` matches the one shown on Ledger prompt**
+
+The “testnet” address is the one used for `<ledger-address>` in the next section.
 
 ## Transferring ###
 
