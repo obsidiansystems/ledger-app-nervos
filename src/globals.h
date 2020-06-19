@@ -120,7 +120,7 @@ typedef struct {
     bip32_path_t path;
     cx_blake2b_t hash_state;
     extended_public_key_t root_public_key;
-    extended_public_key_t normal_public_key;
+    extended_public_key_t external_public_key;
     extended_public_key_t change_public_key;
 } apdu_account_import_state_t;
 
