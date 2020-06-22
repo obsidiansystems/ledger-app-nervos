@@ -167,6 +167,8 @@ unsafe:
     ui_prompt(parse_fail_prompts, ok_c, sign_reject);
 }
 
+/***********************************************************/
+
 #define REJECT(msg, ...)                                                                                               \
     {                                                                                                                  \
         PRINTF("Rejecting: " msg "\n", ##__VA_ARGS__);                                                                 \
@@ -716,4 +718,96 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
 
     clear_data();
     return finalize_successful_send(tx);
+}
+
+/***********************************************************/
+static inline void clear_message_data(void) {
+  memset(&global.apdu.u.sign_msg, 0, sizeof(global.apdu.u.sign_msg));
+}
+
+static int perform_message_signature() {
+  apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
+  uint8_t *const buff = g_sign_msg -> final_hash;
+  uint8_t const buff_size = sizeof(g_sign_msg -> final_hash);
+  WITH_KEY_PAIR(g_sign_msg->key, key_pair, size_t,
+                      ({ sign(&G_io_apdu_buffer[0], MAX_SIGNATURE_SIZE, key_pair, buff, buff_size); }));
+  clear_message_data();
+  return finalize_successful_send(buff_size);
+}
+
+static bool sign_message_ok(void) {
+  delayed_send(perform_message_signature());
+  return true; 
+}
+
+static bool check_magic_bytes(uint8_t const * message, uint8_t message_len) {
+  // TODO: Make global and deduplicate
+  const char nervos_magic[] = "Nervos Message:";
+  /* if(message_len == 0 || message_len < (sizeof(nervos_magic)- 1)) return false; //If the message is shorter, it dont work */
+  int cmp = memcmp(message, &nervos_magic, sizeof(nervos_magic)-1);
+  return (0 == cmp); //cut off the str's nullbyte
+}
+
+
+/* typedef void (*string_generation_callback)(/1* char *buffer, size_t buffer_size, const void *data *1/); */
+static void copy_buffer(char *const out, size_t const out_size, buffer_t const *const in) {
+  if(in -> size > out_size) THROW(EXC_MEMORY_ERROR);
+  memcpy(out, in->bytes, in->size);
+}
+
+static void slice_magic_bytes(buffer_t *buff) {
+  const char magic_bytes[] = "Nervos Message:";
+  //remove string terminator when comparing
+  size_t magic_bytes_size = sizeof(magic_bytes)- 1;
+  if(0 == memcmp(buff->bytes, magic_bytes, magic_bytes_size)) {
+    size_t num_bytes_to_copy = buff->size - magic_bytes_size;
+    memmove(buff->bytes, &buff->bytes[magic_bytes_size], num_bytes_to_copy);
+    buff -> size = num_bytes_to_copy;
+    buff -> length = num_bytes_to_copy;
+  }
+  else THROW(EXC_PARSE_ERROR);
+
+}
+/***********************************************************************/
+static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
+  uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
+  uint8_t const buff_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
+  /* uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]); */
+
+  //TODO: If message - magic-bytes is > than "VALUE_WIDTH", show hash instead
+  apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
+
+  if (buff_size > MAX_APDU_SIZE) THROW(EXC_WRONG_LENGTH_FOR_INS);
+
+  // All messages MUST have the "Nervos Message:" prefix
+  if(!check_magic_bytes(buff, buff_size)) THROW(EXC_PARSE_ERROR);
+
+  // Use the root account for now
+  uint32_t const account_index = 0x80000000 + 0x00;
+  bip32_path_t root_path = {3, {0x8000002C, 0x80000135, account_index }};
+
+  // TODO: Does this get copied or referenced?
+  g_sign_msg -> key = root_path;
+
+  //Hash data to sign and store in global
+  blake2b_incremental_hash(buff, buff_size, &g_sign_msg->hash_state);
+  blake2b_finish_hash(g_sign_msg -> final_hash, sizeof(g_sign_msg -> final_hash), &g_sign_msg -> hash_state);
+
+  // Display the message
+  static const char *const message_prompts[] = {PROMPT("Sign Message: "), NULL};
+  g_sign_msg -> message_data_as_buffer.bytes = buff;
+  g_sign_msg -> message_data_as_buffer.length = buff_size;
+  g_sign_msg -> message_data_as_buffer.size = buff_size;
+  //Remove magic bytes, because, even though we sign them, the user should not be aware of their existence
+  slice_magic_bytes(&g_sign_msg -> message_data_as_buffer);
+  register_ui_callback(0, copy_buffer, &g_sign_msg->message_data_as_buffer);
+  ui_callback_t const ok_sign = sign_message_ok;
+
+  // Prompt and sign hash
+  ui_prompt(message_prompts, ok_sign, sign_reject);
+}
+
+
+size_t handle_apdu_sign_message(uint8_t instruction) {
+  return handle_apdu_sign_message_impl(instruction);
 }
