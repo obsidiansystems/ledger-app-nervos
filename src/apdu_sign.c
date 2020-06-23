@@ -715,7 +715,6 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
     tx += WITH_KEY_PAIR(G.key, key_pair, size_t,
                         ({ sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, data, data_length); }));
 
-
     clear_data();
     return finalize_successful_send(tx);
 }
@@ -752,6 +751,9 @@ static bool check_magic_bytes(uint8_t const * message, uint8_t message_len) {
 /* typedef void (*string_generation_callback)(/1* char *buffer, size_t buffer_size, const void *data *1/); */
 static void copy_buffer(char *const out, size_t const out_size, buffer_t const *const in) {
   if(in -> size > out_size) THROW(EXC_MEMORY_ERROR);
+
+  // if we dont do this we have stuff from the old buffer getting displayed
+  memset(out, 0, out_size);
   memcpy(out, in->bytes, in->size);
 }
 
@@ -786,7 +788,6 @@ static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
   uint32_t const account_index = 0x80000000 + 0x00;
   bip32_path_t root_path = {3, {0x8000002C, 0x80000135, account_index }};
 
-  // TODO: Does this get copied or referenced?
   g_sign_msg -> key = root_path;
 
   //Hash data to sign and store in global
