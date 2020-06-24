@@ -702,7 +702,6 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
         return finalize_successful_send(sizeof(G.final_hash));
     }
 
-
     size_t tx = 0;
     if (send_hash && on_hash) {
         memcpy(&G_io_apdu_buffer[tx], G.final_hash, sizeof(G.final_hash));
@@ -728,10 +727,11 @@ static int perform_message_signature() {
   apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
   uint8_t *const buff = g_sign_msg -> final_hash;
   uint8_t const buff_size = sizeof(g_sign_msg -> final_hash);
-  WITH_KEY_PAIR(g_sign_msg->key, key_pair, size_t,
+  size_t final_size = 0;
+  final_size+=WITH_KEY_PAIR(g_sign_msg->key, key_pair, size_t,
                       ({ sign(&G_io_apdu_buffer[0], MAX_SIGNATURE_SIZE, key_pair, buff, buff_size); }));
   clear_message_data();
-  return finalize_successful_send(buff_size);
+  return finalize_successful_send(final_size);
 }
 
 static bool sign_message_ok(void) {
