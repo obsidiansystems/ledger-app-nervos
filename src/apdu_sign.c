@@ -770,6 +770,25 @@ static void slice_magic_bytes(buffer_t *buff) {
   else THROW(EXC_PARSE_ERROR);
 
 }
+
+static void replace_undisplayable(buffer_t *buff) {
+  uint8_t *data = buff -> bytes;
+  for(size_t i = 0; i < buff->length; i++) {
+    bool cant_display = data[i] > 126 || data[i] < 32;
+    if(cant_display)
+      data[i] = '*';
+  }
+}
+static void handle_long_message(buffer_t *buff) {
+  uint8_t *data = buff -> bytes;
+  if(buff -> length > 64) {
+    buff -> length = 64;
+    buff -> size = 64;
+    data[61] = '.';
+    data[62] = '.';
+    data[63] = '.';
+  }
+}
 /***********************************************************************/
 static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
   uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
@@ -800,6 +819,16 @@ static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
   if (g_sign_msg -> packet_index == 1) {
     // Ensure the message begins with "Nervos Message:"
     if(!check_magic_bytes(buff, buff_size)) THROW(EXC_PARSE_ERROR);
+
+    // We will not display more than 61 chars of the message. These chars
+    // should always be in the 2nd packet. Here, we store them in the global struct
+    g_sign_msg -> message_data_as_buffer.bytes = buff;
+    g_sign_msg -> message_data_as_buffer.length = buff_size;
+    g_sign_msg -> message_data_as_buffer.size = buff_size;
+    //Remove magic bytes, because, even though we sign them, the user should not be aware of their existence
+    slice_magic_bytes(&g_sign_msg -> message_data_as_buffer);
+    replace_undisplayable(&g_sign_msg -> message_data_as_buffer);
+    handle_long_message(&g_sign_msg -> message_data_as_buffer);
     // Read message, determine if SHOWABLE, begin hash
   }
   blake2b_incremental_hash(buff, buff_size, &g_sign_msg->hash_state);
@@ -810,11 +839,6 @@ static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
 
     // Display the message
     static const char *const message_prompts[] = {PROMPT("Sign Message: "), NULL};
-    g_sign_msg -> message_data_as_buffer.bytes = buff;
-    g_sign_msg -> message_data_as_buffer.length = buff_size;
-    g_sign_msg -> message_data_as_buffer.size = buff_size;
-    //Remove magic bytes, because, even though we sign them, the user should not be aware of their existence
-    slice_magic_bytes(&g_sign_msg -> message_data_as_buffer);
     register_ui_callback(0, copy_buffer, &g_sign_msg->message_data_as_buffer);
     ui_callback_t const ok_sign = sign_message_ok;
 
