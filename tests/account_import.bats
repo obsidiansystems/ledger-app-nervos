@@ -3,7 +3,7 @@
 
 @test "Ledger app does account import for account 1" {
   run apdu_with_clicks "800500000400000000" "rR"
-  promptsCheck 3 tests/account_import_apdu_prompts_0.txt
+  promptsCheck 2 tests/account_import_apdu_prompts_0.txt
   [ "$status" -eq 0 ]
   diff tests/account_import_apdu_0.txt <(echo "$output")
 }
