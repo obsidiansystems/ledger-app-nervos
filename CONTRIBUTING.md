@@ -43,6 +43,10 @@ $ nix-shell -A wallet.x --run 'make SHELL=sh all'
 Ledger Nano X does not currently have a way to load unsigned apps.
 Testing need to be done through Ledger Live.
 
+## Clearing Keystore Data from CKB-CLI ##
+
+Ledger key information is stored locally in `~/.ckb-cli/ledger-keystore/` and software key data is stored in `~/.ckb-cli/keystore/`. If you need to delete either, you can do so by running `rm -rf ~/.ckb-cli/ledger-keystore/` or `rm -rf ~/.ckb-cli/keystore/`, respectively.
+
 # Testing #
 
 
