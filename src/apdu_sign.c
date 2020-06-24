@@ -679,7 +679,7 @@ static size_t handle_apdu(uint8_t const instruction) {
                     THROW(EXC_PARSE_ERROR);
                 }
             }
-            
+
             break;
     }
 
@@ -774,38 +774,56 @@ static void slice_magic_bytes(buffer_t *buff) {
 static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
   uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
   uint8_t const buff_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
-  /* uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]); */
-
-  //TODO: If message - magic-bytes is > than "VALUE_WIDTH", show hash instead
+  uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]);
+  if (buff_size > MAX_APDU_SIZE) THROW(EXC_WRONG_LENGTH_FOR_INS);
   apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
 
-  if (buff_size > MAX_APDU_SIZE) THROW(EXC_WRONG_LENGTH_FOR_INS);
+  bool last = (p1 & P1_LAST_MARKER) != 0;
+  switch (p1 & ~P1_LAST_MARKER) {
+    case P1_FIRST:
+      clear_message_data();
+      uint32_t const account_index_raw = READ_UNALIGNED_BIG_ENDIAN(uint32_t, buff);
+      if (account_index_raw >= 0x80000000) THROW(EXC_WRONG_PARAM);
+      uint32_t const account_index = 0x80000000 + account_index_raw;
+      bip32_path_t root_path = {3, {0x8000002C, 0x80000135, account_index }};
+      g_sign_msg -> key = root_path;
+      return finalize_successful_send(0);
+    case P1_NEXT:
+      // Guard against overflow
+      if (g_sign_msg -> packet_index >= 0xFF) PARSE_ERROR();
+      g_sign_msg -> packet_index++;
+      break;
+    default:
+        THROW(EXC_WRONG_PARAM);
+  }
 
-  // All messages MUST have the "Nervos Message:" prefix
-  if(!check_magic_bytes(buff, buff_size)) THROW(EXC_PARSE_ERROR);
-
-  // Use the root account for now
-  uint32_t const account_index = 0x80000000 + 0x00;
-  bip32_path_t root_path = {3, {0x8000002C, 0x80000135, account_index }};
-
-  g_sign_msg -> key = root_path;
-
-  //Hash data to sign and store in global
+  if (g_sign_msg -> packet_index == 1) {
+    // Ensure the message begins with "Nervos Message:"
+    if(!check_magic_bytes(buff, buff_size)) THROW(EXC_PARSE_ERROR);
+    // Read message, determine if SHOWABLE, begin hash
+  }
   blake2b_incremental_hash(buff, buff_size, &g_sign_msg->hash_state);
-  blake2b_finish_hash(g_sign_msg -> final_hash, sizeof(g_sign_msg -> final_hash), &g_sign_msg -> hash_state);
 
-  // Display the message
-  static const char *const message_prompts[] = {PROMPT("Sign Message: "), NULL};
-  g_sign_msg -> message_data_as_buffer.bytes = buff;
-  g_sign_msg -> message_data_as_buffer.length = buff_size;
-  g_sign_msg -> message_data_as_buffer.size = buff_size;
-  //Remove magic bytes, because, even though we sign them, the user should not be aware of their existence
-  slice_magic_bytes(&g_sign_msg -> message_data_as_buffer);
-  register_ui_callback(0, copy_buffer, &g_sign_msg->message_data_as_buffer);
-  ui_callback_t const ok_sign = sign_message_ok;
+  if(last) {
+    //Make sure to sign and send stuff
+    blake2b_finish_hash(g_sign_msg -> final_hash, sizeof(g_sign_msg -> final_hash), &g_sign_msg -> hash_state);
 
-  // Prompt and sign hash
-  ui_prompt(message_prompts, ok_sign, sign_reject);
+    // Display the message
+    static const char *const message_prompts[] = {PROMPT("Sign Message: "), NULL};
+    g_sign_msg -> message_data_as_buffer.bytes = buff;
+    g_sign_msg -> message_data_as_buffer.length = buff_size;
+    g_sign_msg -> message_data_as_buffer.size = buff_size;
+    //Remove magic bytes, because, even though we sign them, the user should not be aware of their existence
+    slice_magic_bytes(&g_sign_msg -> message_data_as_buffer);
+    register_ui_callback(0, copy_buffer, &g_sign_msg->message_data_as_buffer);
+    ui_callback_t const ok_sign = sign_message_ok;
+
+    // Prompt and sign hash
+    ui_prompt(message_prompts, ok_sign, sign_reject);
+  }
+  else {
+      return finalize_successful_send(0);
+  }
 }
 
 
