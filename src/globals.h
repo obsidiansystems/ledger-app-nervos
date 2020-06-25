@@ -111,7 +111,8 @@ typedef struct {
 } apdu_sign_state_t;
 
 typedef struct {
-    buffer_t message_data_as_buffer;
+    /* buffer_t message_data_as_buffer; */
+    buffer_t display_data_as_buffer;
     bip32_path_t key;
     blake2b_hash_state_t hash_state;
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.

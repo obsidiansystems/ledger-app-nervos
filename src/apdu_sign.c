@@ -725,11 +725,12 @@ static inline void clear_message_data(void) {
 
 static int perform_message_signature() {
   apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
-  uint8_t *const buff = g_sign_msg -> final_hash;
-  uint8_t const buff_size = sizeof(g_sign_msg -> final_hash);
+
+  uint8_t *const data = g_sign_msg -> final_hash;
+  uint8_t const data_size = sizeof(g_sign_msg -> final_hash);
   size_t final_size = 0;
   final_size+=WITH_KEY_PAIR(g_sign_msg->key, key_pair, size_t,
-                      ({ sign(&G_io_apdu_buffer[0], MAX_SIGNATURE_SIZE, key_pair, buff, buff_size); }));
+                      ({ sign(&G_io_apdu_buffer[final_size], MAX_SIGNATURE_SIZE, key_pair, data, data_size); }));
   clear_message_data();
   return finalize_successful_send(final_size);
 }
@@ -747,8 +748,6 @@ static bool check_magic_bytes(uint8_t const * message, uint8_t message_len) {
   return (0 == cmp); //cut off the str's nullbyte
 }
 
-
-/* typedef void (*string_generation_callback)(/1* char *buffer, size_t buffer_size, const void *data *1/); */
 static void copy_buffer(char *const out, size_t const out_size, buffer_t const *const in) {
   if(in -> size > out_size) THROW(EXC_MEMORY_ERROR);
 
@@ -789,6 +788,7 @@ static void handle_long_message(buffer_t *buff) {
     data[63] = '.';
   }
 }
+
 /***********************************************************************/
 static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
   uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
@@ -822,24 +822,20 @@ static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
 
     // We will not display more than 61 chars of the message. These chars
     // should always be in the 2nd packet. Here, we store them in the global struct
-    g_sign_msg -> message_data_as_buffer.bytes = buff;
-    g_sign_msg -> message_data_as_buffer.length = buff_size;
-    g_sign_msg -> message_data_as_buffer.size = buff_size;
+    g_sign_msg -> display_data_as_buffer.bytes = buff;
+    g_sign_msg -> display_data_as_buffer.length = buff_size;
+    g_sign_msg -> display_data_as_buffer.size = buff_size;
     //Remove magic bytes, because, even though we sign them, the user should not be aware of their existence
-    slice_magic_bytes(&g_sign_msg -> message_data_as_buffer);
-    replace_undisplayable(&g_sign_msg -> message_data_as_buffer);
-    handle_long_message(&g_sign_msg -> message_data_as_buffer);
-    // Read message, determine if SHOWABLE, begin hash
+    slice_magic_bytes(&g_sign_msg -> display_data_as_buffer);
+    replace_undisplayable(&g_sign_msg -> display_data_as_buffer);
+    handle_long_message(&g_sign_msg -> display_data_as_buffer);
   }
   blake2b_incremental_hash(buff, buff_size, &g_sign_msg->hash_state);
-
   if(last) {
-    //Make sure to sign and send stuff
-    blake2b_finish_hash(g_sign_msg -> final_hash, sizeof(g_sign_msg -> final_hash), &g_sign_msg -> hash_state);
-
+    blake2b_finish_hash(g_sign_msg->final_hash, sizeof(g_sign_msg->final_hash), &g_sign_msg->hash_state);
     // Display the message
     static const char *const message_prompts[] = {PROMPT("Sign Message: "), NULL};
-    register_ui_callback(0, copy_buffer, &g_sign_msg->message_data_as_buffer);
+    register_ui_callback(0, copy_buffer, &g_sign_msg->display_data_as_buffer);
     ui_callback_t const ok_sign = sign_message_ok;
 
     // Prompt and sign hash
@@ -849,7 +845,6 @@ static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
       return finalize_successful_send(0);
   }
 }
-
 
 size_t handle_apdu_sign_message(uint8_t instruction) {
   return handle_apdu_sign_message_impl(instruction);
