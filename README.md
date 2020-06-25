@@ -300,15 +300,11 @@ The `account extended-address` command should be used to
 CKB> account extended-address --path "m/44'/309'/0'/0/1" --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
 ```
 
-This should show up on the ledger as (in 3 screens):
+This should show up on the ledger as (in 2 screens):
 
 ``` text
 Provide 
 Public Key
-```
-``` text
-Derivation Path
-44’/309’/0’/0/1.
 ```
 ``` text
 Address:
