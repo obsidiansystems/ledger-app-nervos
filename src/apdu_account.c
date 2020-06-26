@@ -19,22 +19,14 @@ static bool account_import_ok(void) {
     return true;
 }
 
-static void account_id_to_string(char *const out, size_t const out_size, uint32_t const* const account_index) {
-    uint32_t account_to_show_to_user = (*account_index) + 1;
-    number_to_string_indirect32(out, out_size, &account_to_show_to_user);
-}
-
-__attribute__((noreturn)) static void prompt_account_import(ui_callback_t ok_cb, ui_callback_t cxl_cb, uint32_t account_index) {
+__attribute__((noreturn)) static void prompt_account_import(ui_callback_t ok_cb, ui_callback_t cxl_cb) {
     static size_t const TYPE_INDEX = 0;
-    static size_t const ACCOUNT_INDEX = 1;
 
     static const char *const labels[] = {
         PROMPT("Import"),
-        PROMPT("Account"),
         NULL,
     };
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Account");
-    register_ui_callback(ACCOUNT_INDEX, account_id_to_string, &account_index);
     ui_prompt(labels, ok_cb, cxl_cb);
 }
 
@@ -86,5 +78,5 @@ size_t handle_apdu_account_import(uint8_t _U_ instruction) {
     generate_public_key_wrapper(&G.change_public_key, &G.path);
 
     ui_callback_t cb = account_import_ok;
-    prompt_account_import(cb, delay_reject, account_index_raw);
+    prompt_account_import(cb, delay_reject);
 }

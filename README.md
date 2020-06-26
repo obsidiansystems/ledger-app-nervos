@@ -261,7 +261,7 @@ CKB> account list
 ## Import Ledger Wallet account ###
 
 Use the `account import --ledger <ledger_id>` command to import the account to the `ckb-cli`.
-You will receive a confirmation prompt on the device which should say `Import Account` followed by `Account 1`.
+You will receive a confirmation prompt on the device which should say `Import Account`.
 Confirm this to import the account. This operation will provide the extended public key of path `m/44'/309'/0'` to the `ckb-cli`.
 
 ``` sh
