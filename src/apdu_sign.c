@@ -725,10 +725,13 @@ static inline void clear_message_data(void) {
 
 static int perform_message_signature() {
   apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
-
   uint8_t *const data = g_sign_msg->final_hash;
   uint8_t const data_size = sizeof(g_sign_msg->final_hash);
   size_t final_size = 0;
+
+  //TODO: Terrible hack
+  for(size_t i = g_sign_msg->key.length; i < sizeof(g_sign_msg->key.components); i++) g_sign_msg->key.components[i] = 0;
+
   final_size+=WITH_KEY_PAIR(g_sign_msg->key, key_pair, size_t,
                       ({ sign(&G_io_apdu_buffer[final_size], MAX_SIGNATURE_SIZE, key_pair, data, data_size); }));
   clear_message_data();
@@ -743,7 +746,7 @@ static bool sign_message_ok(void) {
 static bool check_magic_bytes(uint8_t const * message, uint8_t message_len) {
   // TODO: Make global and deduplicate
   const char nervos_magic[] = "Nervos Message:";
-  /* if(message_len == 0 || message_len < (sizeof(nervos_magic)- 1)) return false; //If the message is shorter, it dont work */
+  if(message_len == 0 || message_len < (sizeof(nervos_magic)- 1)) return false; //If the message is shorter, it dont work
   int cmp = memcmp(message, &nervos_magic, sizeof(nervos_magic)-1);
   return (0 == cmp); //cut off the str's nullbyte
 }
@@ -801,7 +804,9 @@ static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
       if (account_index_raw >= 0x80000000) THROW(EXC_WRONG_PARAM);
       uint32_t const account_index = 0x80000000 + account_index_raw;
       bip32_path_t root_path = {3, {0x8000002C, 0x80000135, account_index }};
-      g_sign_msg->key = root_path;
+
+      //TODO: This is still getting overwritten somehow
+      memcpy(&g_sign_msg->key, &root_path, sizeof(root_path));
       return finalize_successful_send(0);
     case P1_NEXT:
       // Guard against overflow
