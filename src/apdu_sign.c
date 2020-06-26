@@ -869,8 +869,9 @@ static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
     blake2b_finish_hash(g_sign_msg->final_hash, sizeof(g_sign_msg->final_hash), &g_sign_msg->hash_state);
 
     // Display the message
-    static const char *const message_prompts[] = {PROMPT("Sign Message: "), NULL};
-    register_ui_callback(0, copy_buffer, &g_sign_msg->display_as_buffer);
+    static const char *const message_prompts[] = { PROMPT("Sign"), PROMPT("Message: "), NULL};
+    REGISTER_STATIC_UI_VALUE(0, "Message");
+    register_ui_callback(1, copy_buffer, &g_sign_msg->display_as_buffer);
     ui_callback_t const ok_sign = sign_message_ok;
 
     // Prompt and sign hash
