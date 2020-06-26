@@ -1,6 +1,3 @@
 Prompt 0:
 Import
 Account
-Prompt 1:
-Account
-1
