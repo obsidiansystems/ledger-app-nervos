@@ -773,10 +773,34 @@ static void slice_magic_bytes(char *buff, uint8_t *buff_size) {
 }
 
 static void replace_undisplayable(uint8_t *buff, uint8_t *buff_size) {
-  for(size_t i = 0; i < *buff_size; i++) {
-    bool cant_display = buff[i] > 126 || buff[i] < 32;
-    if(cant_display)
-      buff[i] = '*';
+  const uint8_t four_bytes = 240; // 1111 0000
+  const uint8_t three_bytes = 224; // 1110 0000
+  const uint8_t two_bytes = 192;  // 1100 0000
+  uint8_t tmp_buff [*buff_size];
+  memcpy(tmp_buff, buff, *buff_size);
+  memset(buff, 0, *buff_size);
+  const uint8_t tmp_size = *buff_size;
+  for(size_t i = 0, j = 0; i < tmp_size; i++, j++) {
+    bool cant_display = tmp_buff[i] > 126 || tmp_buff[i] < 32;
+    if(cant_display) {
+      buff[j] = '*';
+      // Check if char is represented by multiple bytes and remove them
+      if((tmp_buff[i] & four_bytes) == four_bytes){
+        i+=3;
+        *buff_size -=3;
+      }
+      else if((tmp_buff[i] & three_bytes) == three_bytes){
+        i+=2;
+        *buff_size -=2;
+      }
+      else if((tmp_buff[i] & two_bytes) == two_bytes){
+        i+=1;
+        *buff_size -=1;
+      }
+    }
+    else {
+      buff[j] = tmp_buff[i];
+    }
   }
 }
 static void handle_long_message(uint8_t *buff, uint8_t *buff_size) {
