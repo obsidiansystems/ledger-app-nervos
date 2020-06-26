@@ -491,6 +491,24 @@ total_capacity: 2000.0 (CKB)
 total_count: 1
 ```
 
+### Message Signing ####
+To sign a message with their ledger a user may do the following:
+
+```sh
+CKB> util sign-message --message "hello world i love nervos" --account <my-ledger-account>
+message-hash: <blake2b hash of: magic_bytes + message>
+recoverable: false
+signature: <signature>
+
+CKB> util verify-message --message "hello world i love nervos" --account <my-ledger-account> --signature <signature from above>
+pubkey: <pubkey of my ledger's account root>
+recoverable: false
+verify-ok: true
+```
+If a message is longer than 64 characters the ledger will display the first 61 chars, followed by an ellipsis (`...`)
+The ckb-cli accepts utf8 strings in its `--message` argument, but the ledger can not display all chars. If the ledger comes accross a
+character that it is unnable to display it will display an asterisk (`\*`) instead.
+
 ### DAO ####
 
 #### Deposit #####

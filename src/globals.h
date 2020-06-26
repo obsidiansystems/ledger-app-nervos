@@ -111,6 +111,15 @@ typedef struct {
 } apdu_sign_state_t;
 
 typedef struct {
+    buffer_t display_as_buffer;
+    bip32_path_t key;
+    blake2b_hash_state_t hash_state;
+    uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
+    uint8_t display[64];
+    uint8_t final_hash[SIGN_HASH_SIZE];
+} apdu_sign_message_state_t;
+
+typedef struct {
     bip32_path_t key;
     extended_public_key_t ext_public_key;
     cx_blake2b_t hash_state;
@@ -162,6 +171,7 @@ typedef struct {
         union {
             apdu_pubkey_state_t pubkey;
             apdu_sign_state_t sign;
+            apdu_sign_message_state_t sign_msg;
             apdu_account_import_state_t account_import;
         } u;
 

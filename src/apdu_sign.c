@@ -167,6 +167,8 @@ unsafe:
     ui_prompt(parse_fail_prompts, ok_c, sign_reject);
 }
 
+/***********************************************************/
+
 #define REJECT(msg, ...)                                                                                               \
     {                                                                                                                  \
         PRINTF("Rejecting: " msg "\n", ##__VA_ARGS__);                                                                 \
@@ -677,7 +679,7 @@ static size_t handle_apdu(uint8_t const instruction) {
                     THROW(EXC_PARSE_ERROR);
                 }
             }
-            
+
             break;
     }
 
@@ -700,7 +702,6 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
         return finalize_successful_send(sizeof(G.final_hash));
     }
 
-
     size_t tx = 0;
     if (send_hash && on_hash) {
         memcpy(&G_io_apdu_buffer[tx], G.final_hash, sizeof(G.final_hash));
@@ -713,7 +714,170 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
     tx += WITH_KEY_PAIR(G.key, key_pair, size_t,
                         ({ sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, data, data_length); }));
 
-
     clear_data();
     return finalize_successful_send(tx);
+}
+
+/***********************************************************/
+static inline void clear_message_data(void) {
+  memset(&global.apdu.u.sign_msg, 0, sizeof(global.apdu.u.sign_msg));
+}
+
+static int perform_message_signature() {
+  apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
+  uint8_t *const data = g_sign_msg->final_hash;
+  uint8_t const data_size = sizeof(g_sign_msg->final_hash);
+  size_t final_size = 0;
+
+  final_size+=WITH_KEY_PAIR(g_sign_msg->key, key_pair, size_t,
+                      ({ sign(&G_io_apdu_buffer[final_size], MAX_SIGNATURE_SIZE, key_pair, data, data_size); }));
+  clear_message_data();
+  return finalize_successful_send(final_size);
+}
+
+static bool sign_message_ok(void) {
+  delayed_send(perform_message_signature());
+  return true; 
+}
+
+static bool check_magic_bytes(uint8_t const * message, uint8_t message_len) {
+  const char nervos_magic[] = "Nervos Message:";
+  if(message_len == 0 || message_len < (sizeof(nervos_magic)- 1)) return false; //If the message is shorter, it dont work
+  int cmp = memcmp(message, &nervos_magic, sizeof(nervos_magic)-1);
+  return (0 == cmp); //cut off the str's nullbyte
+}
+
+static void copy_buffer(char *const out, size_t const out_size, buffer_t const *const in) {
+  if(in->size > out_size) THROW(EXC_MEMORY_ERROR);
+
+  // if we dont do this we have stuff from the old buffer getting displayed
+  memset(out, 0, out_size);
+  memcpy(out, in->bytes, in->size);
+}
+
+static void slice_magic_bytes(char *buff, uint8_t *buff_size) {
+  const char magic_bytes[] = "Nervos Message:";
+  //remove string terminator when comparing
+  size_t magic_bytes_size = sizeof(magic_bytes)- 1;
+  if(0 == memcmp(buff, magic_bytes, magic_bytes_size)) {
+    size_t num_bytes_to_copy = *buff_size - magic_bytes_size;
+    memmove(buff, &buff[magic_bytes_size], num_bytes_to_copy);
+    *buff_size = num_bytes_to_copy;
+  }
+  else THROW(EXC_PARSE_ERROR);
+
+}
+
+static void replace_undisplayable(uint8_t *buff, uint8_t *buff_size) {
+  const uint8_t four_bytes = 240; // 1111 0000
+  const uint8_t three_bytes = 224; // 1110 0000
+  const uint8_t two_bytes = 192;  // 1100 0000
+  uint8_t tmp_buff [*buff_size];
+  memcpy(tmp_buff, buff, *buff_size);
+  memset(buff, 0, *buff_size);
+  const uint8_t tmp_size = *buff_size;
+  for(size_t i = 0, j = 0; i < tmp_size; i++, j++) {
+    bool cant_display = tmp_buff[i] > 126 || tmp_buff[i] < 32;
+    if(cant_display) {
+      buff[j] = '*';
+      // Check if char is represented by multiple bytes and remove them
+      if((tmp_buff[i] & four_bytes) == four_bytes){
+        i+=3;
+        *buff_size -=3;
+      }
+      else if((tmp_buff[i] & three_bytes) == three_bytes){
+        i+=2;
+        *buff_size -=2;
+      }
+      else if((tmp_buff[i] & two_bytes) == two_bytes){
+        i+=1;
+        *buff_size -=1;
+      }
+    }
+    else {
+      buff[j] = tmp_buff[i];
+    }
+  }
+}
+static void handle_long_message(uint8_t *buff, uint8_t *buff_size) {
+  if(*buff_size > 64) {
+    *buff_size = 64;
+    buff[61] = '.';
+    buff[62] = '.';
+    buff[63] = '.';
+  }
+}
+
+/***********************************************************************/
+static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
+  uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
+  uint8_t const buff_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
+  uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]);
+  if (buff_size > MAX_APDU_SIZE) THROW(EXC_WRONG_LENGTH_FOR_INS);
+  apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
+
+  bool last = (p1 & P1_LAST_MARKER) != 0;
+  switch (p1 & ~P1_LAST_MARKER) {
+    case P1_FIRST:
+      clear_message_data();
+      uint32_t const account_index_raw = READ_UNALIGNED_BIG_ENDIAN(uint32_t, buff);
+      if (account_index_raw >= 0x80000000) THROW(EXC_WRONG_PARAM);
+      uint32_t const account_index = 0x80000000 + account_index_raw;
+      g_sign_msg->key.components[0] = 0x8000002C;
+      g_sign_msg->key.components[1] = 0x80000135;
+      g_sign_msg->key.components[2] = account_index;
+      g_sign_msg->key.length = 3;
+      return finalize_successful_send(0);
+    case P1_NEXT:
+      // Guard against overflow
+      if (g_sign_msg->packet_index >= 0xFF) PARSE_ERROR();
+      g_sign_msg->packet_index++;
+      break;
+    default:
+        THROW(EXC_WRONG_PARAM);
+  }
+
+  if (g_sign_msg->packet_index == 1) {
+    // Ensure the message begins with "Nervos Message:"
+    if(!check_magic_bytes(buff, buff_size)) THROW(EXC_PARSE_ERROR);
+
+    uint8_t tmp_msg_buff[buff_size];
+    uint8_t tmp_msg_buff_size = buff_size;
+
+    // Move msg, so we dont hash the same data that we mutate
+    memcpy(tmp_msg_buff, buff, tmp_msg_buff_size);
+ 
+    //Remove magic bytes, because, even though we sign them, the user should not be aware of their existence
+    slice_magic_bytes((char*)tmp_msg_buff, &tmp_msg_buff_size);
+    replace_undisplayable(tmp_msg_buff, &tmp_msg_buff_size);
+    handle_long_message(tmp_msg_buff, &tmp_msg_buff_size);
+
+    // Move tmp to global storage
+    memcpy(&g_sign_msg->display, tmp_msg_buff, tmp_msg_buff_size);
+
+    //Convert to buffer
+    g_sign_msg->display_as_buffer.bytes = g_sign_msg->display;
+    g_sign_msg->display_as_buffer.size = tmp_msg_buff_size;
+    g_sign_msg->display_as_buffer.length = tmp_msg_buff_size;
+  }
+  blake2b_incremental_hash(buff, buff_size, &g_sign_msg->hash_state);
+  if(last) {
+    blake2b_finish_hash(g_sign_msg->final_hash, sizeof(g_sign_msg->final_hash), &g_sign_msg->hash_state);
+
+    // Display the message
+    static const char *const message_prompts[] = { PROMPT("Sign"), PROMPT("Message: "), NULL};
+    REGISTER_STATIC_UI_VALUE(0, "Message");
+    register_ui_callback(1, copy_buffer, &g_sign_msg->display_as_buffer);
+    ui_callback_t const ok_sign = sign_message_ok;
+
+    // Prompt and sign hash
+    ui_prompt(message_prompts, ok_sign, sign_reject);
+  }
+  else {
+      return finalize_successful_send(0);
+  }
+}
+
+size_t handle_apdu_sign_message(uint8_t instruction) {
+  return handle_apdu_sign_message_impl(instruction);
 }
