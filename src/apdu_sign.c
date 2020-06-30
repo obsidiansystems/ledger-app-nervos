@@ -237,7 +237,19 @@ void cell_lock_code_hash(uint8_t* buf, mol_num_t len) {
                                                 0x18, 0x8b, 0x23, 0xf1, 0xb9, 0xfc, 0xc8, 0x8e, 0x5d, 0x4b, 0x65,
                                                 0xa8, 0x63, 0x7b, 0x17, 0x72, 0x3b, 0xbd, 0xa3, 0xcc, 0xe8};
 
-    if(memcmp(buf, defaultLockScript, 32)) REJECT("Only the standard lock script is currently supported");
+    static const uint8_t multisigLockScript[] = { 0x5c, 0x50, 0x69, 0xeb, 0x08, 0x57, 0xef, 0xc6, 0x5e, 0x1b, 0xca,
+                                                  0x0c, 0x07, 0xdf, 0x34, 0xc3, 0x16, 0x63, 0xb3, 0x62, 0x2f, 0xd3,
+                                                  0x87, 0x6c, 0x87, 0x63, 0x20, 0xfc, 0x96, 0x34, 0xe2, 0xa8 };
+
+    if(memcmp(buf, defaultLockScript, 32)) {
+        if(memcmp(buf, multisigLockScript, 32)) {
+            REJECT("Only the standard lock script is currently supported");
+        } else {
+            G.cell_state.is_multisig = true;
+        }
+    } else {
+        G.cell_state.is_multisig = false;
+    };
 }
 
 void cell_script_hash_type(uint8_t hash_type) {
@@ -274,6 +286,8 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
 
 void input_lock_arg_end() {
     if(!G.cell_state.active) return;
+    // Relax the check for multisig input
+    if(G.cell_state.is_multisig) return;
     if(G.cell_state.lock_arg_nonequal)
         REJECT("Can't securely sign transactions containing inputs we don't control");
 }
@@ -326,6 +340,7 @@ void finish_input_cell_data() {
             REJECT("Data found in non-dao cell");
         }
         G.plain_input_amount += G.cell_state.capacity;
+        G.signing_multisig_input |= G.cell_state.is_multisig;
     }
 }
 
@@ -527,25 +542,53 @@ void set_change_path(void) {
     prep_lock_arg(&G.temp_key, &G.change_lock_arg);
 }
 
-void witness_offsets(struct WitnessArgs_state *state) {
-    int lock_wit_len = state->input_type_offset-state->lock_offset;
-    int shift = 69-lock_wit_len;
+void witness_offsets(struct WitnessArgs_state *state, uint8_t* chunk /* lock_arg */) {
+    int lock_bytes_len = state->input_type_offset-state->lock_offset;
     mol_num_t new_header[4];
-    new_header[0] = state->total_size + shift;
-    new_header[1] = state->lock_offset;
-    new_header[2] = state->input_type_offset + shift;
-    new_header[3] = state->output_type_offset + shift;
+    if (G.signing_multisig_input) {
+        uint8_t* multisig_script = chunk + 4 /* LOCK_ARG_SIZE */;
+        uint8_t reserved_field = multisig_script[0];
+        uint8_t first_n = multisig_script[1];
+        uint8_t threshold = multisig_script[2];
+        uint8_t pubkeys_cnt = multisig_script[3];
+        size_t multisig_script_len = 4 /* FLAGS_SIZE */ + 20 /* BLAKE160_SIZE */ * pubkeys_cnt;
+        size_t signatures_len = 65 /* SIGNATURE_SIZE */ * threshold;
+        size_t required_lock_len = multisig_script_len + signatures_len + 4 /* LOCK_ARG_SIZE */;
 
-    uint64_t len64 = new_header[0];
-    blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
-    blake2b_incremental_hash((uint8_t*) new_header, sizeof(new_header), &G.hash_state);
-    static const uint8_t zero_witness[] = {
-        0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    blake2b_incremental_hash(zero_witness, sizeof(zero_witness), &G.hash_state);
+        /* PRINTF("reserved_field: %d, first_n: %d, threshold: %d, pubkeys_cnt: %d, multisig_script_len: %d, signatures_len: %d",
+           reserved_field, first_n, threshold, pubkeys_cnt, multisig_script_len, signatures_len); */
+        if (lock_bytes_len != required_lock_len)
+            REJECT("WitnessArg for multisig signing not of correct length");
+
+        // The input lock_arg chunk is modified in place
+        // This is to avoid allocating more memory
+        // The signatures (if present) in WitnessArg field are not needed
+        memset((multisig_script + multisig_script_len), 0, signatures_len);
+        new_header[0] = state->total_size;
+        new_header[1] = state->lock_offset;
+        new_header[2] = state->input_type_offset;
+        new_header[3] = state->output_type_offset;
+        uint64_t len64 = new_header[0];
+        blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
+        blake2b_incremental_hash((uint8_t*) new_header, sizeof(new_header), &G.hash_state);
+        blake2b_incremental_hash((uint8_t*) chunk, lock_bytes_len, &G.hash_state);
+    } else {
+        int shift = 69 - lock_bytes_len;
+        new_header[0] = state->total_size + shift;
+        new_header[1] = state->lock_offset;
+        new_header[2] = state->input_type_offset + shift;
+        new_header[3] = state->output_type_offset + shift;
+        uint64_t len64 = new_header[0];
+        static const uint8_t zero_witness[] = {
+            0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
+        blake2b_incremental_hash((uint8_t*) new_header, sizeof(new_header), &G.hash_state);
+        blake2b_incremental_hash(zero_witness, sizeof(zero_witness), &G.hash_state);
+    }
 }
 
 void witness_chunk(uint8_t* chunk, mol_num_t length) {

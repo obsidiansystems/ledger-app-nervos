@@ -1446,7 +1446,7 @@ struct CellbaseWitness_callbacks {
     void (*start)();
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
-    void (*offsets)(struct CellbaseWitness_state*);
+    void (*offsets)(struct CellbaseWitness_state*, uint8_t*);
     const struct Script_callbacks *lock;
     const struct Bytes_callbacks *message;
 };
@@ -1556,7 +1556,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_WitnessArgs_parse             
             s->state_num++;
             s->field_idx=0;
             MOL_INIT_SUBPARSER(lock, BytesOpt);
-            if(cb && cb->offsets) MOL_PIC(cb->offsets)(s);
+            if(cb && cb->offsets) MOL_PIC(cb->offsets)(s, chunk->ptr + chunk->consumed);
         case 2:
             switch(s->field_idx) {
             case 0: {

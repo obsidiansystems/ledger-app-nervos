@@ -58,6 +58,7 @@ typedef struct {
     bool active;
     bool is_dao;
     bool is_change;
+    bool is_multisig;
     uint8_t dao_data_is_nonzero;
     uint32_t arg_chunk_ctr;
     uint32_t data_size;
@@ -107,6 +108,7 @@ typedef struct {
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
     bool hash_only;
     bool first_witness_done;
+    bool signing_multisig_input;
 
 } apdu_sign_state_t;
 
