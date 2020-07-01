@@ -107,6 +107,21 @@ static size_t sign_complete(uint8_t instruction) {
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
     } break;
+    case OPERATION_TAG_SELF_TRANSFER: {
+        static const uint32_t TYPE_INDEX = 0;
+        static const uint32_t AMOUNT_INDEX = 1;
+        static const uint32_t FEE_INDEX = 2;
+        static const uint32_t DESTINATION_INDEX = 3;
+        static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"),      PROMPT("Fee"),
+                                                          PROMPT("Destination"), NULL};
+        REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Self-Transfer");
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
+        register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
+
+        ui_prompt(transaction_prompts, ok_c, sign_reject);
+
+    } break;
     case OPERATION_TAG_DAO_DEPOSIT: {
         static const uint32_t TYPE_INDEX = 0;
         static const uint32_t AMOUNT_INDEX = 1;
@@ -251,6 +266,7 @@ void script_arg_start_input() {
     if(!G.cell_state.active) return;
     G.cell_state.lock_arg_index = 0;
     G.cell_state.lock_arg_nonequal = 0;
+    G.first_output = true;
     G.lock_arg_cmp = G.current_lock_arg;
 }
 
@@ -265,9 +281,10 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
     G.cell_state.lock_arg_index+=buflen;
 
     if(!G.lock_arg_cmp) {
-        G.cell_state.lock_arg_nonequal=true;
+        G.cell_state.lock_arg_nonequal=false;
         return;
     }
+    // Cycle through current buff, and cmp to the buff
     for(mol_num_t i=0;i<buflen;i++) {
         G.cell_state.lock_arg_nonequal |= (G.lock_arg_cmp[current_offset+i] != buf[i]);
         if(G.cell_state.lock_arg_nonequal) return;
@@ -406,7 +423,13 @@ void output_end(void) {
         G.dao_output_amount += G.cell_state.capacity;
         G.dao_bitmask |= 1<<G.current_output_index;
     } else {
-        if(G.cell_state.lock_arg_nonequal) {
+        if(G.cell_state.lock_arg_nonequal || G.first_output) {
+            // If the first output cell has a lock arg that matches the prev cell,
+            // but it is the first output cell, then it is a self transfer
+            if(G.first_output) {
+              G.maybe_transaction.v.tag = OPERATION_TAG_SELF_TRANSFER;
+              G.first_output = false;
+            }
             G.plain_output_amount += G.cell_state.capacity;
             if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20)) {
                 REJECT("Can't handle transactions with multiple non-change destination addresses");
@@ -414,7 +437,6 @@ void output_end(void) {
                 G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
                 memcpy(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20);
             }
-
         } else {
             G.change_amount += G.cell_state.capacity;
         }
@@ -449,6 +471,8 @@ void finalize_raw_transaction(void) {
             G.maybe_transaction.v.tag = OPERATION_TAG_PLAIN_TRANSFER;
             G.maybe_transaction.v.amount = G.plain_output_amount;
             break;
+        case OPERATION_TAG_SELF_TRANSFER:
+            G.maybe_transaction.v.amount = G.plain_output_amount;
         case OPERATION_TAG_DAO_DEPOSIT:
             G.maybe_transaction.v.dao_amount = G.dao_output_amount;
             break;
@@ -592,8 +616,6 @@ void process_witness(uint8_t *buff, mol_num_t buff_size) {
 
 void process_witness_end() {
     // If something went wrong parsing the first arg, just assume that it's the usual empty one.
-    //
-    //
     if(G.witness_idx==0 && G.first_witness_done!=1) {
         G.first_witness_done=1;
         explicit_bzero(&G.hash_state, sizeof(G.hash_state));

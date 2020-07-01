@@ -107,6 +107,7 @@ typedef struct {
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
     bool hash_only;
     bool first_witness_done;
+    bool first_output;  // If a cell is the first output, but its lock arg matches the most recent, we declare it a self transfer
 
 } apdu_sign_state_t;
 
