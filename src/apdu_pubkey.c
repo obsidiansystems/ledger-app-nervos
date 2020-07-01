@@ -117,8 +117,8 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     generate_public_key(&G.ext_public_key, &G.key);
 
     // write tags
-    GPriv.prefixed_public_key_hash.address_type_is_short = 0x01;
-    GPriv.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
+    GPriv.prefixed_public_key_hash.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
+    GPriv.prefixed_public_key_hash.address_code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
 
     // write lock arg
     generate_lock_arg_for_pubkey(&G.ext_public_key.public_key, &GPriv.prefixed_public_key_hash.hash);

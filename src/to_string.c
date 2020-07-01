@@ -184,7 +184,7 @@ void buffer_to_hex(char *const out, size_t const out_size, buffer_t const *const
 
 void lock_arg_to_address_common(char *const dest, size_t const buff_size, uint8_t const *const lockarg) {
     // write tags
-    global.apdu.priv.prefixed_public_key_hash.address_type_is_short = 0x01;
+    global.apdu.priv.prefixed_public_key_hash.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
 
     // write lock arg
     memcpy(&global.apdu.priv.prefixed_public_key_hash.hash, lockarg, sizeof(global.apdu.priv.prefixed_public_key_hash.hash));
@@ -193,11 +193,11 @@ void lock_arg_to_address_common(char *const dest, size_t const buff_size, uint8_
 }
 
 void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, uint8_t const *const lockarg) {
-    global.apdu.priv.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
+    global.apdu.priv.prefixed_public_key_hash.address_code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
     lock_arg_to_address_common(dest, buff_size, lockarg);
 }
 
 void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, uint8_t const *const lockarg) {
-    global.apdu.priv.prefixed_public_key_hash.key_hash_type_is_sighash = 0x01;
+    global.apdu.priv.prefixed_public_key_hash.address_code_hash_index = ADDRESS_CODE_HASH_TYPE_MULTISIG;
     lock_arg_to_address_common(dest, buff_size, lockarg);
 }

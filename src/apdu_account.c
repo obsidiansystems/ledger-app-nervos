@@ -42,8 +42,8 @@ static inline void generate_public_key_wrapper(extended_public_key_t *const out,
     generate_public_key(out, bip32_path);
 
     // write tags
-    GPriv.prefixed_public_key_hash.address_type_is_short = 0x01;
-    GPriv.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
+    GPriv.prefixed_public_key_hash.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
+    GPriv.prefixed_public_key_hash.address_code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
 
     // write lock arg
     generate_lock_arg_for_pubkey(&(out->public_key), &GPriv.prefixed_public_key_hash.hash);
