@@ -281,7 +281,7 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
     G.cell_state.lock_arg_index+=buflen;
 
     if(!G.lock_arg_cmp) {
-        G.cell_state.lock_arg_nonequal=false;
+        G.cell_state.lock_arg_nonequal=true;
         return;
     }
     // Cycle through current buff, and cmp to the buff
