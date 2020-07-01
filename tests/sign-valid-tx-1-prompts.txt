@@ -1,0 +1,12 @@
+Prompt 0:
+Confirm
+Transaction
+Prompt 1:
+Amount
+200
+Prompt 2:
+Fee
+0.001
+Prompt 3:
+Destination
+ckb1qyq0js0a0d04aumk2cdr95x9kza3e5gcqttq46cate
