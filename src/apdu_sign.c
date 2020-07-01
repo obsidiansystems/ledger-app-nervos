@@ -420,10 +420,11 @@ void output_start(mol_num_t index) {
 
 void output_end(void) {
     if(G.cell_state.is_dao) {
+        G.contains_dao_cell = true;
         G.dao_output_amount += G.cell_state.capacity;
         G.dao_bitmask |= 1<<G.current_output_index;
     } else {
-        if(G.cell_state.lock_arg_nonequal || G.first_output) {
+        if(G.cell_state.lock_arg_nonequal || ((!G.contains_dao_cell) && G.first_output)) {
             // If the first output cell has a lock arg that matches the prev cell,
             // but it is the first output cell, then it is a self transfer
             if(G.first_output) {

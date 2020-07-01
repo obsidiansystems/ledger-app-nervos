@@ -108,6 +108,7 @@ typedef struct {
     bool hash_only;
     bool first_witness_done;
     bool first_output;  // If a cell is the first output, but its lock arg matches the most recent, we declare it a self transfer
+    bool contains_dao_cell;
 
 } apdu_sign_state_t;
 
