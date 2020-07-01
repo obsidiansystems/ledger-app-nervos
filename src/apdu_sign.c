@@ -88,6 +88,7 @@ static size_t sign_complete(uint8_t instruction) {
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Operation");
 
     ui_callback_t const ok_c = instruction == INS_SIGN_WITH_HASH ? sign_with_hash_ok : sign_without_hash_ok;
+    ui_callback_t const lock_arg_to_destination_address_cb = G.sending_to_multisig_output ? lock_arg_to_multisig_address : lock_arg_to_sighash_address;
 
     switch (G.maybe_transaction.v.tag) {
 
@@ -100,7 +101,7 @@ static size_t sign_complete(uint8_t instruction) {
                                                           PROMPT("Destination"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
         //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
 
@@ -116,7 +117,7 @@ static size_t sign_complete(uint8_t instruction) {
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
         // register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
 
@@ -428,6 +429,9 @@ void output_end(void) {
                 memcpy(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20);
             }
 
+            if(G.cell_state.is_multisig) {
+                G.sending_to_multisig_output = true;
+            }
         } else {
             G.change_amount += G.cell_state.capacity;
         }

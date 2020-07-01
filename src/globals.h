@@ -109,6 +109,7 @@ typedef struct {
     bool hash_only;
     bool first_witness_done;
     bool signing_multisig_input;
+    bool sending_to_multisig_output;
 
 } apdu_sign_state_t;
 
