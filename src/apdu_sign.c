@@ -266,7 +266,7 @@ void script_arg_start_input() {
     if(!G.cell_state.active) return;
     G.cell_state.lock_arg_index = 0;
     G.cell_state.lock_arg_nonequal = 0;
-    G.first_output = true;
+    // current_lock_arg is the one we are signing with
     G.lock_arg_cmp = G.current_lock_arg;
 }
 
@@ -277,6 +277,8 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
         G.cell_state.lock_arg_nonequal |= true;
         return;
     }
+
+    G.cell_state.is_change = 0 == memcmp(G.change_lock_arg, buf, buflen);
     memcpy(G.lock_arg_tmp+current_offset, buf, buflen);
     G.cell_state.lock_arg_index+=buflen;
 
@@ -284,7 +286,7 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
         G.cell_state.lock_arg_nonequal=true;
         return;
     }
-    // Cycle through current buff, and cmp to the buff
+
     for(mol_num_t i=0;i<buflen;i++) {
         G.cell_state.lock_arg_nonequal |= (G.lock_arg_cmp[current_offset+i] != buf[i]);
         if(G.cell_state.lock_arg_nonequal) return;
@@ -415,22 +417,39 @@ void output_start(mol_num_t index) {
     G.current_output_index=index;
     explicit_bzero((void*) &G.cell_state, sizeof(G.cell_state));
     G.cell_state.active = true;
+    G.is_self_transfer = false;
     G.lock_arg_cmp=G.change_lock_arg;
 }
 
 void output_end(void) {
+  bool is_second_change = G.processed_change_cell && G.cell_state.is_change;
+  bool dest_is_src = !G.cell_state.is_change && (0 == memcmp(G.current_lock_arg, G.lock_arg_tmp, 20));
+  G.is_self_transfer |=  is_second_change || dest_is_src;
+
+  // Have we now processed at least 1 change cell?
+  G.processed_change_cell |= G.cell_state.is_change;
+
     if(G.cell_state.is_dao) {
-        G.contains_dao_cell = true;
         G.dao_output_amount += G.cell_state.capacity;
         G.dao_bitmask |= 1<<G.current_output_index;
     } else {
-        if(G.cell_state.lock_arg_nonequal || ((!G.contains_dao_cell) && G.first_output)) {
-            // If the first output cell has a lock arg that matches the prev cell,
-            // but it is the first output cell, then it is a self transfer
-            if(G.first_output) {
-              G.maybe_transaction.v.tag = OPERATION_TAG_SELF_TRANSFER;
-              G.first_output = false;
-            }
+        if(G.is_self_transfer) {
+          // The normal rules no longer apply
+          if(is_second_change) { 
+            // It is now a self_txn so no change exists
+            G.plain_output_amount += G.change_amount;
+            G.change_amount = 0;
+          }
+          G.plain_output_amount += G.cell_state.capacity;
+          uint8_t *dest_to_show = dest_is_src ? G.lock_arg_tmp : G.change_lock_arg;
+          if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, dest_to_show, 20)) {
+              REJECT("Can't handle transactions with multiple non-change destination addresses");
+          } else {
+              G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
+              memcpy(G.maybe_transaction.v.destination, dest_to_show, 20);
+          }
+        }
+        else if(G.cell_state.lock_arg_nonequal) {
             G.plain_output_amount += G.cell_state.capacity;
             if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20)) {
                 REJECT("Can't handle transactions with multiple non-change destination addresses");
@@ -438,7 +457,8 @@ void output_end(void) {
                 G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
                 memcpy(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20);
             }
-        } else {
+        }
+        else {
             G.change_amount += G.cell_state.capacity;
         }
     }
@@ -469,11 +489,12 @@ void finalize_raw_transaction(void) {
             break;
         case OPERATION_TAG_NOT_SET:
         case OPERATION_TAG_PLAIN_TRANSFER:
-            G.maybe_transaction.v.tag = OPERATION_TAG_PLAIN_TRANSFER;
+            G.maybe_transaction.v.tag = G.is_self_transfer ? 
+              OPERATION_TAG_SELF_TRANSFER : OPERATION_TAG_PLAIN_TRANSFER;
             G.maybe_transaction.v.amount = G.plain_output_amount;
             break;
-        case OPERATION_TAG_SELF_TRANSFER:
-            G.maybe_transaction.v.amount = G.plain_output_amount;
+        /* case OPERATION_TAG_SELF_TRANSFER: */
+        /*     G.maybe_transaction.v.amount = G.plain_output_amount; */
         case OPERATION_TAG_DAO_DEPOSIT:
             G.maybe_transaction.v.dao_amount = G.dao_output_amount;
             break;
