@@ -30,17 +30,6 @@ __attribute__((noreturn)) static void prompt_account_import(ui_callback_t ok_cb,
     ui_prompt(labels, ok_cb, cxl_cb);
 }
 
-static inline void generate_public_key_wrapper(extended_public_key_t *const out, bip32_path_t const *const bip32_path) {
-    generate_public_key(out, bip32_path);
-
-    // write tags
-    GPriv.prefixed_public_key_hash.address_type_is_short = 0x01;
-    GPriv.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
-
-    // write lock arg
-    generate_lock_arg_for_pubkey(&(out->public_key), &GPriv.prefixed_public_key_hash.hash);
-}
-
 size_t handle_apdu_account_import(uint8_t _U_ instruction) {
     if (READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]) != 0)
         THROW(EXC_WRONG_PARAM);
@@ -63,19 +52,19 @@ size_t handle_apdu_account_import(uint8_t _U_ instruction) {
     // m/44'/309'/<account_index>'
     bip32_path_t root_path = {3, {0x8000002C, 0x80000135, account_index}};
     G.path = root_path;
-    generate_public_key_wrapper(&G.root_public_key, &G.path);
+    generate_public_key(&G.root_public_key, &G.path);
 
     // Derive Extended Public key
     // m/44'/309'/<account_index>'/0
     bip32_path_t external_path = {4, {0x8000002C, 0x80000135, account_index, 0x00000000}};
     G.path = external_path;
-    generate_public_key_wrapper(&G.external_public_key, &G.path);
+    generate_public_key(&G.external_public_key, &G.path);
 
     // Derive Extended Public key
     // m/44'/309'/<account_index>'/1
     bip32_path_t change_path = {4, {0x8000002C, 0x80000135, account_index, 0x00000001}};
     G.path = change_path;
-    generate_public_key_wrapper(&G.change_public_key, &G.path);
+    generate_public_key(&G.change_public_key, &G.path);
 
     ui_callback_t cb = account_import_ok;
     prompt_account_import(cb, delay_reject);
