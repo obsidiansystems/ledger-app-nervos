@@ -15,7 +15,7 @@ void protocol_hash_to_string(char *const buff, size_t const buff_size, uint8_t c
 void parsed_contract_to_string(char *const buff, size_t const buff_size, public_key_hash_t const *const contract);
 void lookup_parsed_contract_name(char *const buff, size_t const buff_size, public_key_hash_t const *const contract);
 
-void lock_arg_to_string(char *const buff, size_t const buff_size, uint8_t const *const contract);
+/* void lock_arg_to_string(char *const buff, size_t const buff_size, uint8_t const *const contract); */
 void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, uint8_t const *const lockarg);
 void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, uint8_t const *const lockarg);
 
