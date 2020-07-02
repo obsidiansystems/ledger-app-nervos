@@ -126,14 +126,18 @@ typedef struct public_key_hash {
 #define ADDRESS_CODE_HASH_TYPE_MULTISIG 0x01
 
 typedef union {
-    uint8_t entire[2 + sizeof(standard_lock_arg_t)];
     struct {
         uint8_t address_format_type;
-        uint8_t address_code_hash_index;
+        uint8_t code_hash_index;
         standard_lock_arg_t hash;
-    };
-} prefixed_public_key_hash_t;
+    } s; // short
 
+    struct {
+        uint8_t address_format_type;
+        uint8_t code_hash[32];
+        uint8_t lock_arg[28];
+    } f; // full
+} render_address_payload_t;
 
 #define HAS_DESTINATION_ADDRESS 0x01
 #define HAS_CHANGE_ADDRESS      0x02

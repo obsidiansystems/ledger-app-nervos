@@ -53,13 +53,20 @@ static void bip32_path_to_string(char *const out, size_t const out_size, apdu_pu
 }
 
 void render_pkh(char *const out, size_t const out_size,
-                       prefixed_public_key_hash_t const *const pubkey) {
+                render_address_payload_t const *const payload) {
     const size_t base32_max = 256;
     uint8_t base32_buf[base32_max];
     size_t base32_len = 0;
+    size_t payload_len = 22;
+    /* if (payload->s.address_format_type == ADDRESS_FORMAT_TYPE_SHORT) { */
+    /*     payload_len = 2 + 20; */
+    /* } else { */
+    /*     payload_len = 2 + 32 + 20 + 8; */
+    /* } */
+
     if (!convert_bits(base32_buf, base32_max, &base32_len,
                       5,
-                      pubkey->entire, sizeof(pubkey->entire),
+                      (const uint8_t *)payload, payload_len,
                       8,
                       1)) {
         THROW(EXC_MEMORY_ERROR);
@@ -80,7 +87,7 @@ __attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callba
         NULL,
     };
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
-    register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.prefixed_public_key_hash);
+    register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.render_address_payload);
     ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
@@ -97,12 +104,9 @@ __attribute__((noreturn)) static void prompt_ext_path(ui_callback_t ok_cb, ui_ca
     };
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Extended Public Key");
     register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
-    register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.prefixed_public_key_hash);
+    register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.render_address_payload);
     ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
-
-_Static_assert(sizeof GPriv.prefixed_public_key_hash == 22, "address will be wrong length");
-_Static_assert(sizeof GPriv.prefixed_public_key_hash.entire == 22, "address will be wrong length");
 
 size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     const uint8_t *const dataBuffer = G_io_apdu_buffer + OFFSET_CDATA;
@@ -117,11 +121,11 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     generate_public_key(&G.ext_public_key, &G.key);
 
     // write tags
-    GPriv.prefixed_public_key_hash.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
-    GPriv.prefixed_public_key_hash.address_code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
+    GPriv.render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
+    GPriv.render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
 
     // write lock arg
-    generate_lock_arg_for_pubkey(&G.ext_public_key.public_key, &GPriv.prefixed_public_key_hash.hash);
+    generate_lock_arg_for_pubkey(&G.ext_public_key.public_key, &GPriv.render_address_payload.s.hash);
 
     if (instruction == INS_PROMPT_EXT_PUBLIC_KEY) {
       ui_callback_t cb = ext_pubkey_ok;
