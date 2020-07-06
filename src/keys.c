@@ -53,19 +53,18 @@ extended_key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const
 
     cx_curve_t const cx_curve = CX_CURVE_SECP256K1;
 
-    os_perso_derive_node_bip32(cx_curve, bip32_path->components, bip32_path->length, priv->private_key_data, priv->res.extended_public_key.chain_code);
+    os_perso_derive_node_bip32(cx_curve, bip32_path->components, bip32_path->length, priv->private_key_data, priv->res.chain_code);
 
     BEGIN_TRY {
         TRY {
             cx_ecfp_init_private_key(cx_curve, priv->private_key_data, sizeof(priv->private_key_data),
                                      &priv->res.key_pair.private_key);
-            cx_ecfp_generate_pair(cx_curve, &priv->res.extended_public_key.public_key, &priv->res.key_pair.private_key, 1);
+            cx_ecfp_generate_pair(cx_curve, &priv->res.key_pair.public_key, &priv->res.key_pair.private_key, 1);
 
             if (cx_curve == CX_CURVE_Ed25519) {
-                cx_edward_compress_point(CX_CURVE_Ed25519, priv->res.extended_public_key.public_key.W, priv->res.extended_public_key.public_key.W_len);
-                priv->res.extended_public_key.public_key.W_len = 33;
+                cx_edward_compress_point(CX_CURVE_Ed25519, priv->res.key_pair.public_key.W, priv->res.key_pair.public_key.W_len);
+                priv->res.key_pair.public_key.W_len = 33;
             }
-            priv->res.key_pair.public_key = priv->res.extended_public_key.public_key;
         }
         FINALLY {
             explicit_bzero(priv->private_key_data, sizeof(priv->private_key_data));
@@ -78,15 +77,8 @@ extended_key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const
 
 key_pair_t *generate_key_pair_return_global(bip32_path_t const *const bip32_path) {
     extended_key_pair_t *const result = generate_extended_key_pair_return_global(bip32_path);
-    explicit_bzero(&result->extended_public_key, sizeof(result->extended_public_key));
+    explicit_bzero(&result->chain_code, sizeof(result->chain_code));
     return &(result->key_pair);
-}
-
-extended_public_key_t const *generate_public_key_return_global(bip32_path_t const *const bip32_path) {
-    check_null(bip32_path);
-    extended_key_pair_t *const result = generate_extended_key_pair_return_global(bip32_path);
-    explicit_bzero(&result->key_pair, sizeof(result->key_pair));
-    return &result->extended_public_key;
 }
 
 size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const pair, uint8_t const *const in,

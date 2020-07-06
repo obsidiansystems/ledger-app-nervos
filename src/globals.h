@@ -66,6 +66,28 @@ typedef struct {
 } cell_state_t;
 
 typedef struct {
+    union {
+        input_state_t input_state;
+
+        // Things we need exclusively after doing validate_context_txn
+        struct {
+            uint32_t witness_idx;
+            _Alignas(uint32_t) uint8_t witness_stack[64]; 
+            uint32_t current_output_index;
+
+            uint8_t transaction_hash[SIGN_HASH_SIZE];
+            uint8_t final_hash[SIGN_HASH_SIZE];
+            uint64_t dao_bitmask;
+            uint64_t change_amount;
+            uint64_t plain_output_amount;
+            uint64_t dao_output_amount;
+            bool hash_only;
+            bool first_witness_done;
+            bool is_self_transfer;
+            bool processed_change_cell; // Has at least one change-address been processed?
+        } tx;
+    } u;
+
     bip32_path_t key;
     bip32_path_t temp_key;
     standard_lock_arg_t current_lock_arg;
@@ -75,41 +97,18 @@ typedef struct {
 
     blake2b_hash_state_t hash_state;
 
-    uint32_t current_output_index;
-
     uint32_t input_count;
 
-    input_state_t input_state;
     cell_state_t cell_state;
 
-    uint32_t witness_idx;
-    
-    uint8_t transaction_hash[SIGN_HASH_SIZE];
-    
-    uint8_t final_hash[SIGN_HASH_SIZE];
-
-    _Alignas(uint32_t) uint8_t witness_stack[64]; 
     _Alignas(uint32_t) uint8_t transaction_stack[512];
-    
-    uint64_t dao_bitmask;
 
-    uint64_t total_inputs;
-    uint64_t total_outputs;
     uint64_t dao_input_amount;
-    uint64_t dao_output_amount;
     uint64_t plain_input_amount;
-    uint64_t plain_output_amount;
-    uint64_t change_amount;
 
     uint8_t *lock_arg_cmp;
     uint8_t lock_arg_tmp[20];
     buffer_t message_data_as_buffer;
-    uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
-    bool hash_only;
-    bool first_witness_done;
-
-    bool is_self_transfer;
-    bool processed_change_cell; // Has at least one change-address been processed?
 
 } apdu_sign_state_t;
 

@@ -47,11 +47,11 @@ typedef struct {
 } extended_public_key_t;
 
 typedef struct {
-    extended_public_key_t extended_public_key;
     key_pair_t key_pair;
+    uint8_t chain_code[CHAIN_CODE_DATA_SIZE];
 } extended_key_pair_t;
 
-#define MAX_BIP32_PATH 10
+#define MAX_BIP32_PATH 5
 
 typedef struct {
     uint8_t length;
@@ -133,14 +133,14 @@ typedef union {
 #define HAS_CHANGE_ADDRESS      0x02
 
 struct parsed_transaction {
-    enum operation_tag tag;
     uint64_t total_fee;
     uint64_t amount; // 0 where inappropriate
-    uint8_t flags;   // Interpretation depends on operation type
-    uint32_t source_acct;
-    uint8_t destination[20];
     uint64_t dao_amount;
     uint64_t dao_output_amount;
+    uint32_t source_acct;
+    uint8_t destination[20];
+    enum operation_tag tag;
+    uint8_t flags;   // Interpretation depends on operation type
     uint8_t group_input_count;
 };
 
