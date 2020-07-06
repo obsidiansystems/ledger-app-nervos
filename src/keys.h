@@ -36,13 +36,12 @@ static inline void generate_key_pair(key_pair_t *const out, bip32_path_t const *
 }
 
 // Non-reentrant
-extended_public_key_t const *generate_public_key_return_global(bip32_path_t const *const bip32_path);
-
-// Non-reentrant
 static inline void generate_public_key(extended_public_key_t *const out, bip32_path_t const *const bip32_path) {
     check_null(out);
-    extended_public_key_t const *const result = generate_public_key_return_global(bip32_path);
-    memcpy(out, result, sizeof(*out));
+    extended_key_pair_t const *const result = generate_extended_key_pair_return_global(bip32_path);
+    memcpy(&out->public_key, &result->key_pair.public_key, sizeof(out->public_key));
+    memcpy(&out->chain_code, &result->chain_code, sizeof(out->chain_code));
+    explicit_bzero(result, sizeof(*result));
 }
 
 // Non-reentrant
