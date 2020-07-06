@@ -159,9 +159,9 @@ static size_t sign_complete(uint8_t instruction) {
     }
 
 unsafe:
-    G.message_data_as_buffer.bytes = (uint8_t *)&G.final_hash;
-    G.message_data_as_buffer.size = sizeof(G.final_hash);
-    G.message_data_as_buffer.length = sizeof(G.final_hash);
+    G.message_data_as_buffer.bytes = (uint8_t *)&G.u.tx.final_hash;
+    G.message_data_as_buffer.size = sizeof(G.u.tx.final_hash);
+    G.message_data_as_buffer.length = sizeof(G.u.tx.final_hash);
     // Base58 encoding of 32-byte hash is 43 bytes long.
     register_ui_callback(HASH_INDEX, buffer_to_hex, &G.message_data_as_buffer);
     ui_prompt(parse_fail_prompts, ok_c, sign_reject);
@@ -197,33 +197,34 @@ void blake2b_chunk(uint8_t* buf, mol_num_t len) {
 
 void input_start() {
     explicit_bzero(&G.cell_state, sizeof(G.cell_state));
-    explicit_bzero((void*)&G.input_state, sizeof(G.input_state));
+    explicit_bzero((void*)&G.u.input_state, sizeof(G.u.input_state));
 }
 
 void input_save_tx_hash(uint8_t *hash, mol_num_t hash_length) {
     (void) hash_length;// hash_length guaranteed by parser
-    memcpy(G.input_state.tx_hash, hash, sizeof(G.input_state.tx_hash));
+    memcpy(G.u.input_state.tx_hash, hash, sizeof(G.u.input_state.tx_hash));
 }
 
 void input_save_index(uint8_t *index, mol_num_t index_length) {
     (void) index_length; // guaranteed by parser
-    memcpy(&G.input_state.index, index, sizeof(G.input_state.index));
+    memcpy(&G.u.input_state.index, index, sizeof(G.u.input_state.index));
 }
 
 void context_blake2b_chunk(uint8_t *chunk, mol_num_t length) {
-    blake2b_incremental_hash(chunk, length, &G.input_state.hash_state);
+    blake2b_incremental_hash(chunk, length, &G.u.input_state.hash_state);
 }
 
 void validate_context_txn(void) {
     uint8_t tx_hash[32];
-    blake2b_finish_hash(tx_hash, 32, &G.input_state.hash_state);
-    if(memcmp(tx_hash, G.input_state.tx_hash, 32))
+    blake2b_finish_hash(tx_hash, 32, &G.u.input_state.hash_state);
+    if(memcmp(tx_hash, G.u.input_state.tx_hash, 32))
         REJECT_HARD("Context transaction does not match hash");
+    explicit_bzero(&G.u, sizeof(G.u));
 }
 
 void input_context_start_idx(mol_num_t idx) {
     // Enable/disable the remaining input callbacks based on whether we're on that output.
-    G.cell_state.active = idx == G.input_state.index;
+    G.cell_state.active = idx == G.u.input_state.index;
 }
 
 void cell_capacity(uint8_t* capacity, mol_num_t len) {
@@ -395,7 +396,7 @@ void computeNewOffsetsToHash(struct AnnotatedRawTransaction_state *s) {
 }
 
 void output_start(mol_num_t index) {
-    G.current_output_index=index;
+    G.u.tx.current_output_index=index;
     explicit_bzero((void*) &G.cell_state, sizeof(G.cell_state));
     G.cell_state.active = true;
     G.lock_arg_cmp=G.change_lock_arg;
@@ -403,11 +404,11 @@ void output_start(mol_num_t index) {
 
 void output_end(void) {
     if(G.cell_state.is_dao) {
-        G.dao_output_amount += G.cell_state.capacity;
-        G.dao_bitmask |= 1<<G.current_output_index;
+        G.u.tx.dao_output_amount += G.cell_state.capacity;
+        G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
     } else {
         if(G.cell_state.lock_arg_nonequal) {
-            G.plain_output_amount += G.cell_state.capacity;
+            G.u.tx.plain_output_amount += G.cell_state.capacity;
             if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20)) {
                 REJECT("Can't handle transactions with multiple non-change destination addresses");
             } else {
@@ -416,13 +417,13 @@ void output_end(void) {
             }
 
         } else {
-            G.change_amount += G.cell_state.capacity;
+            G.u.tx.change_amount += G.cell_state.capacity;
         }
     }
 }
 
 void validate_output_data_start(mol_num_t idx) {
-    G.cell_state.is_dao = !((G.dao_bitmask & 1<<idx) == 0);
+    G.cell_state.is_dao = !((G.u.tx.dao_bitmask & 1<<idx) == 0);
 }
 
 void finish_output_cell_data(void) {
@@ -447,27 +448,27 @@ void finalize_raw_transaction(void) {
         case OPERATION_TAG_NOT_SET:
         case OPERATION_TAG_PLAIN_TRANSFER:
             G.maybe_transaction.v.tag = OPERATION_TAG_PLAIN_TRANSFER;
-            G.maybe_transaction.v.amount = G.plain_output_amount;
+            G.maybe_transaction.v.amount = G.u.tx.plain_output_amount;
             break;
         case OPERATION_TAG_DAO_DEPOSIT:
-            G.maybe_transaction.v.dao_amount = G.dao_output_amount;
+            G.maybe_transaction.v.dao_amount = G.u.tx.dao_output_amount;
             break;
         case OPERATION_TAG_DAO_PREPARE:
-            G.maybe_transaction.v.dao_amount = G.dao_output_amount;
-            if(G.dao_output_amount != G.dao_input_amount) REJECT("DAO input and output amounts do not match for prepare operation"); // Not a complete check; full DAO requirement is that _each cell_ match exactly. Just providing some fail-fast here.
+            G.maybe_transaction.v.dao_amount = G.u.tx.dao_output_amount;
+            if(G.u.tx.dao_output_amount != G.dao_input_amount) REJECT("DAO input and output amounts do not match for prepare operation"); // Not a complete check; full DAO requirement is that _each cell_ match exactly. Just providing some fail-fast here.
             break;
         case OPERATION_TAG_DAO_WITHDRAW:
             G.maybe_transaction.v.dao_amount = G.dao_input_amount;
-            if(G.dao_output_amount != 0) REJECT("Can't mix DAO withdraw and other DAO operations");
-            if(G.plain_output_amount != 0) REJECT("DAO withdrawals cannot be sent directly to another account");
+            if(G.u.tx.dao_output_amount != 0) REJECT("Can't mix DAO withdraw and other DAO operations");
+            if(G.u.tx.plain_output_amount != 0) REJECT("DAO withdrawals cannot be sent directly to another account");
             break;
     }
-    G.maybe_transaction.v.total_fee = (G.plain_input_amount + G.dao_input_amount) - (G.plain_output_amount + G.dao_output_amount + G.change_amount);
+    G.maybe_transaction.v.total_fee = (G.plain_input_amount + G.dao_input_amount) - (G.u.tx.plain_output_amount + G.u.tx.dao_output_amount + G.u.tx.change_amount);
     if(G.maybe_transaction.v.tag == OPERATION_TAG_DAO_WITHDRAW) {
         // Can't compute fee without a bunch more info, calculating return instead and putting that in this slot so the user can get equivalent info.
         G.maybe_transaction.v.total_fee = -G.maybe_transaction.v.total_fee;
     }
-    blake2b_finish_hash(G.transaction_hash, sizeof(G.transaction_hash), &G.hash_state);
+    blake2b_finish_hash(G.u.tx.transaction_hash, sizeof(G.u.tx.transaction_hash), &G.hash_state);
 }
 
 // Process a whole transaction to sign.
@@ -561,29 +562,29 @@ const WitnessArgs_cb WitnessArgs_rewrite_callbacks = {
 };
 
 void begin_witness(mol_num_t index) {
-    G.witness_idx = index;
-    if(G.witness_idx==0) {
+    G.u.tx.witness_idx = index;
+    if(G.u.tx.witness_idx==0) {
         explicit_bzero(&G.hash_state, sizeof(G.hash_state));
-        blake2b_incremental_hash(G.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
-        MolReader_WitnessArgs_init_state(G.witness_stack+sizeof(G.witness_stack), (struct WitnessArgs_state*)G.witness_stack, &WitnessArgs_rewrite_callbacks);
+        blake2b_incremental_hash(G.u.tx.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
+        MolReader_WitnessArgs_init_state(G.u.tx.witness_stack+sizeof(G.u.tx.witness_stack), (struct WitnessArgs_state*)G.u.tx.witness_stack, &WitnessArgs_rewrite_callbacks);
     }
 }
 
 void hash_witness_length(mol_num_t size) {
-    if(!(G.witness_idx==0)) {
+    if(!(G.u.tx.witness_idx==0)) {
         uint64_t size_as_64 = size-4;
         blake2b_incremental_hash((void*) &size_as_64, 8, &G.hash_state);
     }
 }
 
 void process_witness(uint8_t *buff, mol_num_t buff_size) {
-  if(G.witness_idx == 0) { // First witness handling
+  if(G.u.tx.witness_idx == 0) { // First witness handling
 
     struct mol_chunk chunk = { buff, buff_size, 0 };
-    mol_rv rv = MolReader_WitnessArgs_parse(G.witness_stack+sizeof(G.witness_stack), (struct WitnessArgs_state*)G.witness_stack, &chunk, &WitnessArgs_rewrite_callbacks, MOL_NUM_MAX);
+    mol_rv rv = MolReader_WitnessArgs_parse(G.u.tx.witness_stack+sizeof(G.u.tx.witness_stack), (struct WitnessArgs_state*)G.u.tx.witness_stack, &chunk, &WitnessArgs_rewrite_callbacks, MOL_NUM_MAX);
 
     if(rv == COMPLETE) {
-        G.first_witness_done=1;
+        G.u.tx.first_witness_done=1;
     }
   } else {
       blake2b_incremental_hash(buff, buff_size, &G.hash_state);
@@ -594,10 +595,10 @@ void process_witness_end() {
     // If something went wrong parsing the first arg, just assume that it's the usual empty one.
     //
     //
-    if(G.witness_idx==0 && G.first_witness_done!=1) {
-        G.first_witness_done=1;
+    if(G.u.tx.witness_idx==0 && G.u.tx.first_witness_done!=1) {
+        G.u.tx.first_witness_done=1;
         explicit_bzero(&G.hash_state, sizeof(G.hash_state));
-        blake2b_incremental_hash(G.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
+        blake2b_incremental_hash(G.u.tx.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
         static const uint8_t self_witness[] = {
             0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             // Length of WitnessArg,
             0x55, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x55, 0x00, // WitnessArg
@@ -611,7 +612,7 @@ void process_witness_end() {
 }
 
 void finalize_witnesses() {
-    blake2b_finish_hash(G.final_hash, sizeof(G.final_hash), &G.hash_state);
+    blake2b_finish_hash(G.u.tx.final_hash, sizeof(G.u.tx.final_hash), &G.hash_state);
 }
 
 void set_input_count(uint8_t *buf, mol_num_t len) {
@@ -696,20 +697,20 @@ size_t handle_apdu_sign(uint8_t instruction) {
 }
 
 static int perform_signature(bool const on_hash, bool const send_hash) {
-    if (on_hash && G.hash_only) {
-        memcpy(G_io_apdu_buffer, G.final_hash, sizeof(G.final_hash));
+    if (on_hash && G.u.tx.hash_only) {
+        memcpy(G_io_apdu_buffer, G.u.tx.final_hash, sizeof(G.u.tx.final_hash));
         clear_data();
-        return finalize_successful_send(sizeof(G.final_hash));
+        return finalize_successful_send(sizeof(G.u.tx.final_hash));
     }
 
     size_t tx = 0;
     if (send_hash && on_hash) {
-        memcpy(&G_io_apdu_buffer[tx], G.final_hash, sizeof(G.final_hash));
-        tx += sizeof(G.final_hash);
+        memcpy(&G_io_apdu_buffer[tx], G.u.tx.final_hash, sizeof(G.u.tx.final_hash));
+        tx += sizeof(G.u.tx.final_hash);
     }
 
-    uint8_t const *const data = G.final_hash;        // on_hash ? G.final_hash : G.message_data;
-    size_t const data_length = sizeof(G.final_hash); // on_hash ? sizeof(G.final_hash) : G.message_data_length;
+    uint8_t const *const data = G.u.tx.final_hash;        // on_hash ? G.u.tx.final_hash : G.message_data;
+    size_t const data_length = sizeof(G.u.tx.final_hash); // on_hash ? sizeof(G.u.tx.final_hash) : G.message_data_length;
 
     tx += WITH_KEY_PAIR(G.key, key_pair, size_t,
                         ({ sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, data, data_length); }));
