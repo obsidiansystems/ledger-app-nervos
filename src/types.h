@@ -132,14 +132,14 @@ typedef union {
 #define HAS_CHANGE_ADDRESS      0x02
 
 struct parsed_transaction {
-    enum operation_tag tag;
     uint64_t total_fee;
     uint64_t amount; // 0 where inappropriate
-    uint8_t flags;   // Interpretation depends on operation type
-    uint32_t source_acct;
-    uint8_t destination[20];
     uint64_t dao_amount;
     uint64_t dao_output_amount;
+    uint32_t source_acct;
+    uint8_t destination[20];
+    enum operation_tag tag;
+    uint8_t flags;   // Interpretation depends on operation type
     uint8_t group_input_count;
 };
 
