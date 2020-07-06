@@ -182,13 +182,11 @@ void buffer_to_hex(char *const out, size_t const out_size, buffer_t const *const
     bin_to_hex(out, out_size, src->bytes, src->length);
 }
 
-void lock_arg_to_address(char *const dest, size_t const buff_size, uint8_t const *const lockarg) {
-    // write tags
-    global.apdu.priv.prefixed_public_key_hash.address_type_is_short = 0x01;
-    global.apdu.priv.prefixed_public_key_hash.key_hash_type_is_sighash = 0x00;
+void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, uint8_t const *const lock_arg) {
+    /* lock_arg_t const *const lock_arg = (lock_arg_t const *) lockarg; */
+    global.apdu.priv.render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
+    global.apdu.priv.render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
 
-    // write lock arg
-    memcpy(&global.apdu.priv.prefixed_public_key_hash.hash, lockarg, sizeof(global.apdu.priv.prefixed_public_key_hash.hash));
-
-    render_pkh(dest, buff_size, &global.apdu.priv.prefixed_public_key_hash);
+    memcpy(&global.apdu.priv.render_address_payload.s.hash, lock_arg, sizeof(global.apdu.priv.render_address_payload.s.hash));
+    render_pkh(dest, buff_size, &global.apdu.priv.render_address_payload);
 }
