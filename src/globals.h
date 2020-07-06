@@ -52,6 +52,7 @@ typedef struct {
     bool active;
     bool is_dao;
     bool is_change;
+    bool is_multisig;
     uint8_t dao_data_is_nonzero;
     uint32_t arg_chunk_ctr;
     uint32_t data_size;
@@ -103,6 +104,7 @@ typedef struct {
     uint8_t *lock_arg_cmp;
     uint8_t lock_arg_tmp[20];
     buffer_t message_data_as_buffer;
+    bool signing_multisig_input;
 
 } apdu_sign_state_t;
 
@@ -180,6 +182,9 @@ typedef struct {
 } globals_t;
 
 extern globals_t global;
+
+extern const uint8_t defaultLockScript[];
+extern const uint8_t multisigLockScript[];
 
 extern const uint8_t blake2b_personalization[17];
 

@@ -249,14 +249,27 @@ void cell_capacity(uint8_t* capacity, mol_num_t len) {
     G.cell_state.capacity = *(uint64_t*) capacity;
 }
 
+const uint8_t defaultLockScript[] = {0x9b, 0xd7, 0xe0, 0x6f, 0x3e, 0xcf, 0x4b, 0xe0, 0xf2, 0xfc, 0xd2,
+                                     0x18, 0x8b, 0x23, 0xf1, 0xb9, 0xfc, 0xc8, 0x8e, 0x5d, 0x4b, 0x65,
+                                     0xa8, 0x63, 0x7b, 0x17, 0x72, 0x3b, 0xbd, 0xa3, 0xcc, 0xe8};
+
+const uint8_t multisigLockScript[] = { 0x5c, 0x50, 0x69, 0xeb, 0x08, 0x57, 0xef, 0xc6, 0x5e, 0x1b, 0xca,
+                                       0x0c, 0x07, 0xdf, 0x34, 0xc3, 0x16, 0x63, 0xb3, 0x62, 0x2f, 0xd3,
+                                       0x87, 0x6c, 0x87, 0x63, 0x20, 0xfc, 0x96, 0x34, 0xe2, 0xa8 };
+
 void cell_lock_code_hash(uint8_t* buf, mol_num_t len) {
     (void)len;
     if(!G.cell_state.active) return;
-    static const uint8_t defaultLockScript[] = {0x9b, 0xd7, 0xe0, 0x6f, 0x3e, 0xcf, 0x4b, 0xe0, 0xf2, 0xfc, 0xd2,
-                                                0x18, 0x8b, 0x23, 0xf1, 0xb9, 0xfc, 0xc8, 0x8e, 0x5d, 0x4b, 0x65,
-                                                0xa8, 0x63, 0x7b, 0x17, 0x72, 0x3b, 0xbd, 0xa3, 0xcc, 0xe8};
 
-    if(memcmp(buf, defaultLockScript, 32)) REJECT("Only the standard lock script is currently supported");
+    if(memcmp(buf, defaultLockScript, 32)) {
+        if(memcmp(buf, multisigLockScript, 32)) {
+            REJECT("Only the standard lock script is currently supported");
+        } else {
+            G.cell_state.is_multisig = true;
+        }
+    } else {
+        G.cell_state.is_multisig = false;
+    };
 }
 
 void cell_script_hash_type(uint8_t hash_type) {
@@ -297,6 +310,8 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
 
 void input_lock_arg_end() {
     if(!G.cell_state.active) return;
+    // Relax the check for multisig input
+    if(G.cell_state.is_multisig) return;
     if(G.cell_state.lock_arg_nonequal)
         REJECT("Can't securely sign transactions containing inputs we don't control");
 }
@@ -349,6 +364,7 @@ void finish_input_cell_data() {
             REJECT("Data found in non-dao cell");
         }
         G.plain_input_amount += G.cell_state.capacity;
+        G.signing_multisig_input |= G.cell_state.is_multisig;
     }
 }
 
