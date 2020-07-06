@@ -41,12 +41,6 @@ struct maybe_transaction {
 #define OUTPUT_FLAGS_IS_DAO         0x02
 #define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
 
-struct tx_output {
-    uint64_t amount;
-    uint8_t lock_arg[20];
-    uint8_t flags;
-};
-
 typedef struct {
     uint8_t tx_hash[32];
     uint32_t index;

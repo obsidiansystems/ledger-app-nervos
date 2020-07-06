@@ -145,9 +145,9 @@ size_t frac_ckb_to_string(char *const dest, uint64_t number) {
     return off;
 }
 
-void lock_arg_to_string(char *const dest, size_t const buff_size, uint8_t const *const lockarg) {
-    bin_to_hex(dest, buff_size, lockarg, 20);
-}
+/* void lock_arg_to_string(char *const dest, size_t const buff_size, uint8_t const *const lockarg) { */
+/*     bin_to_hex(dest, buff_size, lockarg, 20); */
+/* } */
 
 void copy_string(char *const dest, size_t const buff_size, char const *const src) {
     check_null(dest);
