@@ -51,7 +51,7 @@ typedef struct {
     uint8_t chain_code[CHAIN_CODE_DATA_SIZE];
 } extended_key_pair_t;
 
-#define MAX_BIP32_PATH 10
+#define MAX_BIP32_PATH 5
 
 typedef struct {
     uint8_t length;
