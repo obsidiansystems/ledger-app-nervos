@@ -106,6 +106,7 @@ enum operation_tag {
     OPERATION_TAG_NONE = -1, // Sentinal value, as 0 is possibly used for something
     OPERATION_TAG_NOT_SET = 0, // Used for "value not yet determined" during parsing.
     OPERATION_TAG_PLAIN_TRANSFER = 1,
+    OPERATION_TAG_SELF_TRANSFER,
     OPERATION_TAG_DAO_DEPOSIT,
     OPERATION_TAG_DAO_PREPARE,
     OPERATION_TAG_DAO_WITHDRAW

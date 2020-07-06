@@ -107,6 +107,21 @@ static size_t sign_complete(uint8_t instruction) {
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
     } break;
+    case OPERATION_TAG_SELF_TRANSFER: {
+        static const uint32_t TYPE_INDEX = 0;
+        static const uint32_t AMOUNT_INDEX = 1;
+        static const uint32_t FEE_INDEX = 2;
+        static const uint32_t DESTINATION_INDEX = 3;
+        static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"),      PROMPT("Fee"),
+                                                          PROMPT("Destination"), NULL};
+        REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Self-Transfer");
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
+        register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
+
+        ui_prompt(transaction_prompts, ok_c, sign_reject);
+
+    } break;
     case OPERATION_TAG_DAO_DEPOSIT: {
         static const uint32_t TYPE_INDEX = 0;
         static const uint32_t AMOUNT_INDEX = 1;
@@ -252,6 +267,7 @@ void script_arg_start_input() {
     if(!G.cell_state.active) return;
     G.cell_state.lock_arg_index = 0;
     G.cell_state.lock_arg_nonequal = 0;
+    // current_lock_arg is the one we are signing with
     G.lock_arg_cmp = G.current_lock_arg;
 }
 
@@ -262,6 +278,8 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
         G.cell_state.lock_arg_nonequal |= true;
         return;
     }
+
+    G.cell_state.is_change = 0 == memcmp(G.change_lock_arg, buf, buflen);
     memcpy(G.lock_arg_tmp+current_offset, buf, buflen);
     G.cell_state.lock_arg_index+=buflen;
 
@@ -269,6 +287,7 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
         G.cell_state.lock_arg_nonequal=true;
         return;
     }
+
     for(mol_num_t i=0;i<buflen;i++) {
         G.cell_state.lock_arg_nonequal |= (G.lock_arg_cmp[current_offset+i] != buf[i]);
         if(G.cell_state.lock_arg_nonequal) return;
@@ -399,15 +418,39 @@ void output_start(mol_num_t index) {
     G.u.tx.current_output_index=index;
     explicit_bzero((void*) &G.cell_state, sizeof(G.cell_state));
     G.cell_state.active = true;
+    G.u.tx.is_self_transfer = false;
     G.lock_arg_cmp=G.change_lock_arg;
 }
 
 void output_end(void) {
+  bool is_second_change = G.u.tx.processed_change_cell && G.cell_state.is_change;
+  bool dest_is_src = !G.cell_state.is_change && (0 == memcmp(G.current_lock_arg, G.lock_arg_tmp, 20));
+  G.u.tx.is_self_transfer |=  is_second_change || dest_is_src;
+
+  // Have we now processed at least 1 change cell?
+  G.u.tx.processed_change_cell |= G.cell_state.is_change;
+
     if(G.cell_state.is_dao) {
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
     } else {
-        if(G.cell_state.lock_arg_nonequal) {
+        if(G.u.tx.is_self_transfer) {
+          // The normal rules no longer apply
+          if(is_second_change) { 
+            // It is now a self_txn so no change exists
+            G.u.tx.plain_output_amount += G.u.tx.change_amount;
+            G.u.tx.change_amount = 0;
+          }
+          G.u.tx.plain_output_amount += G.cell_state.capacity;
+          uint8_t *dest_to_show = dest_is_src ? G.lock_arg_tmp : G.change_lock_arg;
+          if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, dest_to_show, 20)) {
+              REJECT("Can't handle transactions with multiple non-change destination addresses");
+          } else {
+              G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
+              memcpy(G.maybe_transaction.v.destination, dest_to_show, 20);
+          }
+        }
+        else if(G.cell_state.lock_arg_nonequal) {
             G.u.tx.plain_output_amount += G.cell_state.capacity;
             if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20)) {
                 REJECT("Can't handle transactions with multiple non-change destination addresses");
@@ -415,7 +458,6 @@ void output_end(void) {
                 G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
                 memcpy(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20);
             }
-
         } else {
             G.u.tx.change_amount += G.cell_state.capacity;
         }
@@ -447,7 +489,12 @@ void finalize_raw_transaction(void) {
             break;
         case OPERATION_TAG_NOT_SET:
         case OPERATION_TAG_PLAIN_TRANSFER:
-            G.maybe_transaction.v.tag = OPERATION_TAG_PLAIN_TRANSFER;
+            G.maybe_transaction.v.tag = G.u.tx.is_self_transfer ? 
+              OPERATION_TAG_SELF_TRANSFER : OPERATION_TAG_PLAIN_TRANSFER;
+            G.maybe_transaction.v.amount = G.u.tx.plain_output_amount;
+            break;
+        // Shouldn't actually hit this case because of the handling of TAG_NOT_SET above
+        case OPERATION_TAG_SELF_TRANSFER:
             G.maybe_transaction.v.amount = G.u.tx.plain_output_amount;
             break;
         case OPERATION_TAG_DAO_DEPOSIT:
@@ -593,8 +640,6 @@ void process_witness(uint8_t *buff, mol_num_t buff_size) {
 
 void process_witness_end() {
     // If something went wrong parsing the first arg, just assume that it's the usual empty one.
-    //
-    //
     if(G.u.tx.witness_idx==0 && G.u.tx.first_witness_done!=1) {
         G.u.tx.first_witness_done=1;
         explicit_bzero(&G.hash_state, sizeof(G.hash_state));

@@ -83,6 +83,8 @@ typedef struct {
             uint64_t dao_output_amount;
             bool hash_only;
             bool first_witness_done;
+            bool is_self_transfer;
+            bool processed_change_cell; // Has at least one change-address been processed?
         } tx;
     } u;
 
