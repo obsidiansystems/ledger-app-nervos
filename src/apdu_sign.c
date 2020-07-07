@@ -88,7 +88,7 @@ static size_t sign_complete(uint8_t instruction) {
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Operation");
 
     ui_callback_t const ok_c = instruction == INS_SIGN_WITH_HASH ? sign_with_hash_ok : sign_without_hash_ok;
-    void *lock_arg_to_destination_address_cb = lock_arg_to_sighash_address;
+    void *lock_arg_to_destination_address_cb = G.u.tx.sending_to_multisig_output ? lock_arg_to_multisig_address : lock_arg_to_sighash_address;
 
     switch (G.maybe_transaction.v.tag) {
 
