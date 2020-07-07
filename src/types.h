@@ -78,7 +78,7 @@ static inline bool bip32_paths_eq(bip32_path_t volatile const *const a, bip32_pa
 
 #define MAX_SCREEN_COUNT 7 // Current maximum usage
 #define PROMPT_WIDTH     16
-#define VALUE_WIDTH      64 // Needs to hold a 32 bytes of hash in hex.
+#define VALUE_WIDTH      128 // Needs to hold a 32 bytes of hash in hex.
 
 // Macros to wrap a static prompt and value strings and ensure they aren't too long.
 #define PROMPT(str)                                                                                                    \
@@ -114,20 +114,37 @@ enum operation_tag {
 
 typedef uint8_t standard_lock_arg_t[20];
 
+// if lock_period == 0, then it is non-timelock lock_arg
+typedef struct {
+    standard_lock_arg_t hash;
+    uint8_t lock_period[8];
+} lock_arg_t;
+
 typedef struct public_key_hash {
     uint8_t hash[KEY_HASH_SIZE];
     char *hash_ptr; // caching.
 } public_key_hash_t;
 
-typedef union {
-    uint8_t entire[2 + sizeof(standard_lock_arg_t)];
-    struct {
-        uint8_t address_type_is_short;
-        uint8_t key_hash_type_is_sighash;
-        standard_lock_arg_t hash;
-    };
-} prefixed_public_key_hash_t;
+#define ADDRESS_FORMAT_TYPE_SHORT 0x01
+#define ADDRESS_FORMAT_TYPE_FULL_DATA 0x02
+#define ADDRESS_FORMAT_TYPE_FULL_TYPE 0x04
 
+#define ADDRESS_CODE_HASH_TYPE_SIGHASH 0x00
+#define ADDRESS_CODE_HASH_TYPE_MULTISIG 0x01
+
+typedef union {
+    struct {
+        uint8_t address_format_type;
+        uint8_t code_hash_index;
+        standard_lock_arg_t hash;
+    } s; // short
+
+    struct {
+        uint8_t address_format_type;
+        uint8_t code_hash[32];
+        lock_arg_t lock_arg;
+    } f; // full
+} render_address_payload_t;
 
 #define HAS_DESTINATION_ADDRESS 0x01
 #define HAS_CHANGE_ADDRESS      0x02
@@ -138,7 +155,7 @@ struct parsed_transaction {
     uint64_t dao_amount;
     uint64_t dao_output_amount;
     uint32_t source_acct;
-    uint8_t destination[20];
+    lock_arg_t destination;
     enum operation_tag tag;
     uint8_t flags;   // Interpretation depends on operation type
     uint8_t group_input_count;

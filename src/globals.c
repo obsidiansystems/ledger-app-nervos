@@ -70,3 +70,5 @@ void switch_network() {
       }};
     nvm_write((void*)&N_data, (void*)&data[N_data.address_type&1], sizeof(N_data));
 }
+
+_Static_assert(sizeof global <= 2120, "Size of globals_t exceeds the tested working limit");

@@ -1,0 +1,12 @@
+Prompt 0:
+Confirm
+Transaction
+Prompt 1:
+Amount
+300
+Prompt 2:
+Fee
+0.001
+Prompt 3:
+Destination
+ckb1q3w9q60tppt7l3j7r09qcp7lxnp3vcanvgha8pmvsa3jplykxn323x9vd6ppzz5775yjxd6mlh977m7e0xu2ccqqqquqgzq8yqvzdv4v

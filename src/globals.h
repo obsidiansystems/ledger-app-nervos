@@ -41,12 +41,6 @@ struct maybe_transaction {
 #define OUTPUT_FLAGS_IS_DAO         0x02
 #define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
 
-struct tx_output {
-    uint64_t amount;
-    uint8_t lock_arg[20];
-    uint8_t flags;
-};
-
 typedef struct {
     uint8_t tx_hash[32];
     uint32_t index;
@@ -58,6 +52,7 @@ typedef struct {
     bool active;
     bool is_dao;
     bool is_change;
+    bool is_multisig;
     uint8_t dao_data_is_nonzero;
     uint32_t arg_chunk_ctr;
     uint32_t data_size;
@@ -85,6 +80,7 @@ typedef struct {
             bool first_witness_done;
             bool is_self_transfer;
             bool processed_change_cell; // Has at least one change-address been processed?
+            bool sending_to_multisig_output;
         } tx;
     } u;
 
@@ -107,8 +103,9 @@ typedef struct {
     uint64_t plain_input_amount;
 
     uint8_t *lock_arg_cmp;
-    uint8_t lock_arg_tmp[20];
+    lock_arg_t lock_arg_tmp;
     buffer_t message_data_as_buffer;
+    bool signing_multisig_input;
 
 } apdu_sign_state_t;
 
@@ -179,13 +176,16 @@ typedef struct {
 
         struct {
             struct priv_generate_key_pair generate_key_pair;
-            prefixed_public_key_hash_t prefixed_public_key_hash;
+            render_address_payload_t render_address_payload;
         } priv;
     } apdu;
     nvram_data new_data;
 } globals_t;
 
 extern globals_t global;
+
+extern const uint8_t defaultLockScript[];
+extern const uint8_t multisigLockScript[];
 
 extern const uint8_t blake2b_personalization[17];
 

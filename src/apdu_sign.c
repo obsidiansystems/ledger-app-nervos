@@ -88,6 +88,7 @@ static size_t sign_complete(uint8_t instruction) {
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Operation");
 
     ui_callback_t const ok_c = instruction == INS_SIGN_WITH_HASH ? sign_with_hash_ok : sign_without_hash_ok;
+    void *lock_arg_to_destination_address_cb = G.u.tx.sending_to_multisig_output ? lock_arg_to_multisig_address : lock_arg_to_sighash_address;
 
     switch (G.maybe_transaction.v.tag) {
 
@@ -100,7 +101,7 @@ static size_t sign_complete(uint8_t instruction) {
                                                           PROMPT("Destination"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
         //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
 
@@ -115,7 +116,7 @@ static size_t sign_complete(uint8_t instruction) {
         static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"),      PROMPT("Fee"),
                                                           PROMPT("Destination"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Self-Transfer");
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
 
@@ -131,7 +132,7 @@ static size_t sign_complete(uint8_t instruction) {
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
         // register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_address, &G.maybe_transaction.v.destination);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
 
@@ -212,6 +213,7 @@ void blake2b_chunk(uint8_t* buf, mol_num_t len) {
 
 void input_start() {
     explicit_bzero(&G.cell_state, sizeof(G.cell_state));
+    explicit_bzero((void*) &G.lock_arg_tmp, sizeof(G.lock_arg_tmp));
     explicit_bzero((void*)&G.u.input_state, sizeof(G.u.input_state));
 }
 
@@ -248,14 +250,27 @@ void cell_capacity(uint8_t* capacity, mol_num_t len) {
     G.cell_state.capacity = *(uint64_t*) capacity;
 }
 
+const uint8_t defaultLockScript[] = {0x9b, 0xd7, 0xe0, 0x6f, 0x3e, 0xcf, 0x4b, 0xe0, 0xf2, 0xfc, 0xd2,
+                                     0x18, 0x8b, 0x23, 0xf1, 0xb9, 0xfc, 0xc8, 0x8e, 0x5d, 0x4b, 0x65,
+                                     0xa8, 0x63, 0x7b, 0x17, 0x72, 0x3b, 0xbd, 0xa3, 0xcc, 0xe8};
+
+const uint8_t multisigLockScript[] = { 0x5c, 0x50, 0x69, 0xeb, 0x08, 0x57, 0xef, 0xc6, 0x5e, 0x1b, 0xca,
+                                       0x0c, 0x07, 0xdf, 0x34, 0xc3, 0x16, 0x63, 0xb3, 0x62, 0x2f, 0xd3,
+                                       0x87, 0x6c, 0x87, 0x63, 0x20, 0xfc, 0x96, 0x34, 0xe2, 0xa8 };
+
 void cell_lock_code_hash(uint8_t* buf, mol_num_t len) {
     (void)len;
     if(!G.cell_state.active) return;
-    static const uint8_t defaultLockScript[] = {0x9b, 0xd7, 0xe0, 0x6f, 0x3e, 0xcf, 0x4b, 0xe0, 0xf2, 0xfc, 0xd2,
-                                                0x18, 0x8b, 0x23, 0xf1, 0xb9, 0xfc, 0xc8, 0x8e, 0x5d, 0x4b, 0x65,
-                                                0xa8, 0x63, 0x7b, 0x17, 0x72, 0x3b, 0xbd, 0xa3, 0xcc, 0xe8};
 
-    if(memcmp(buf, defaultLockScript, 32)) REJECT("Only the standard lock script is currently supported");
+    if(memcmp(buf, defaultLockScript, 32)) {
+        if(memcmp(buf, multisigLockScript, 32)) {
+            REJECT("Only the standard lock script is currently supported");
+        } else {
+            G.cell_state.is_multisig = true;
+        }
+    } else {
+        G.cell_state.is_multisig = false;
+    };
 }
 
 void cell_script_hash_type(uint8_t hash_type) {
@@ -274,14 +289,22 @@ void script_arg_start_input() {
 void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
     if(!G.cell_state.active) return;
     uint32_t current_offset = G.cell_state.lock_arg_index;
-    if(G.cell_state.lock_arg_index+buflen > 20) { // Probably not possible.
+    if(G.cell_state.lock_arg_index+buflen > 28) { // Unknown arg
         G.cell_state.lock_arg_nonequal |= true;
+        G.cell_state.is_change = false;
         return;
     }
 
-    G.cell_state.is_change = 0 == memcmp(G.change_lock_arg, buf, buflen);
-    memcpy(G.lock_arg_tmp+current_offset, buf, buflen);
+    memcpy(&G.lock_arg_tmp+current_offset, buf, buflen);
     G.cell_state.lock_arg_index+=buflen;
+
+    for(mol_num_t i=0;i<buflen;i++) {
+        // Change address cannot be timelock, ie more than 20 bytes long
+        if ((current_offset+i > 20) || (G.change_lock_arg[current_offset+i] != buf[i])) {
+            G.cell_state.is_change = false;
+            break;
+        }
+    }
 
     if(!G.lock_arg_cmp) {
         G.cell_state.lock_arg_nonequal=true;
@@ -296,6 +319,8 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
 
 void input_lock_arg_end() {
     if(!G.cell_state.active) return;
+    // Relax the check for multisig input
+    if(G.cell_state.is_multisig) return;
     if(G.cell_state.lock_arg_nonequal)
         REJECT("Can't securely sign transactions containing inputs we don't control");
 }
@@ -348,6 +373,7 @@ void finish_input_cell_data() {
             REJECT("Data found in non-dao cell");
         }
         G.plain_input_amount += G.cell_state.capacity;
+        G.signing_multisig_input |= G.cell_state.is_multisig;
     }
 }
 
@@ -417,14 +443,20 @@ void computeNewOffsetsToHash(struct AnnotatedRawTransaction_state *s) {
 void output_start(mol_num_t index) {
     G.u.tx.current_output_index=index;
     explicit_bzero((void*) &G.cell_state, sizeof(G.cell_state));
+    explicit_bzero((void*) &G.lock_arg_tmp, sizeof(G.lock_arg_tmp));
     G.cell_state.active = true;
     G.u.tx.is_self_transfer = false;
     G.lock_arg_cmp=G.change_lock_arg;
+    G.cell_state.is_change = true;
 }
 
 void output_end(void) {
   bool is_second_change = G.u.tx.processed_change_cell && G.cell_state.is_change;
-  bool dest_is_src = !G.cell_state.is_change && (0 == memcmp(G.current_lock_arg, G.lock_arg_tmp, 20));
+  uint64_t zero_val = 0;
+  bool dest_is_src = !G.cell_state.is_change
+      && (0 == memcmp(G.current_lock_arg, G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash)))
+      && (0 == memcmp(&zero_val, G.lock_arg_tmp.lock_period, sizeof(G.lock_arg_tmp.lock_period)));
+
   G.u.tx.is_self_transfer |=  is_second_change || dest_is_src;
 
   // Have we now processed at least 1 change cell?
@@ -434,6 +466,9 @@ void output_end(void) {
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
     } else {
+        if(G.cell_state.is_multisig) {
+            G.u.tx.sending_to_multisig_output = true;
+        }
         if(G.u.tx.is_self_transfer) {
           // The normal rules no longer apply
           if(is_second_change) { 
@@ -442,21 +477,21 @@ void output_end(void) {
             G.u.tx.change_amount = 0;
           }
           G.u.tx.plain_output_amount += G.cell_state.capacity;
-          uint8_t *dest_to_show = dest_is_src ? G.lock_arg_tmp : G.change_lock_arg;
-          if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, dest_to_show, 20)) {
+          uint8_t *dest_to_show = dest_is_src ? G.lock_arg_tmp.hash : G.change_lock_arg;
+          if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination.hash, dest_to_show, 20)) {
               REJECT("Can't handle transactions with multiple non-change destination addresses");
           } else {
               G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-              memcpy(G.maybe_transaction.v.destination, dest_to_show, 20);
+              memcpy(G.maybe_transaction.v.destination.hash, dest_to_show, 20);
           }
         }
         else if(G.cell_state.lock_arg_nonequal) {
             G.u.tx.plain_output_amount += G.cell_state.capacity;
-            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20)) {
+            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination.hash, G.lock_arg_tmp.hash, 20)) {
                 REJECT("Can't handle transactions with multiple non-change destination addresses");
             } else {
                 G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-                memcpy(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20);
+                memcpy(&G.maybe_transaction.v.destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
             }
         } else {
             G.u.tx.change_amount += G.cell_state.capacity;
