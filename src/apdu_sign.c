@@ -451,6 +451,9 @@ void output_end(void) {
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
     } else {
+        if(G.cell_state.is_multisig) {
+            G.u.tx.sending_to_multisig_output = true;
+        }
         if(G.u.tx.is_self_transfer) {
           // The normal rules no longer apply
           if(is_second_change) { 

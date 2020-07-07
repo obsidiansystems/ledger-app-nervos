@@ -80,6 +80,7 @@ typedef struct {
             bool first_witness_done;
             bool is_self_transfer;
             bool processed_change_cell; // Has at least one change-address been processed?
+            bool sending_to_multisig_output;
         } tx;
     } u;
 
