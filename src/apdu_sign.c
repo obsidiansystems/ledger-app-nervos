@@ -290,12 +290,17 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
     uint32_t current_offset = G.cell_state.lock_arg_index;
     if(G.cell_state.lock_arg_index+buflen > 20) { // Probably not possible.
         G.cell_state.lock_arg_nonequal |= true;
+        G.cell_state.is_change = false;
         return;
     }
 
-    G.cell_state.is_change = 0 == memcmp(G.change_lock_arg, buf, buflen);
     memcpy(G.lock_arg_tmp+current_offset, buf, buflen);
     G.cell_state.lock_arg_index+=buflen;
+
+    for(mol_num_t i=0;i<buflen;i++) {
+        if (G.change_lock_arg[current_offset+i] != buf[i])
+            G.cell_state.is_change = false;
+    }
 
     if(!G.lock_arg_cmp) {
         G.cell_state.lock_arg_nonequal=true;
@@ -437,6 +442,7 @@ void output_start(mol_num_t index) {
     G.cell_state.active = true;
     G.u.tx.is_self_transfer = false;
     G.lock_arg_cmp=G.change_lock_arg;
+    G.cell_state.is_change = true;
 }
 
 void output_end(void) {
