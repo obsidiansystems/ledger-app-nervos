@@ -54,7 +54,7 @@ int bech32_encode(char *const output, const size_t out_len, const char *const hr
             chk = bech32_polymod_step(chk) ^ (hrp[i] >> 5);
             ++i;
         }
-        if (i + 7 + data_len > 90)
+        if (i + 7 + data_len > 108)
             return 0;
         chk = bech32_polymod_step(chk);
     }

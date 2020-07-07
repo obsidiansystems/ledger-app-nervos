@@ -78,7 +78,7 @@ static inline bool bip32_paths_eq(bip32_path_t volatile const *const a, bip32_pa
 
 #define MAX_SCREEN_COUNT 7 // Current maximum usage
 #define PROMPT_WIDTH     16
-#define VALUE_WIDTH      64 // Needs to hold a 32 bytes of hash in hex.
+#define VALUE_WIDTH      128 // Needs to hold a 32 bytes of hash in hex.
 
 // Macros to wrap a static prompt and value strings and ensure they aren't too long.
 #define PROMPT(str)                                                                                                    \

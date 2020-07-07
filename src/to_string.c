@@ -192,6 +192,12 @@ void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_
 
 void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
     bool has_timelock = false;
+    for (int i = 0; i < 8; i++) {
+        if (lock_arg->lock_period[i] != 0) {
+            has_timelock = true;
+            break;
+        }
+    }
     if (has_timelock) {
         global.apdu.priv.render_address_payload.f.address_format_type = ADDRESS_FORMAT_TYPE_FULL_TYPE;
         memcpy(&global.apdu.priv.render_address_payload.f.code_hash, multisigLockScript,
