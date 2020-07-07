@@ -182,16 +182,15 @@ void buffer_to_hex(char *const out, size_t const out_size, buffer_t const *const
     bin_to_hex(out, out_size, src->bytes, src->length);
 }
 
-void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, uint8_t const *const lock_arg) {
-    /* lock_arg_t const *const lock_arg = (lock_arg_t const *) lockarg; */
+void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
     global.apdu.priv.render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
     global.apdu.priv.render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
 
-    memcpy(&global.apdu.priv.render_address_payload.s.hash, lock_arg, sizeof(global.apdu.priv.render_address_payload.s.hash));
+    memcpy(&global.apdu.priv.render_address_payload.s.hash, lock_arg->hash, sizeof(global.apdu.priv.render_address_payload.s.hash));
     render_pkh(dest, buff_size, &global.apdu.priv.render_address_payload);
 }
 
-void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, uint8_t const *const lock_arg) {
+void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
     bool has_timelock = false;
     if (has_timelock) {
         global.apdu.priv.render_address_payload.f.address_format_type = ADDRESS_FORMAT_TYPE_FULL_TYPE;
@@ -201,7 +200,7 @@ void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, uint
     } else {
         global.apdu.priv.render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
         global.apdu.priv.render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_MULTISIG;
-        memcpy(&global.apdu.priv.render_address_payload.s.hash, lock_arg,
+        memcpy(&global.apdu.priv.render_address_payload.s.hash, lock_arg->hash,
                sizeof(global.apdu.priv.render_address_payload.s.hash));
     }
 

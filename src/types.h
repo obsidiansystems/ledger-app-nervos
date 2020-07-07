@@ -114,6 +114,12 @@ enum operation_tag {
 
 typedef uint8_t standard_lock_arg_t[20];
 
+// if lock_period == 0, then it is non-timelock lock_arg
+typedef struct {
+    standard_lock_arg_t hash;
+    uint8_t lock_period[8];
+} lock_arg_t;
+
 typedef struct public_key_hash {
     uint8_t hash[KEY_HASH_SIZE];
     char *hash_ptr; // caching.
@@ -136,7 +142,7 @@ typedef union {
     struct {
         uint8_t address_format_type;
         uint8_t code_hash[32];
-        uint8_t lock_arg[28];
+        lock_arg_t lock_arg;
     } f; // full
 } render_address_payload_t;
 
@@ -149,7 +155,7 @@ struct parsed_transaction {
     uint64_t dao_amount;
     uint64_t dao_output_amount;
     uint32_t source_acct;
-    uint8_t destination[20];
+    lock_arg_t destination;
     enum operation_tag tag;
     uint8_t flags;   // Interpretation depends on operation type
     uint8_t group_input_count;

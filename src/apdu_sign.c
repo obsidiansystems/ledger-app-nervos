@@ -213,6 +213,7 @@ void blake2b_chunk(uint8_t* buf, mol_num_t len) {
 
 void input_start() {
     explicit_bzero(&G.cell_state, sizeof(G.cell_state));
+    explicit_bzero((void*) &G.lock_arg_tmp, sizeof(G.lock_arg_tmp));
     explicit_bzero((void*)&G.u.input_state, sizeof(G.u.input_state));
 }
 
@@ -288,18 +289,21 @@ void script_arg_start_input() {
 void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
     if(!G.cell_state.active) return;
     uint32_t current_offset = G.cell_state.lock_arg_index;
-    if(G.cell_state.lock_arg_index+buflen > 20) { // Probably not possible.
+    if(G.cell_state.lock_arg_index+buflen > 28) { // Unknown arg
         G.cell_state.lock_arg_nonequal |= true;
         G.cell_state.is_change = false;
         return;
     }
 
-    memcpy(G.lock_arg_tmp+current_offset, buf, buflen);
+    memcpy(&G.lock_arg_tmp+current_offset, buf, buflen);
     G.cell_state.lock_arg_index+=buflen;
 
     for(mol_num_t i=0;i<buflen;i++) {
-        if (G.change_lock_arg[current_offset+i] != buf[i])
+        // Change address cannot be timelock, ie more than 20 bytes long
+        if ((current_offset+i > 20) || (G.change_lock_arg[current_offset+i] != buf[i])) {
             G.cell_state.is_change = false;
+            break;
+        }
     }
 
     if(!G.lock_arg_cmp) {
@@ -439,6 +443,7 @@ void computeNewOffsetsToHash(struct AnnotatedRawTransaction_state *s) {
 void output_start(mol_num_t index) {
     G.u.tx.current_output_index=index;
     explicit_bzero((void*) &G.cell_state, sizeof(G.cell_state));
+    explicit_bzero((void*) &G.lock_arg_tmp, sizeof(G.lock_arg_tmp));
     G.cell_state.active = true;
     G.u.tx.is_self_transfer = false;
     G.lock_arg_cmp=G.change_lock_arg;
@@ -447,7 +452,11 @@ void output_start(mol_num_t index) {
 
 void output_end(void) {
   bool is_second_change = G.u.tx.processed_change_cell && G.cell_state.is_change;
-  bool dest_is_src = !G.cell_state.is_change && (0 == memcmp(G.current_lock_arg, G.lock_arg_tmp, 20));
+  uint64_t zero_val = 0;
+  bool dest_is_src = !G.cell_state.is_change
+      && (0 == memcmp(G.current_lock_arg, G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash)))
+      && (0 == memcmp(&zero_val, G.lock_arg_tmp.lock_period, sizeof(G.lock_arg_tmp.lock_period)));
+
   G.u.tx.is_self_transfer |=  is_second_change || dest_is_src;
 
   // Have we now processed at least 1 change cell?
@@ -468,21 +477,21 @@ void output_end(void) {
             G.u.tx.change_amount = 0;
           }
           G.u.tx.plain_output_amount += G.cell_state.capacity;
-          uint8_t *dest_to_show = dest_is_src ? G.lock_arg_tmp : G.change_lock_arg;
-          if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, dest_to_show, 20)) {
+          uint8_t *dest_to_show = dest_is_src ? G.lock_arg_tmp.hash : G.change_lock_arg;
+          if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination.hash, dest_to_show, 20)) {
               REJECT("Can't handle transactions with multiple non-change destination addresses");
           } else {
               G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-              memcpy(G.maybe_transaction.v.destination, dest_to_show, 20);
+              memcpy(G.maybe_transaction.v.destination.hash, dest_to_show, 20);
           }
         }
         else if(G.cell_state.lock_arg_nonequal) {
             G.u.tx.plain_output_amount += G.cell_state.capacity;
-            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20)) {
+            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination.hash, G.lock_arg_tmp.hash, 20)) {
                 REJECT("Can't handle transactions with multiple non-change destination addresses");
             } else {
                 G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-                memcpy(G.maybe_transaction.v.destination, G.lock_arg_tmp, 20);
+                memcpy(&G.maybe_transaction.v.destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
             }
         } else {
             G.u.tx.change_amount += G.cell_state.capacity;

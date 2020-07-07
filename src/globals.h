@@ -103,7 +103,7 @@ typedef struct {
     uint64_t plain_input_amount;
 
     uint8_t *lock_arg_cmp;
-    uint8_t lock_arg_tmp[20];
+    lock_arg_t lock_arg_tmp;
     buffer_t message_data_as_buffer;
     bool signing_multisig_input;
 
