@@ -8,7 +8,7 @@ This application has been developed against our forks of [CKB-CLI](https://githu
 
 System requirements differ based on if you are using or installing the application. If you are using a Linux machine, you will need to [Prepare your Linux Machine for Ledger Device Communication](#preparing-your-linux-machine-for-ledger-device-communication).
 
-## App Installation
+## For Application Installation
 
 Installation requirements differ based on installation method:
 
@@ -18,7 +18,7 @@ Installation requirements differ based on installation method:
 
 This applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware XXX. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
 
-## Application Usage
+## For Application Usage
 
 Most of the instructions in this README cover how to use the Ledger application with Nervos' client, [CKB-CLI](https://github.com/nervosnetwork/ckb-cli). If you have installed CKB-CLI from its upstream location, please refer to their system requirements.
 
@@ -58,20 +58,22 @@ Subsequently, unplug your ledger hardware wallet, and plug it in again for the c
 
 For more details, see [Ledger's documentation](https://support.ledger.com/hc/en-us/articles/115005165269-Fix-connection-issues).
 
-# Installing Ledger App from Release
+# Ledger App Installation
 
-Please download `nano-s-release.tar.gz` from the latest release on 
-the [releases](https://github.com/obsidiansystems/ledger-app-nervos/releases)
-page of this repo, which contains a pre-compiled app or `.hex` file ready
-to install on the Ledger. The following sections describe how to install it, including
-acquiring other tools from the Ledger project.
+There are 3 ways you can install this Ledger application:
+1. Ledger Live *(not yet available)*: [Ledger Live](https://www.ledger.com/ledger-live) is the easiest way to install applications on your Ledger device. However, this application is still in active development and not yet available in Ledger Live.
+2. [Installing from Release](#Installing-The-Ledger-Application-from-Release): This is the recommended installation method until this app is available in Ledger Live.
+3. Installing from Source: Recommended for development only.
 
-## Installing BOLOS Python Loader
+*Note: You can only install applications on the Ledger Nano X through Ledger Live.*
 
-Install `libusb` and `libudev`, with the relevant headers. On Debian-based
-distros, including Ubuntu, the packages with the headers are suffixed with
-`-dev`. Other distros will have their own conventions. So, for example, on
-Ubuntu, you can do this with:
+## Installing the Ledger Application from Release
+
+Please download `nano-s-release.tar.gz` from the latest release on  the [releases](https://github.com/obsidiansystems/ledger-app-nervos/releases) page of this repo, which contains a pre-compiled app or `.hex` file ready to install on the Ledger. The following sections describe how to install it, including acquiring other tools from the Ledger project.
+
+### Installing BOLOS Python Loader
+
+Install `libusb` and `libudev`, with the relevant headers. On Debian-based distros, including Ubuntu, the packages with the headers are suffixed with `-dev`. Other distros will have their own conventions. So, for example, on Ubuntu, you can do this with:
 
 ```
 $ sudo apt-get install libusb-1.0.0-dev libudev-dev # Ubuntu example
@@ -83,54 +85,39 @@ Then, install `pip3`. You must install `pip3` for this and not `pip`. On Ubuntu:
 $ sudo apt-get install python3-pip # Ubuntu example
 ```
 
-Now, on any operating system, install `virtualenv` using `pip3`. It is important
-to use `pip3` and not `pip` for this, as this module requires `python3` support.
+Now, on any operating system, install `virtualenv` using `pip3`. It is important to use `pip3` and not `pip` for this, as this module requires `python3` support.
 
 ```
 $ sudo pip3 install virtualenv # Any OS
 ```
 
-Then create a Python virtual environment (abbreviated *virtualenv*). You could
-call it anything, but we shall call it "ledger". This will create a directory
-called "ledger" containing the virtualenv:
+Then create a Python virtual environment (abbreviated *virtualenv*). You could call it anything, but we shall call it "ledger". This will create a directory called "ledger" containing the virtualenv:
 
 ```
 $ virtualenv ledger # Any OS
 ```
 
-Then, you must enter the `virtualenv`. If you do not successfully enter the `virtualenv`,
-future commands will fail. You can tell you have entered the virtualenv when your prompt is
-prefixed with `(ledger)`.
+Then, you must enter the `virtualenv`. If you do not successfully enter the `virtualenv`, future commands will fail. You can tell you have entered the virtualenv when your prompt is prefixed with `(ledger)`.
 
 ```
 $ source ledger/bin/activate
 ```
 
-Your terminal session -- and only that terminal session -- will now be in the
-virtual env. To have a new terminal session enter the virtualenv, run the above
-`source` command only in the same directory in the new terminal session.
+Your terminal session -- and only that terminal session -- will now be in the virtual env. To have a new terminal session enter the virtualenv, run the above `source` command only in the same directory in the new terminal session.
 
-## ledgerblue: The Python Module for Ledger Nano S/X
+### ledgerblue: The Python Module for Ledger Nano S/X
 
-We can now install `ledgerblue`, which is a Python module designed originally for
-Ledger Blue, but also is needed for the Ledger Nano S/X.
+We can now install `ledgerblue`, which is a Python module designed originally for Ledger Blue, but also is needed for the Ledger Nano S/X.
 
-Although we do not yet support Ledger Blue, you must still install the following python package.
-Within the virtualenv environment -- making sure that `(ledger)` is showing up
-before your prompt -- use pip to install the `ledgerblue`
-[Python package](https://pypi.org/project/ledgerblue/).
-This will install the Ledger Python packages into the virtualenv; they will be
-available only in a shell where the virtualenv has been activated.
+Although we do not yet support Ledger Blue, you must still install the following python package. Within the virtualenv environment -- making sure that `(ledger)` is showing up before your prompt -- use pip to install the `ledgerblue` [Python package](https://pypi.org/project/ledgerblue/). This will install the Ledger Python packages into the virtualenv; they will be available only in a shell where the virtualenv has been activated.
 
 ```
 $ pip install ledgerblue
 ```
 
-If you have to use `sudo` or `pip3` here, that is an indication that you have
-not correctly set up `virtualenv`. It will still work in such a situation, but
-please research other material on troubleshooting `virtualenv` setup.
+If you have to use `sudo` or `pip3` here, that is an indication that you have not correctly set up `virtualenv`. It will still work in such a situation, but please research other material on troubleshooting `virtualenv` setup.
 
-## Load the application onto the Ledger device
+### Load the Application onto the Ledger Device
 
 Next you'll use the installation script to install the application on your Ledger device.
 
@@ -142,20 +129,11 @@ The Ledger device must be in the following state:
   * Not asleep (you should not see *vires in numeris* is scrolling across the
     screen)
 
-If you are already in an application or the Ledger device is asleep, your installation process
-will fail.
+If you are already in an application or the Ledger device is asleep, your installation process will fail.
 
-We recommend staying at your computer and keeping an eye on the Ledger device's screen
-as you continue. You may want to read the rest of these instructions before you
-begin installing, as you will need to confirm and verify a few things during the
-process.
+We recommend staying at your computer and keeping an eye on the Ledger device's screen as you continue. You may want to read the rest of these instructions before you begin installing, as you will need to confirm and verify a few things during the process.
 
-Still within the virtualenv, run the `./install.sh` command included
-in the `nano-s-release.tar.gz` that you downloaded. This `./install.sh`
-script takes the path to an application directory. The only such directory
-included in the downloaded `release.tar.gz` will be `app`, so install
-the app like this, replacing `~/Downloads/` with whatever directory you
-downloaded the file into:
+Still within the virtualenv, run the `./install.sh` command included in the `nano-s-release.tar.gz` that you downloaded. This `./install.sh` script takes the path to an application directory. The only such directory included in the downloaded `release.tar.gz` will be `app`, so install the app like this, replacing `~/Downloads/` with whatever directory you downloaded the file into:
 
 ```
 cd ~/Downloads/
@@ -164,24 +142,17 @@ cd ledger-app-nervos-s
 ./install.sh app
 ```
 
-The first thing that should come up in your terminal is a message that looks
-like this:
+The first thing that should come up in your terminal is a message that looks like this:
 
 ```
 Generated random root public key : <long string of digits and letters>
 ```
 
-Look at your Ledger device's screen and verify that the digits of that key match the
-digits you can see on your terminal. What you see on your Ledger hardware wallet's screen
-should be just the beginning and ending few characters of the longer string that
-printed in your terminal.
+Look at your Ledger device's screen and verify that the digits of that key match the digits you can see on your terminal. What you see on your Ledger hardware wallet's screen should be just the beginning and ending few characters of the longer string that printed in your terminal.
 
-You will need to push confirmation buttons on your Ledger device a few times
-during the installation process and re-enter your PIN code near the end of the
-process. You should finally see the Nervos logo appear on the screen.
+You will need to push confirmation buttons on your Ledger device a few times during the installation process and re-enter your PIN code near the end of the process. You should finally see the Nervos logo appear on the screen.
 
-If you see the "Generated random root public key" message and then something
-that looks like this:
+If you see the "Generated random root public key" message and then something that looks like this:
 
 ```
 Traceback (most recent call last):
@@ -190,32 +161,23 @@ File "/usr/lib/python3.6/runpy.py", line 193, in _run_module_as_main
 OSError: open failed
 ```
 
-the most likely cause is that your `udev` rules are not set up correctly, or you
-did not unplug your Ledger hardware wallet between setting up the rules and attempting to
-install. Please confirm the correctness of your `udev` rules.
+the most likely cause is that your `udev` rules are not set up correctly, or you did not unplug your Ledger hardware wallet between setting up the rules and attempting to install. Please confirm the correctness of your `udev` rules.
 
-To load a new version of the Nervos application onto the Ledger device in the future,
-you can run the command again, and it will automatically remove any
-previously-loaded version.
+To load a new version of the Nervos application onto the Ledger device in the future, you can run the command again, and it will automatically remove any previously-loaded version.
 
-# Installing Ledger App from Source
+## Installing the Ledger Application from Source
 
 Alternatively, you can install the Ledger app from source.
 
-Make sure you have Nix installed. Load the latest version of the Nervos
-app, confirming the unsafe prompt:
+Make sure you have Nix installed. Load the latest version of the Nervos app, confirming the unsafe prompt:
 
 ``` sh
 $ ./nix/install.sh s
 ```
 
-If you get a “permission denied” error, your computer is not
-detecting the Ledger device correctly. Make sure the Ledger is
-connected properly, that it was plugged in since updating the `udev`
-rules.
+If you get a “permission denied” error, your computer is not detecting the Ledger device correctly. Make sure the Ledger is connected properly, that it was plugged in since updating the `udev` rules.
 
-You have to accept a few prompts on the Ledger. Then you must select
-and load the Nervos app, confirming the unsafe prompt.
+You have to accept a few prompts on the Ledger. Then you must select and load the Nervos app, confirming the unsafe prompt.
 
 Now, make sure the Ledger is:
 
@@ -236,15 +198,13 @@ and verify that the results match to check that installation was successful.
 
 ## Installing the Client
 
-To use the CKB command line utility with the Ledger, you must currently use the Obsidian
-fork of the client. To build and start it, run:
+To use the CKB command line utility with the Ledger, you must currently use the Obsidian fork of the client. To build and start it, run:
 
 ``` sh
 $ nix run -f nix/dep/ckb-cli -c ckb-cli
 ```
 
-All commands that follow prefixed with ‘CKB>’ should be run in the
-prompt provided by the above command.
+All commands that follow prefixed with ‘CKB>’ should be run in the prompt provided by the above command.
 
 ## List Ledger Wallets ###
 
