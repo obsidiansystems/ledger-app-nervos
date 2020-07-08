@@ -167,32 +167,36 @@ To load a new version of the Nervos application onto the Ledger device in the fu
 
 ## Installing the Ledger Application from Source
 
-Alternatively, you can install the Ledger app from source.
-
-Make sure you have Nix installed. Load the latest version of the Nervos app, confirming the unsafe prompt:
+You can install the Ledger app from source if you have Nix installed. To load the latest version of the Nervos app:
 
 ``` sh
+$ git clone https://github.com/obsidiansystems/ledger-app-nervos.git
+$ cd ledger-app-nervos
+$ git checkout master
 $ ./nix/install.sh s
 ```
+Some notes during app installation:
+- Unsafe Manager: you will see a prompt to either allow or deny 'unsafe manager' when running `./nix/install.sh s`. 'Unsafe Manager' is any manager which is not Ledger Live.
+- Permission Denied: If you get a “permission denied” error, your computer is not detecting the Ledger device correctly. Make sure the Ledger is connected properly, that it was plugged in since updating the `udev` rules.
 
-If you get a “permission denied” error, your computer is not detecting the Ledger device correctly. Make sure the Ledger is connected properly, that it was plugged in since updating the `udev` rules.
+You have to accept a few prompts on the Ledger. Then you must select and load the Nervos app.
 
-You have to accept a few prompts on the Ledger. Then you must select and load the Nervos app, confirming the unsafe prompt.
+### Confirming the Installed Version
 
-Now, make sure the Ledger is:
+To confirm the version of the application installed on your hardware wallet, first make sure the Ledger device is: 
 
 - connected
 - unlocked
 - has the “Nervos” app open (shows “Use wallet to view accounts”)
 
-run
+Then run the following: 
 
 ``` sh
 ./check-installed-version.sh
-git rev-parse --short HEAD
+
 ```
 
-and verify that the results match to check that installation was successful.
+If the results of that command match the results of `git rev-parse --short HEAD`, the installation was successful.
 
 # Using the Client
 
