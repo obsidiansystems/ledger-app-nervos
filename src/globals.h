@@ -67,6 +67,9 @@ typedef struct {
         // Things we need exclusively after doing validate_context_txn
         struct {
             uint32_t witness_idx;
+            uint32_t witness_multisig_threshold;
+            uint32_t witness_multisig_pubkeys_cnt;
+            uint32_t witness_multisig_lock_arg_consumed;
             _Alignas(uint32_t) uint8_t witness_stack[64]; 
             uint32_t current_output_index;
 
