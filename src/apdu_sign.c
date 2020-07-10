@@ -613,39 +613,109 @@ void set_change_path(void) {
 }
 
 void witness_offsets(struct WitnessArgs_state *state) {
-    int lock_wit_len = state->input_type_offset-state->lock_offset;
-    int shift = 69-lock_wit_len;
-    mol_num_t new_header[4];
-    new_header[0] = state->total_size + shift;
-    new_header[1] = state->lock_offset;
-    new_header[2] = state->input_type_offset + shift;
-    new_header[3] = state->output_type_offset + shift;
+    if (G.signing_multisig_input) {
+        // Assume the WitnessArgs are correct
+        mol_num_t header[4];
+        header[0] = state->total_size;
+        header[1] = state->lock_offset;
+        header[2] = state->input_type_offset;
+        header[3] = state->output_type_offset;
 
-    uint64_t len64 = new_header[0];
-    blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
-    blake2b_incremental_hash((uint8_t*) new_header, sizeof(new_header), &G.hash_state);
-    static const uint8_t zero_witness[] = {
-        0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    blake2b_incremental_hash(zero_witness, sizeof(zero_witness), &G.hash_state);
+        uint64_t len64 = header[0];
+        blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
+        blake2b_incremental_hash((uint8_t*) header, sizeof(header), &G.hash_state);
+        /* PRINTF("witness_multisig header %.*h\n", 16, header ); */
+    } else {
+        int lock_wit_len = state->input_type_offset-state->lock_offset;
+        int shift = 69-lock_wit_len;
+        mol_num_t new_header[4];
+        new_header[0] = state->total_size + shift;
+        new_header[1] = state->lock_offset;
+        new_header[2] = state->input_type_offset + shift;
+        new_header[3] = state->output_type_offset + shift;
+
+        uint64_t len64 = new_header[0];
+        blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
+        blake2b_incremental_hash((uint8_t*) new_header, sizeof(new_header), &G.hash_state);
+        static const uint8_t zero_witness[] = {
+            0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        blake2b_incremental_hash(zero_witness, sizeof(zero_witness), &G.hash_state);
+    }
 }
 
-void witness_chunk(uint8_t* chunk, mol_num_t length) {
-    blake2b_incremental_hash(chunk, length, &G.hash_state);
+void witness_lock_arg_size(mol_num_t size) {
+    if (!G.signing_multisig_input) return;
+    uint32_t size_adjusted = size-4;
+    blake2b_incremental_hash((void*) &size_adjusted, 4, &G.hash_state);
+}
+
+// multisig_script | Signature1 | Signature2 | ...
+//
+// Where the components are of the following format:
+//
+// multisig_script: S | R | M | N | PubKeyHash1 | PubKeyHash2 | ...
+//
+// +-------------+------------------------------------+-------+
+// |             |           Description              | Bytes |
+// +-------------+------------------------------------+-------+
+// | S           | reserved field, must be zero       |     1 |
+// | R           | first nth public keys must match   |     1 |
+// | M           | threshold                          |     1 |
+// | N           | total public keys                  |     1 |
+// | PubkeyHashN | blake160 hash of compressed pubkey |    20 |
+// | SignatureN  | recoverable signature              |    65 |
+// +-------------+------------------------------------+-------+
+
+void witness_lock_arg_body_chunk(uint8_t *buf, mol_num_t buflen) {
+    if (!G.signing_multisig_input) return;
+    mol_num_t consumed = G.u.tx.witness_multisig_lock_arg_consumed;
+    if (consumed == 0 && (buf[0] != 0))
+        REJECT("Reserved field of multisig_script is non-zero");
+    if (consumed < 3) {
+        mol_num_t threshold_index = 2 - consumed;
+        G.u.tx.witness_multisig_threshold = buf[threshold_index];
+    }
+    if (consumed < 4) {
+        mol_num_t pubkeys_cnt_index = 3 - consumed;
+        G.u.tx.witness_multisig_pubkeys_cnt = buf[pubkeys_cnt_index];
+    }
+    if (G.u.tx.witness_multisig_pubkeys_cnt > 0) {
+        size_t multisig_script_len = 4 /* FLAGS_SIZE */ + 20 /* BLAKE160_SIZE */ * G.u.tx.witness_multisig_pubkeys_cnt;
+        size_t signatures_start = multisig_script_len - consumed;
+        if (signatures_start > 0 && buflen > signatures_start) {
+            // Zero signatures
+            for(mol_num_t i = signatures_start; i < buflen; i++) {
+                buf[i] = 0;
+            }
+        }
+    }
+    /* PRINTF("witness threshold %d\n", G.u.tx.witness_multisig_threshold); */
+    /* PRINTF("witness pubkeys_cnt %d\n", G.u.tx.witness_multisig_pubkeys_cnt); */
+    /* PRINTF("witness_lock_arg_body_chunk %.*h\n", buflen, buf); */
+    blake2b_chunk(buf, buflen);
+    G.u.tx.witness_multisig_lock_arg_consumed += buflen;
 }
 
 const WitnessArgs_cb WitnessArgs_rewrite_callbacks = {
     .offsets = witness_offsets,
-    .input_type = &(BytesOpt_cb) { .chunk = witness_chunk },
-    .output_type = &(BytesOpt_cb) { .chunk = witness_chunk }
+    .lock = &(BytesOpt_cb) { .item = &(Bytes_cb) {
+        .size = witness_lock_arg_size,
+        .body_chunk = witness_lock_arg_body_chunk
+    }},
+    .input_type = &(BytesOpt_cb) { .chunk = blake2b_chunk },
+    .output_type = &(BytesOpt_cb) { .chunk = blake2b_chunk }
 };
 
 void begin_witness(mol_num_t index) {
     G.u.tx.witness_idx = index;
     if(G.u.tx.witness_idx==0) {
+        G.u.tx.witness_multisig_threshold = 0;
+        G.u.tx.witness_multisig_pubkeys_cnt = 0;
+        G.u.tx.witness_multisig_lock_arg_consumed = 0;
         explicit_bzero(&G.hash_state, sizeof(G.hash_state));
         blake2b_incremental_hash(G.u.tx.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
         MolReader_WitnessArgs_init_state(G.u.tx.witness_stack+sizeof(G.u.tx.witness_stack), (struct WitnessArgs_state*)G.u.tx.witness_stack, &WitnessArgs_rewrite_callbacks);
