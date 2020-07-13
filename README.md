@@ -365,12 +365,12 @@ total_count: 1
 To sign a message with their ledger a user may do the following:
 
 ```sh
-CKB> util sign-message --message "hello world i love nervos" --account <my-ledger-account>
+CKB> util sign-message --message "hello world i love nervos" --from-account <my-ledger-account>
 message-hash: <blake2b hash of: magic_bytes + message>
 recoverable: false
 signature: <signature>
 
-CKB> util verify-message --message "hello world i love nervos" --account <my-ledger-account> --signature <signature from above>
+CKB> util verify-message --message "hello world i love nervos" --from-account <my-ledger-account> --signature <signature from above>
 pubkey: <pubkey of my ledger's account root>
 recoverable: false
 verify-ok: true
