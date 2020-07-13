@@ -490,18 +490,17 @@ If a message is longer than 64 characters the ledger will display the first 61 c
 The ckb-cli accepts utf8 strings in its `--message` argument, but the ledger can not display all chars. If the ledger comes accross a
 character that it is unnable to display it will display an asterisk (`\*`) instead.
 
-### DAO ####
+### DAO Operations ####
 
-#### Deposit #####
+#### Deposit into the NervosDAO #####
 
-You can deposit to the dao like:
+You can deposit to the NervosDAO with the following command:
 
 ``` sh
 CKB> dao deposit \
-    --capacity 102 \
-    --from-account <ledger-id> \
-    --tx-fee 0.00001 \
-    --path "m/44'/309'/0'/1/0"
+    --capacity <capacity> \
+    --from-account <lock-arg> \
+    --tx-fee <tx-fee> \
 ```
 Prompts on the Ledger device are as follows:
 ``` text
@@ -510,22 +509,18 @@ Deposit
 ```
 ``` text
 Amount
-102
+<capacity>
 ```
 ``` text
 Fee
-0.00001
+<tx-fee>
 ```
-``` text
-Source
-ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-```
-#### Get deposited cells #####
+#### Get Cells Deposited in the NervosDAO #####
 
-Get deposited cells:
+After you've made a deposit to the NervosDAO, you can confirm it using `dao query-deposited-cells`:
 
 ``` sh
-CKB> dao query-deposited-cells --address <ledger-address>
+CKB> dao query-deposited-cells --address <address>
 live_cells:
   - capacity: 10200000000
     data_bytes: 8
@@ -542,18 +537,17 @@ live_cells:
 total_capacity: 10200000000
 ```
 
-Remember the values above for one of the live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `prepare` operation below which prepares a cell for withdrawal from the NervosDAO.
+Remember the values above for one of the live cells under `tx_hash` and `output_index`. You'll need these when constructing the `dao prepare` operation below which prepares a cell for withdrawal from the NervosDAO.
 
-#### Prepare #####
+#### Prepare Cells for Withdrawal from the NervosDAO #####
 
-Prepare a cell for withdrawal from the NervosDAO:
+To prepare a cell for withdrawal from the NervosDAO:
 
 ``` sh
 CKB> dao prepare \
-    --from-account <ledger-id> \
+    --from-account <lock-arg> \
     --out-point <tx_hash>-<output_index> \
-    --tx-fee 0.0001 \
-    --path "m/44'/309'/0'/1/0"
+    --tx-fee <tx-fee> \
 ```
 Prompts on the Ledger device are as follows:
 ``` text
@@ -562,11 +556,11 @@ Prepare
 ```
 ``` text
 Amount
-102
+<capacity>
 ```
 ``` text
 Fee
-0.00001
+<tx-fee>
 ```
 ``` text
 Owner
@@ -577,12 +571,12 @@ Fee payer
 ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
 ```
 
-##### Get prepared cells #####
+##### Get Cells Prepared for Withdrawal from NervosDAO #####
 
-Get prepared cells:
+After you've prepared your cell for withdrawal from the NervosDAO, you can confirm its status using `dao-query-prepared-cells`:
 
 ``` sh
-CKB> dao query-prepared-cells --address <ledger-address>
+CKB> dao query-prepared-cells --address <address>
 live_cells:
   - capacity: 10500000000
     data_bytes: 8
@@ -600,18 +594,17 @@ live_cells:
 total_maximum_withdraw: 10500154580
 ```
 
-Remember the values above for one of the live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `withdraw` operation below which withdraws CKB from the NervosDAO.
+Remember the values above for one of the live cells under `tx_hash` and `output_index`. You'll need these when constructing the `withdraw` operation below which withdraws CKB from the NervosDAO.
 
 #### Withdraw #####
 
-Withdraw a prepared cell:
+To withdraw a prepared cell from the NervosDAO:
 
 ``` sh
 CKB> dao withdraw \
-    --from-account <ledger-id> \
+    --from-account <lock-arg> \
     --out-point <tx_hash>-<output_index> \
-    --tx-fee 0.00001 \
-    --path "m/44'/309'/0'/1/0"
+    --tx-fee <tx-fee> \
 ```
 Prompts on the Ledger device are as follows:
 ``` text
@@ -620,11 +613,11 @@ Withdraw
 ```
 ``` text
 Amount
-102
+<capacity>
 ```
 ``` text
 Fee
-0.00001
+<tx-fee>
 ```
 ``` text
 Owner
