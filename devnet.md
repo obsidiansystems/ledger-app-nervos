@@ -2,7 +2,26 @@
 
 Using a Nervos devnet is recommended when doing testing, development, or experimentation with the Nervos Ledger app. This instructions build upon [Nervos' dev chain docs](https://docs.nervos.org/docs/basics/guides/devchain) and explain how to use the devnet directly from this repository.
 
-## Setting up a Local Devnet
+## Getting Set Up
+
+Before starting the devnet, we may want to create an account to either 1) receive an allocation of CKB in the genesis block or 2) receive block rewards for mining. If you'd like to use the account stored on your ledger device, see Account Import instructions. To use a software-based account, use the `account new` command. You will have to set a password to protect your key:
+
+```
+ckb-cli account new
+
+Your new account is locked with a password. Please give a password. Do not forget this password.
+Password: 
+Repeat password: 
+address:
+  mainnet: ckb1qyqyrm8w0w8uq7puwhdp7s6xqzdjuknhf2tqzdztph
+  testnet: ckt1qyqyrm8w0w8uq7puwhdp7s6xqzdjuknhf2tqlgu5dt
+lock_arg: 0x41ecee7b8fc0783c75da1f4346009b2e5a774a96
+lock_hash: 0xeb31c5232b322905b9d52350c0d0cf55987f676d86704146ce67d92ddef05ed3
+```
+
+You can now use the `lock-arg` of this account when configuring your devnet.
+
+## Creating and Configuring a Local Devnet
 
 From within this repository, we will first make [CKB](https://github.com/nervosnetwork/ckb) available then proceed with initializing the dev chain:
 
