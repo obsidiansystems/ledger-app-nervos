@@ -199,11 +199,13 @@ Then run the following:
 
 If the results of that command match the results of `git rev-parse --short HEAD`, the installation was successful.
 
-# Using the Client
+# Using the Nervos Ledger App with CKB-CLI
+
+The Nervos Ledger app is built to work with CKB-CLI. Some of these CKB-CLI subcommands, such as `account import`, do not require that you're connected to a network such as the testnet Aggron or a devnet. Others, such as `wallet transfer` or `DAO operations`, must be submitted to a network for their result to be actualized. For testing purposes, we recommend [Using the Nervos Devnet](devnet.md).
 
 ## Installing the Client
 
-To use the CKB command line utility with the Ledger, you must currently use the Obsidian fork of the client. To build and start it, run:
+To use the CKB command line utility with the Ledger, you must currently use the Obsidian fork of the client. To build and start it, run the following from within this repository:
 
 ``` sh
 $ nix run -f nix/dep/ckb-cli -c ckb-cli
@@ -211,7 +213,7 @@ $ nix run -f nix/dep/ckb-cli -c ckb-cli
 
 All commands that follow prefixed with ‘CKB>’ should be run in the prompt provided by the above command.
 
-## List Ledger Wallets ###
+## Listing Ledger Devices ###
 
 Use the `account list` command to see connected Ledger devices. Be sure to have the Nervos application open on the device, otherwise it will not be detected:
 
@@ -222,11 +224,11 @@ CKB> account list
   ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
 ```
 
-The `ledger_id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. the `ledger\_id` will be
+The `ledger_id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. the `ledger_id` will be
 used for ```<ledger-id>``` argument in the `account import` command as described below.
 
 If you have already imported the Ledger account, then `account list` command will instead give the account details.
-This will be shown even if the device is not connected.
+They will be shown even if the device is not connected.
 
 ``` sh
 CKB> account list
@@ -239,7 +241,7 @@ CKB> account list
   lock_hash: 0xc27b9ad3414cf5b1720713663d5f754e8968793f2da90b6428feb565bf94de4e
 ```
 
-## Import Ledger Wallet account ###
+## Account Import ###
 
 Use the `account import --ledger <ledger_id>` command to import the account to the `ckb-cli`.
 You will receive a confirmation prompt on the device which should say `Import Account`.
@@ -258,17 +260,15 @@ CKB> account import --ledger 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc89125
 
 Now that the account has been imported, it is remembered by the client and is visible when you run `account list`.
 
-### Get BIP44 Wallet Public Keys ###
+### Get BIP44 Address Public Keys ###
 
-Use the `account bip44-addresses` command to obtain the BIP44 addresses for the mainnet.
-
-Note that this command is provided as a convenience by the `ckb-cli` to get a list of addresses with the derivation path quickly.
-
-**It is highly recommended to verify the account provided by this command on the Ledger device using the `account extended-address` command as described next.**
+Use the `account bip44-addresses` command to obtain the first 20 receiving and 10 change addresses for your account. 
 
 ``` sh
-CKB> account bip44-addresses --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
+CKB> account bip44-addresses --lock-arg <lock-arg>
 ```
+
+Note that this command is provided as a convenience by the `ckb-cli` to get a list of addresses with the derivation path quickly. Before sharing one of these receiving addresses, **it is highly recommended that you verify the address provided by this command on the Ledger device using the `account extended-address` command as described next.**
 
 ### Obtain / Verify Public Key ###
 
@@ -276,6 +276,8 @@ The `account extended-address` command should be used to
 
 - Verify the public key obtained via `account bip44-addresses` command on the Ledger device
 - Obtain the public key for any arbitrary BIP44 derivation path
+
+Here's an example command that provide the first receiving address for the lock-arg `0x327a95bd57966e686ffe590c331cd37002e1c631`:
 
 ``` sh
 CKB> account extended-address --path "m/44'/309'/0'/0/1" --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
@@ -291,14 +293,12 @@ Public Key
 Address:
 ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
 ```
-If you've changed the Ledger's configuration to show testnet address, the last screen will instead look like this:
 
-``` text
-Address:
-ckt1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsa64fqt
-```
+**Verifying the output address printed by `ckb-cli` matches the one shown on Ledger prompt is highly recommended.**
 
-After accepting the prompt on the Ledger the output on `ckb-cli` should look like:
+*Note: If you've changed the Ledger's configuration to show testnet address, the `Address` prompt will instead show the testnet address. This setting persists between power cycles.*
+
+After accepting the prompt on the Ledger the output on `ckb-cli` will show information about the address:
  
 ``` text
 address:
@@ -308,11 +308,7 @@ lock_arg: 0x632c444199275d00b7c1fb65bf001d70bc609599
 lock_hash: 0xee0283c2d991992d6e015a4680c54318ad42c820ca0dc862c0a1d68c415499a8
 ```
 
-**It is highly recommended to verify that output address printed by `ckb-cli` matches the one shown on Ledger prompt**
-
-The “testnet” address is the one used for `<ledger-address>` in the next section.
-
-## Transferring ###
+## Transfer CKB ###
 
 ### Creating a new account for local dev network ####
 
@@ -684,27 +680,3 @@ Leave this open in a separate terminal as you continue on the next steps.
 ## Application Build Failure ##
 
 If you run into issues building the Ledger application using `nix-shell -A wallet.s --run 'make SHELL=sh all'`, we recommend trying `nix-shell -A wallet.s --run 'make SHELL=sh clean all`.
-
-## Devnet stops at 59594 blocks ##
-
-At some point, you hit an issue where the node can’t hold the capacity of the miner. This can be resolved by, clearing your devnet and restarting like so:
-
-``` sh
-CTRL-C
-$ rm -rf data/
-$ ckb run &
-$ ckb miner
-```
-
-## Invalid cell status ##
-
-This can happen when you have switched networks between running
-ckb-cli. If this is the case, it can be fixed by clearing your cache.
-This can be done on the command line.
-
-First, quit out of ckb-cli so that we can modify our index by typing
-‘quit’. Then, clear your cache with:
-
-``` sh
-$ rm -rf $HOME/.ckb-cli/index-v1/
-```
