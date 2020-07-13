@@ -62,7 +62,6 @@ static inline void require_hid(void) {
 
 size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey);
 size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const *const pubkey);
-size_t provide_account_import(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey, extended_public_key_t const *const external_pubkey, extended_public_key_t const *const change_pubkey);
 
 size_t handle_apdu_error(uint8_t instruction);
 size_t handle_apdu_version(uint8_t instruction);
