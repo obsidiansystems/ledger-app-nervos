@@ -135,14 +135,6 @@ typedef struct {
 } apdu_pubkey_state_t;
 
 typedef struct {
-    bip32_path_t path;
-    cx_blake2b_t hash_state;
-    extended_public_key_t root_public_key;
-    extended_public_key_t external_public_key;
-    extended_public_key_t change_public_key;
-} apdu_account_import_state_t;
-
-typedef struct {
     void *stack_root;
     apdu_handler handlers[INS_MAX + 1];
 
@@ -182,7 +174,6 @@ typedef struct {
             apdu_sign_state_t sign;
             apdu_sign_message_state_t sign_msg;
             apdu_sign_message_hash_state_t sign_msg_hash;
-            apdu_account_import_state_t account_import;
         } u;
 
         struct {
