@@ -260,6 +260,8 @@ CKB> account import --ledger 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc89125
 
 Now that the account has been imported, it is remembered by the client and is visible when you run `account list`.
 
+## Using your Account's Addresses ##
+
 ### Get BIP44 Address Public Keys ###
 
 Use the `account bip44-addresses` command to obtain the first 20 receiving and 10 change addresses for your account. 
@@ -308,148 +310,39 @@ lock_arg: 0x632c444199275d00b7c1fb65bf001d70bc609599
 lock_hash: 0xee0283c2d991992d6e015a4680c54318ad42c820ca0dc862c0a1d68c415499a8
 ```
 
-## Transfer CKB ###
+## Transfer CKB ##
 
-### Creating a new account for local dev network ####
-
-Now, you must also create an account from ckb-cli so that an account
-can get the issued cells. This can be done with:
-
-```
-CKB> account new
-```
-
-Follow the prompts and choose a password to continue. Next, get the
-lock_arg for your account with:
-
-```
-CKB> account list
-- "#": 0
-  account_source: on-disk password-protected key store
-  address:
-    mainnet: ckb1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqpwltnt
-    testnet: ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-  lock_arg: 0xabaedbbb6d8de1d8ad4d036237c23c822f84e870
-  lock_hash: 0x21ad4eee4fb0f079f5f8166f42f0d4fbd1fd63b8f36a7ccfb9d3657f9a5aed43
-- "#": 1
-  account_source: ledger hardware wallet
-  address:
-    mainnet: ckb1qyqry754h4tevmngdll9jrpnrnfhqqhpcccskdl3en
-    testnet: ckt1qyqry754h4tevmngdll9jrpnrnfhqqhpcccstgpw40
-  lock_arg: 0x327a95bd57966e686ffe590c331cd37002e1c631
-  lock_hash: 0xc27b9ad3414cf5b1720713663d5f754e8968793f2da90b6428feb565bf94de4e
-```
-
-The value of “lock_arg: ...” is your-new-account-lock-arg.
-
-### Starting a local dev network ####
-
-Our instructions for starting a devnet are based on [Nervos' Dev Chain docs](https://docs.nervos.org/dev-guide/devchain.html). First, make a directory and init it for a dev network:
-``` sh
-$ nix run -f nix/dep/ckb # to make ckb available
-$ mkdir devnet
-$ cd devnet
-$ ckb init --chain dev
-```
-
-then modify the value at the end of ckb-miner.toml to be small:
-
-```
-value = 20
-```
-
-and also add this block to the end of ckb.toml:
-
-```
-[block_assembler]
-code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-args = "0xb57dd485a1b0c0a57c377e896a1a924d7ed02ab9"
-hash_type = "type"
-message = "0x"
-```
-
-finally, in specs/dev.toml, set genesis\_epoch\_length to 1 and
-uncomment permanent\_difficulty\_in\_dummy:
-
-```
-genesis_epoch_length = 1
-# For development and testing purposes only.
-# Keep difficulty be permanent if the pow is Dummy. (default: false)
-permanent_difficulty_in_dummy = true
-```
-
-and also pick one of the genesis issuance cells and set args to a lock
-arg from password-protected account above:
-
-```
-[[genesis.issued_cells]]
-capacity = 20_000_000_000_00000000
-lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-lock.args = "<your-new-account-lock-arg>"
-lock.hash_type = "type"
-```
-
-Then you can run 
-
-```
-ckb run &
-ckb miner
-```
-
-to start up the node and miner; the ledger account you added to
-genesis.issued\_cells should have a large quantity of CKB to spend
-testing.
-
-Note that you may have to suspend your miner to avoid hitting the
-maximum amount of deposited cells. You can do this with Ctrl-Z. Type
-‘fg’ followed by enter to continue running it later. The miner should
-be running when running any ckb-cli commands.
-
-### Getting CKB from the miner ####
-
-The dev network is set up to send CKBs to the on-disk account. To get
-money onto the Ledger, you need to do a transfer. This can be done
-with an initial transfer:
-
-```
-CKB> wallet transfer --from-account <your-new-account-lock-arg> --to-address <ledger-address> --capacity 1000 --tx-fee 0.001
-```
-
-### Verify address balance ####
-
-To continue, you need at least 100 CKB in your wallet. Do this with:
-
-``` sh
-CKB> wallet get-capacity --address <ledger-address>
-total: 100.0 (CKB)
-```
-
-If your node is not synced up, this will take up to a few hours. If
-the number is less than 100, you need to somehow get the coins some
-other way.
-
-### Transfer ####
-
-Transfer operation (use correct --from-account and
-derive-change-address value from “List Ledger Wallets” and “Get Public
-Key” above).
+Basic transfers can be done using the `wallet transfer` command:
 
 ``` sh
 CKB> wallet transfer \
-    --from-account <ledger-account-lock-arg> \
-    --to-address <ledger-address> \
-    --capacity 102 --tx-fee 0.00001 \
-    --derive-change-address <ledger-address> \
-    --derive-receiving-address-length 0 \
-    --derive-change-address-length 1
+    --from-account <lock-arg> \
+    --to-address <to-address> \
+    --capacity <capacity> \
+    --tx-fee <tx-fee> \
 ```
 
-#### Get live cells ######
+More complicated transactions, such as those with multiple outputs, can be constructed in a JSON file. We recommend the following resources for more complex transactions:
+- [Handling Complex Transaction](https://github.com/nervosnetwork/ckb-cli/wiki/Handle-Complex-Transaction)
+- [How to use Multisigs with CKB-CLI](https://medium.com/@obsidian.systems/how-to-use-multisigs-with-ckb-cli-5fbd7f4f56e4)
+
+## Checking Chain Data ##
+
+### Verifying Address Balances ####
+
+Before or after a transaction, you may wish to verify the balance of an address. Do this with:
+
+``` sh
+CKB> wallet get-capacity --address <address>
+total: 100.0 (CKB)
+```
+
+### Geting an Address's Live Cells ####
 
 Get live cells:
 
 ``` sh
-CKB> wallet get-live-cells --address <ledger-address>
+CKB> wallet get-live-cells --address <address>
 current_capacity: 2000.0 (CKB)
 current_count: 1
 live_cells:
@@ -468,7 +361,7 @@ total_capacity: 2000.0 (CKB)
 total_count: 1
 ```
 
-### Message Signing ####
+## Message Signing ##
 To sign a message with their ledger a user may do the following:
 
 ```sh
@@ -486,9 +379,9 @@ If a message is longer than 64 characters the ledger will display the first 61 c
 The ckb-cli accepts utf8 strings in its `--message` argument, but the ledger can not display all chars. If the ledger comes accross a
 character that it is unnable to display it will display an asterisk (`\*`) instead.
 
-### DAO Operations ####
+## DAO Operations ##
 
-#### Deposit into the NervosDAO #####
+### Deposit into the NervosDAO ###
 
 You can deposit to the NervosDAO with the following command:
 
@@ -511,7 +404,7 @@ Amount
 Fee
 <tx-fee>
 ```
-#### Get Cells Deposited in the NervosDAO #####
+#### Get Cells Deposited in the NervosDAO ####
 
 After you've made a deposit to the NervosDAO, you can confirm it using `dao query-deposited-cells`:
 
@@ -535,7 +428,7 @@ total_capacity: 10200000000
 
 Remember the values above for one of the live cells under `tx_hash` and `output_index`. You'll need these when constructing the `dao prepare` operation below which prepares a cell for withdrawal from the NervosDAO.
 
-#### Prepare Cells for Withdrawal from the NervosDAO #####
+### Prepare Cells for Withdrawal from the NervosDAO ###
 
 To prepare a cell for withdrawal from the NervosDAO:
 
@@ -567,7 +460,7 @@ Fee payer
 ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
 ```
 
-##### Get Cells Prepared for Withdrawal from NervosDAO #####
+#### Get Cells Prepared for Withdrawal from NervosDAO ####
 
 After you've prepared your cell for withdrawal from the NervosDAO, you can confirm its status using `dao-query-prepared-cells`:
 
@@ -592,7 +485,7 @@ total_maximum_withdraw: 10500154580
 
 Remember the values above for one of the live cells under `tx_hash` and `output_index`. You'll need these when constructing the `withdraw` operation below which withdraws CKB from the NervosDAO.
 
-#### Withdraw #####
+### Withdraw ###
 
 To withdraw a prepared cell from the NervosDAO:
 
