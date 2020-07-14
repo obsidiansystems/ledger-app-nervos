@@ -11,11 +11,11 @@
 
 #include <string.h>
 
-#define G global.apdu.u.account_import
+#define G global.apdu.u.pubkey
 #define GPriv global.apdu.priv
 
 static bool account_import_ok(void) {
-    delayed_send(provide_account_import(G_io_apdu_buffer, &G.root_public_key.public_key, &G.external_public_key, &G.change_public_key));
+    delayed_send(provide_ext_pubkey(G_io_apdu_buffer, &G.ext_public_key));
     return true;
 }
 
@@ -48,23 +48,10 @@ size_t handle_apdu_account_import(uint8_t _U_ instruction) {
     // Use hardened value
     uint32_t const account_index = 0x80000000 + account_index_raw;
 
-    // Derive Extended Public key, but only public key will be provided back
     // m/44'/309'/<account_index>'
     bip32_path_t root_path = {3, {0x8000002C, 0x80000135, account_index}};
-    G.path = root_path;
-    generate_public_key(&G.root_public_key, &G.path);
-
-    // Derive Extended Public key
-    // m/44'/309'/<account_index>'/0
-    bip32_path_t external_path = {4, {0x8000002C, 0x80000135, account_index, 0x00000000}};
-    G.path = external_path;
-    generate_public_key(&G.external_public_key, &G.path);
-
-    // Derive Extended Public key
-    // m/44'/309'/<account_index>'/1
-    bip32_path_t change_path = {4, {0x8000002C, 0x80000135, account_index, 0x00000001}};
-    G.path = change_path;
-    generate_public_key(&G.change_public_key, &G.path);
+    G.key = root_path;
+    generate_public_key(&G.ext_public_key, &G.key);
 
     ui_callback_t cb = account_import_ok;
     prompt_account_import(cb, delay_reject);
