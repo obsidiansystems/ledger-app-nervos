@@ -198,8 +198,15 @@ typedef enum {
 	ADDRESS_TESTNET
 } address_type_t;
 
+typedef enum {
+  SIGN_HASH_OFF=0,
+  SIGN_HASH_ON
+} sign_hash_type_t;
+
 typedef struct {
 	bool initialized;
 	address_type_t address_type;
 	char network_prompt[10];
+  sign_hash_type_t sign_hash_type;
+	char sign_hash_prompt[10];
 } nvram_data;

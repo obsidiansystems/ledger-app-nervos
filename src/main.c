@@ -19,8 +19,10 @@ __attribute__((noreturn)) void app_main(void) {
     if(!N_data.initialized) {
 	    nvram_data data={
 		    true,
-		    false,
-		    "mainnet"
+		    ADDRESS_MAINNET,
+		    "mainnet",
+        SIGN_HASH_OFF,
+		    "Off"
 	    };
 	    nvm_write((void*)&N_data, (void*)&data, sizeof(N_data));
     }
