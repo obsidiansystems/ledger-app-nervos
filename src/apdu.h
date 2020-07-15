@@ -30,6 +30,7 @@
 #define INS_PROMPT_EXT_PUBLIC_KEY     0x04
 #define INS_ACCOUNT_IMPORT            0x05
 #define INS_SIGN_MESSAGE              0x06
+#define INS_SIGN_MESSAGE_HASH         0x07
 #define INS_GIT                       0x09
 #define INS_SIGN_WITH_HASH            0x0F
 
