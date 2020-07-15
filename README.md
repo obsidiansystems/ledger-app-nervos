@@ -500,3 +500,11 @@ This means your prepared cell is not yet available to withdraw. You'll need to w
 ## Application Build Failure ##
 
 If you run into issues building the Ledger application using `nix-shell -A wallet.s --run 'make SHELL=sh all'`, we recommend trying `nix-shell -A wallet.s --run 'make SHELL=sh clean all`.
+
+## Manually Removing Applications from a Ledger Device  ##
+
+If an application is not listed in Ledger Live, it can only be uninstalled from the device over the command line similar to how it was installed.
+
+To uninstall, follow the [instructions for installing a release hex file](#installing-the-ledger-application-from-release) up to the [ledgerblue](#ledgerblue-the-python-module-for-ledger-nano-sx) installation. You can then run `python -m ledgerblue.deleteApp --targetId 0x31100004 --appName "<app-name>"` to uninstall an application, replacing `<app-name>` with the name of the application you'd like to delete.
+
+Note that side-loading applications on the Nano X is not supported with current firmware, thus applications can only be added or removed from a Nano X device through Ledger Live.
