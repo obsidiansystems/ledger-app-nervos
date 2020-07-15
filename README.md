@@ -393,6 +393,7 @@ You can deposit to the NervosDAO with the following command:
 CKB> dao deposit \
     --capacity <capacity> \
     --from-account <lock-arg> \
+    --path <path> \
     --tx-fee <tx-fee> \
 ```
 Prompts on the Ledger device are as follows:
@@ -433,6 +434,7 @@ To prepare a cell for withdrawal from the NervosDAO:
 ``` sh
 CKB> dao prepare \
     --from-account <lock-arg> \
+    --path <path> \
     --out-point <tx_hash>-<output_index> \
     --tx-fee <tx-fee> \
 ```
@@ -475,6 +477,7 @@ To withdraw a prepared cell from the NervosDAO:
 ``` sh
 CKB> dao withdraw \
     --from-account <lock-arg> \
+    --path <path> \
     --out-point <tx_hash>-<output_index> \
     --tx-fee <tx-fee> \
 ```
