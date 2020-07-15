@@ -26,6 +26,16 @@ typedef struct {
     uint8_t *bytes;
 } buffer_t;
 
+typedef struct {
+    uint64_t fst;
+    uint64_t snd;
+} uint64_tuple_t;
+
+typedef struct {
+    uint32_t fst;
+    uint32_t snd;
+} uint32_tuple_t;
+
 // UI
 typedef bool (*ui_callback_t)(void); // return true to go back to idle screen
 
