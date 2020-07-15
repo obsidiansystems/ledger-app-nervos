@@ -295,7 +295,7 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
         return;
     }
 
-    memcpy(&G.lock_arg_tmp+current_offset, buf, buflen);
+    memcpy(((uint8_t*) &G.lock_arg_tmp) + current_offset, buf, buflen);
     G.cell_state.lock_arg_index+=buflen;
 
     for(mol_num_t i=0;i<buflen;i++) {
