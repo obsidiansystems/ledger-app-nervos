@@ -871,7 +871,13 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
 
 /***********************************************************/
 static inline void clear_message_data(void) {
+  // Use for both sign_message and sign_message_hash
   memset(&global.apdu.u.sign_msg, 0, sizeof(global.apdu.u.sign_msg));
+}
+
+static inline void clear_message_hash_data(void) {
+  // Use for both sign_message and sign_message_hash
+  memset(&global.apdu.u.sign_msg_hash, 0, sizeof(global.apdu.u.sign_msg_hash));
 }
 
 static int perform_message_signature() {
@@ -1032,3 +1038,66 @@ static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
 size_t handle_apdu_sign_message(uint8_t instruction) {
   return handle_apdu_sign_message_impl(instruction);
 }
+
+/***********************************************************************/
+static int perform_message_hash_signature() {
+  // g_smh --> Global_Sign_Message_Hash
+  apdu_sign_message_hash_state_t *g_smh = &global.apdu.u.sign_msg_hash;
+  uint8_t *const data = g_smh->hash_to_sign;
+  uint8_t const data_size = g_smh->hash_to_sign_size;
+  size_t final_size = 0;
+  final_size+=WITH_KEY_PAIR(g_smh->key, key_pair, size_t,
+                      ({ sign(&G_io_apdu_buffer[final_size], MAX_SIGNATURE_SIZE, key_pair, data, data_size); }));
+  clear_message_hash_data();
+  return finalize_successful_send(final_size);
+}
+
+static bool sign_message_hash_ok(void) {
+  delayed_send(perform_message_hash_signature());
+  return true; 
+}
+
+static size_t handle_apdu_sign_message_hash_impl(void) {
+  uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
+  uint8_t const buff_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
+  uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]);
+  if (buff_size > MAX_APDU_SIZE) THROW(EXC_WRONG_LENGTH_FOR_INS);
+
+  // g_smh --> Global_Sign_Message_Hash
+  apdu_sign_message_hash_state_t *g_smh = &global.apdu.u.sign_msg_hash;
+  switch (p1) {
+    case P1_FIRST:
+      clear_message_hash_data();
+      uint32_t const account_index_raw = READ_UNALIGNED_BIG_ENDIAN(uint32_t, buff);
+      if (account_index_raw >= 0x80000000) THROW(EXC_WRONG_PARAM);
+      uint32_t const account_index = 0x80000000 + account_index_raw;
+      g_smh->key.components[0] = 0x8000002C;
+      g_smh->key.components[1] = 0x80000135;
+      g_smh->key.components[2] = account_index;
+      g_smh->key.length = 3;
+      /* read_bip32_path(&g_smh->key, buff, buff_size); */
+      return finalize_successful_send(0);
+    case P1_LAST_MARKER:
+      if(buff_size > 64) PARSE_ERROR();
+      memcpy(g_smh->hash_to_sign, buff, buff_size);
+      g_smh->hash_to_sign_size = buff_size;
+      break;
+    default:
+        THROW(EXC_WRONG_PARAM);
+  }
+  g_smh->display_as_buffer.bytes = g_smh->hash_to_sign;
+  g_smh->display_as_buffer.size = g_smh->hash_to_sign_size;
+  g_smh->display_as_buffer.length = g_smh->hash_to_sign_size;
+
+  static const char *const message_prompts[] = { PROMPT("Sign"), PROMPT("Message Hash: "), NULL};
+  REGISTER_STATIC_UI_VALUE(0, "Message Hash");
+  register_ui_callback(1, buffer_to_hex, &g_smh->display_as_buffer);
+  ui_callback_t const ok_sign = sign_message_hash_ok;
+  // Prompt and sign hash
+  ui_prompt(message_prompts, ok_sign, sign_reject);
+}
+
+size_t handle_apdu_sign_message_hash(uint8_t instruction) {
+  return handle_apdu_sign_message_hash_impl();
+}
+
