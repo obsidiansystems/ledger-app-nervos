@@ -6,17 +6,50 @@ This application has been developed against our forks of [CKB-CLI](https://githu
 
 # System Requirements
 
-System requirements differ based on if you are using or installing the application. If you are using a Linux machine, you will need to [Prepare your Linux Machine for Ledger Device Communication](#preparing-your-linux-machine-for-ledger-device-communication).
+System requirements differ based on if you are using or installing the application. If you are using a Linux machine, you will need to [Prepare your Linux Machine for Ledger Device Communication](#preparing-your-linux-machine-for-ledger-device-communication) for both installing and usaging the application.
+
+This applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware XXX. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
 
 ## For Application Installation
 
 Installation requirements differ based on installation method:
 
-- **Installing with Ledger Live**: [Ledger Live](https://www.ledger.com/ledger-live) is the easiest way to install applications on your Ledger device. Please refer to [Ledger Live's system requirements](https://support.ledger.com/hc/en-us/articles/360006395553-Download-and-install-Ledger-Live) for this installation method. This application is still in active development and not yet available in Ledger Live.
-- **Installing Release Files**: Release files can be installed using Linux and Mac. Windows is not supported.
-- **Installing from Source**: The application can be built from source and installed on Linux machines with the Nix Package Manager.
+### Installing with Ledger Live ### 
+[Ledger Live](https://www.ledger.com/ledger-live) is the easiest way to install applications on your Ledger device. Please refer to [Ledger Live's system requirements](https://support.ledger.com/hc/en-us/articles/360006395553-Download-and-install-Ledger-Live) for this installation method. This application is still in active development and not yet available in Ledger Live.
 
-This applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware XXX. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
+### Installing Release Files ###
+
+#### Supported Operating Systems ####
+
+- **Linux**: Supported. Debian distributions such as Ubuntu (18.04+) and NixOS (vXXX+). Other linux distributions may work, but have not been tested.
+- **Mac**: Supported. This has been tested on Catalina 10.15.5. Other versions may work, but have not been tested.
+- **Windows**: Not currently supported.
+
+#### Package/Tool Dependency ####
+
+- **libusb and libudev**: On Debian distributions, including Ubuntu, these packages are suffixed with `-dev`. Other distributions may have their own conventions.
+     - Linux Installation: `sudo apt-get install libusb-1.0.0-dev libudev-dev`
+     - Mac Installation: N/A (not necessary)
+- **Python3**: Use `python3 --version` to check whether you have python3 installed or to confirm an installation was successful.
+     - Linux Installation: `sudo apt-get install python3-pip # Ubuntu example`
+     - Mac Installation: Python 3 can be installed on mac with homebrew: `brew install python`
+- **virtualenv**: Use `virtualenv --version` to check whether you have virtualenv installed or to confirm an installation was successful. 
+     - Linux Installation: To install using python3: `pip3 install virtualenv` (this may require `sudo`).
+     - Mac Installation: To install using python3: `pip3 install virtualenv` (this may require `sudo`).
+
+### Installing from Source ###
+
+#### Supported Operating Systems ####
+
+- **Linux**: Supported. Debian distributions such as Ubuntu (18.04+) and NixOS (vXXX+). Other linux distributions may work, but have not been tested.
+- **Mac**: Supported on Mojave (10.14), but not supported on Catalina due to [issues with Nix installation](https://nixos.org/nix/manual/#sect-macos-installation). 
+- **Windows**: Not currently supported.
+
+#### Package/Tool Dependency ####
+
+- **Nix Package Manager**: Use `nix-env --version` to check whether you have Nix installed or to confirm an installation was successful. We recommend checking which [Nix Installation](https://nixos.org/nix/manual/#chap-installation) is right for you, but for most users the following will will work:
+     - Linux Installation: `sh <(curl -L https://nixos.org/nix/install) --daemon`
+     - Mac Installation: `sh <(curl -L https://nixos.org/nix/install) --daemon`
 
 ## For Application Usage
 
