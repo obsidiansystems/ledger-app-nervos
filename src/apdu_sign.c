@@ -871,12 +871,10 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
 
 /***********************************************************/
 static inline void clear_message_data(void) {
-  // Use for both sign_message and sign_message_hash
   memset(&global.apdu.u.sign_msg, 0, sizeof(global.apdu.u.sign_msg));
 }
 
 static inline void clear_message_hash_data(void) {
-  // Use for both sign_message and sign_message_hash
   memset(&global.apdu.u.sign_msg_hash, 0, sizeof(global.apdu.u.sign_msg_hash));
 }
 
@@ -907,7 +905,7 @@ static bool check_magic_bytes(uint8_t const * message, uint8_t message_len) {
 static void copy_buffer(char *const out, size_t const out_size, buffer_t const *const in) {
   if(in->size > out_size) THROW(EXC_MEMORY_ERROR);
 
-  // if we dont do this we have stuff from the old buffer getting displayed
+  // if we dont do this then we have stuff from the old buffer getting displayed
   memset(out, 0, out_size);
   memcpy(out, in->bytes, in->size);
 }
