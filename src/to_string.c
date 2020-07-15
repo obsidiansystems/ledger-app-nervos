@@ -97,6 +97,19 @@ void frac_ckb_to_string_indirect(char *const dest, size_t const buff_size, uint6
     frac_ckb_to_string(dest, *number);
 }
 
+// (x, y) -> "x of y"
+void frac_ckb_tuple_to_string_indirect(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple) {
+    check_null(dest);
+    check_null(tuple);
+    char const of_str[] = " of ";
+    if (buff_size < (2 * MAX_INT_DIGITS) + strlen(of_str) + 1)
+        THROW(EXC_WRONG_LENGTH);
+    size_t out_len = 0;
+    out_len += frac_ckb_to_string(dest + out_len, tuple->fst);
+    strcpy(dest + out_len, of_str);
+    out_len += strlen(of_str);
+    frac_ckb_to_string(dest + out_len, tuple->snd);
+}
 
 
 size_t number_to_string(char *const dest, uint64_t number) {
@@ -211,4 +224,16 @@ void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock
     }
 
     render_pkh(dest, buff_size, &global.apdu.priv.render_address_payload);
+}
+
+// (x, h) -> "x of y"
+void uint64_tuple_to_string(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple) {
+    check_null(dest);
+    check_null(tuple);
+    size_t out_len = 0;
+    out_len += number_to_string(dest + out_len, tuple->fst);
+    char const of_str[] = " of ";
+    strcpy(dest + out_len, of_str);
+    out_len += strlen(of_str);
+    number_to_string(dest + out_len, tuple->snd);
 }

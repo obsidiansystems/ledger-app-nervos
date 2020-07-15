@@ -25,6 +25,8 @@ size_t number_to_string(char *const dest, uint64_t number);
 // Format a frac_ckb
 void frac_ckb_to_string_indirect(char *const dest, size_t const buff_size, uint64_t const *const number);
 
+void frac_ckb_tuple_to_string_indirect(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple);
+
 // These take their number parameter through a pointer and take a length
 void number_to_string_indirect64(char *const dest, size_t const buff_size, uint64_t const *const number);
 void number_to_string_indirect32(char *const dest, size_t const buff_size, uint32_t const *const number);
@@ -45,3 +47,5 @@ void bin_to_base58(char *const out, size_t const out_size, uint8_t const *const 
 // Wrapper around `bin_to_base58` that works on `buffer_t`.
 // `in` may be unrelocated pointer to rodata.
 void buffer_to_base58(char *const out, size_t const out_size, buffer_t const *const in);
+
+void uint64_tuple_to_string(char *const out, size_t const out_size, uint64_tuple_t const *const tuple);
