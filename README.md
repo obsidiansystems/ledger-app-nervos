@@ -201,7 +201,7 @@ If the results of that command match the results of `git rev-parse --short HEAD`
 
 # Using the Nervos Ledger App with CKB-CLI
 
-The Nervos Ledger app is built to work with CKB-CLI. Some of these CKB-CLI subcommands, such as `account import`, do not require that you're connected to a network such as the testnet Aggron or a devnet. Others, such as `wallet transfer` or `DAO operations`, must be submitted to a network for their result to be actualized. For testing purposes, we recommend [Using the Nervos Devnet](devnet.md).
+The Nervos Ledger app is built to work with CKB-CLI. Some of these CKB-CLI subcommands, such as `account import`, do not require that you're connected to a network such as the testnet Aggron or a devnet. Others, such as `wallet transfer` or `DAO operations`, must be submitted to a network for their result to be actualized. For testing purposes, we recommend [Using the Nervos Devnet](devnet.md), but you can also [Use the Nervos Testnet Aggron](using-testnet.md).
 
 ## Installing the Client
 
@@ -526,47 +526,6 @@ or
 JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c71b5dc71fcbf1638bb72c8fb16f8fffdfd5172456a56167fea0a3)))
 ```
 This means your prepared cell is not yet available to withdraw. You'll need to wait for the conclusion of your current deposit period before withdrawing.
-
-# Running the testnet #
-
-You can also run the above commands in the testnet instead of a
-devnet. This allows you to make transactions that are sent to the
-wider test network. Note that this means you will have to wait the 30
-day period for doing a DAO withdraw.
-
-Get ckb in your shell:
-
-``` sh
-$ nix run -f ./nix/dep/ckb
-```
-
-Create a testnet directory
-
-```
-$ mkdir -p testnet
-$ cd testnet/
-```
-
-Get aggron.toml:
-
-``` sh
-$ curl -o aggron.toml https://gist.githubusercontent.com/doitian/573513c345165c0fe4f3504ebc1c8f9f/raw/3032bed68550e0a50e91df2c706481e80b579c70/aggron.toml
-```
-
-Init the testnet toml:
-
-``` sh
-$ ckb init --import-spec ./aggron.toml --chain testnet
-```
-
-Run the node with:
-
-```
-$ ckb run
-```
-
-Leave this open in a separate terminal as you continue on the next steps.
-
 
 # Troubleshooting #
 
