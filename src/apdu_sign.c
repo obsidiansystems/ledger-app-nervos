@@ -1096,6 +1096,10 @@ static size_t handle_apdu_sign_message_hash_impl(void) {
 }
 
 size_t handle_apdu_sign_message_hash(uint8_t instruction) {
-  return handle_apdu_sign_message_hash_impl();
+  bool signHashOn = N_data.sign_hash_type == SIGN_HASH_ON;
+  if(signHashOn)
+    return handle_apdu_sign_message_hash_impl();
+  else
+    THROW(EXC_REJECT);
 }
 
