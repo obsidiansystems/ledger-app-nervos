@@ -285,16 +285,12 @@ Here's an example command that provide the first receiving address for the lock-
 CKB> account extended-address --path "m/44'/309'/0'/0/1" --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
 ```
 
-This should show up on the ledger as (in 2 screens):
+This should show up on the ledger as 2 prompts:
 
-``` text
-Provide 
-Public Key
-```
-``` text
-Address:
-ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
-```
+|   Prompt 1   	|                     Prompt 2                     	|
+|:------------:	|:------------------------------------------------:	|
+|   `Provide`  	|                     `Address`                    	|
+| `Public Key` 	| `ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh` 	|
 
 **Verifying the output address printed by `ckb-cli` matches the one shown on Ledger prompt is highly recommended. Please read [Ledger's documentation](https://support.ledger.com/hc/en-us/articles/360006433934) on the subject.**
 
@@ -321,10 +317,18 @@ CKB> wallet transfer \
     --capacity <capacity> \
     --tx-fee <tx-fee> \
 ```
+The on-device prompts for this command are as follows:
+
+|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|    Prompt 4    	|
+|:-------------:	|:------------:	|:----------:	|:--------------:	|
+|   `Confirm`   	|   `Amount`   	|    `Fee`   	|  `Destination` 	|
+| `Transaction` 	| `<capacity>` 	| `<tx-fee>` 	| `<to-address>` 	|
 
 More complicated transactions, such as those with multiple outputs, can be constructed in a JSON file. We recommend the following resources for more complex transactions:
 - [Handling Complex Transaction](https://github.com/nervosnetwork/ckb-cli/wiki/Handle-Complex-Transaction)
 - [How to use Multisigs with CKB-CLI](https://medium.com/@obsidian.systems/how-to-use-multisigs-with-ckb-cli-5fbd7f4f56e4)
+
+Note that more complicated transactions will have different on-device prompts so the user can verify all the aspects of what they are signing. (*TODO: show all variants of transaction prompts*)
 
 ## Checking Chain Data ##
 
@@ -392,18 +396,12 @@ CKB> dao deposit \
     --tx-fee <tx-fee> \
 ```
 Prompts on the Ledger device are as follows:
-``` text
-Confirm DAO
-Deposit
-```
-``` text
-Amount
-<capacity>
-```
-``` text
-Fee
-<tx-fee>
-```
+
+|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|
+|:-------------:	|:------------:	|:----------:	|
+| `Confirm DAO` 	|   `Amount`   	|    `Fee`   	|
+|   `Deposit`   	| `<capacity>` 	| `<tx-fee>` 	|
+
 #### Get Cells Deposited in the NervosDAO ####
 
 After you've made a deposit to the NervosDAO, you can confirm it using `dao query-deposited-cells`:
@@ -439,26 +437,11 @@ CKB> dao prepare \
     --tx-fee <tx-fee> \
 ```
 Prompts on the Ledger device are as follows:
-``` text
-Confirm DAO
-Prepare
-```
-``` text
-Amount
-<capacity>
-```
-``` text
-Fee
-<tx-fee>
-```
-``` text
-Owner
-ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-```
-``` text
-Fee payer
-ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-```
+
+|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|   Prompt 4   	|    Prompt 5   	|
+|:-------------:	|:------------:	|:----------:	|:------------:	|:-------------:	|
+| `Confirm DAO` 	|   `Amount`   	|    `Fee`   	|    `Owner`   	|  `Fee Payer`  	|
+|   `Prepare`   	| `<capacity>` 	| `<tx-fee>` 	| `<lock-arg>` 	| `<fee-payer>` 	|
 
 #### Get Cells Prepared for Withdrawal from NervosDAO ####
 
@@ -496,26 +479,11 @@ CKB> dao withdraw \
     --tx-fee <tx-fee> \
 ```
 Prompts on the Ledger device are as follows:
-``` text
-Confirm DAO
-Withdraw
-```
-``` text
-Amount
-<capacity>
-```
-``` text
-Fee
-<tx-fee>
-```
-``` text
-Owner
-ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-```
-``` text
-Fee payer
-ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-```
+
+|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|   Prompt 4   	|    Prompt 5   	|
+|:-------------:	|:------------:	|:----------:	|:------------:	|:-------------:	|
+| `Confirm DAO` 	|   `Amount`   	|    `Fee`   	|    `Owner`   	|  `Fee Payer`  	|
+|   `Withdraw`  	| `<capacity>` 	| `<tx-fee>` 	| `<lock-arg>` 	| `<fee-payer>` 	|
 
 If you attempt to withdraw from the Nervos DAO prematurely, you'll see an error such as 
 ```
