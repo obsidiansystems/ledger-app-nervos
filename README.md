@@ -16,7 +16,7 @@ Installation requirements differ based on installation method:
 - **Installing Release Files**: Release files can be installed using Linux and Mac. Windows is not supported.
 - **Installing from Source**: The application can be built from source and installed on Linux machines with the Nix Package Manager.
 
-This applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware XXX. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
+This applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware 1.2.4-1. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
 
 ## For Application Usage
 
@@ -61,9 +61,9 @@ For more details, see [Ledger's documentation](https://support.ledger.com/hc/en-
 # Ledger App Installation
 
 There are 3 ways you can install this Ledger application:
-1. Ledger Live *(not yet available)*: [Ledger Live](https://www.ledger.com/ledger-live) is the easiest way to install applications on your Ledger device. However, this application is still in active development and not yet available in Ledger Live.
-2. [Installing from Release](#Installing-The-Ledger-Application-from-Release): This is the recommended installation method until this app is available in Ledger Live.
-3. Installing from Source: Recommended for development only.
+1. [Ledger Live](https://www.ledger.com/ledger-live) *(not yet available)*: Ledger Live is the easiest way to install applications on your Ledger device. However, this application is still in active development and not yet available in Ledger Live.
+2. [Installing from Release](#installing-the-ledger-application-from-release): This is the recommended installation method until this app is available in Ledger Live.
+3. [Installing from Source](#installing-the-ledger-application-from-source): Recommended for development only.
 
 *Note: You can only install applications on the Ledger Nano X through Ledger Live.*
 
