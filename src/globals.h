@@ -123,13 +123,6 @@ typedef struct {
 
 typedef struct {
     bip32_path_t key;
-    buffer_t display_as_buffer;
-    uint8_t hash_to_sign[64];  // Max message hash size we accept = 64 bytes
-    uint8_t hash_to_sign_size;
-} apdu_sign_message_hash_state_t;
-
-typedef struct {
-    bip32_path_t key;
     extended_public_key_t ext_public_key;
     cx_blake2b_t hash_state;
 } apdu_pubkey_state_t;
@@ -181,7 +174,6 @@ typedef struct {
             apdu_pubkey_state_t pubkey;
             apdu_sign_state_t sign;
             apdu_sign_message_state_t sign_msg;
-            apdu_sign_message_hash_state_t sign_msg_hash;
             apdu_account_import_state_t account_import;
         } u;
 
