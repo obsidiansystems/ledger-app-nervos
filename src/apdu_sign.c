@@ -1066,14 +1066,7 @@ static size_t handle_apdu_sign_message_hash_impl(void) {
   switch (p1) {
     case P1_FIRST:
       clear_message_hash_data();
-      uint32_t const account_index_raw = READ_UNALIGNED_BIG_ENDIAN(uint32_t, buff);
-      if (account_index_raw >= 0x80000000) THROW(EXC_WRONG_PARAM);
-      uint32_t const account_index = 0x80000000 + account_index_raw;
-      g_smh->key.components[0] = 0x8000002C;
-      g_smh->key.components[1] = 0x80000135;
-      g_smh->key.components[2] = account_index;
-      g_smh->key.length = 3;
-      /* read_bip32_path(&g_smh->key, buff, buff_size); */
+      read_bip32_path(&g_smh->key, buff, buff_size);
       return finalize_successful_send(0);
     case P1_LAST_MARKER:
       if(buff_size > 64) PARSE_ERROR();
