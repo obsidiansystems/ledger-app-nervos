@@ -162,7 +162,7 @@ typedef union {
 
 struct parsed_transaction {
     uint64_t total_fee;
-    // (input amount (we are signing - change), total of outputs (- change))
+    // (input amount (total amount we are signing (change is not deducted), total of outputs (- change))
     uint64_tuple_t amount; // 0 where inappropriate
     uint64_t dao_amount;
     uint64_t dao_output_amount;
