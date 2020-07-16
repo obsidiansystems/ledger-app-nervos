@@ -26,7 +26,7 @@ If you are using this application with a wallet, please refer to that wallet's s
 
 ## Preparing Your Linux Machine for Ledger Device Communication
 
-On Linux, the "udev" rules must be set up to allow your user to communicate with the ledger device.
+On Linux, the "udev" rules must be set up to allow your user to communicate with the ledger device. MacOS devices do not need any configuration to communicate with a Ledger device, so if you are using Mac you can ignore this section.
 
 ### NixOS
 
