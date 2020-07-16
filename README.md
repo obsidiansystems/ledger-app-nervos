@@ -294,7 +294,7 @@ This should show up on the ledger as 2 prompts:
 
 **Verifying the output address printed by `ckb-cli` matches the one shown on Ledger prompt is highly recommended. Please read [Ledger's documentation](https://support.ledger.com/hc/en-us/articles/360006433934) on the subject.**
 
-*Note: If you've changed the Ledger's configuration to show testnet address, the `Address` prompt will instead show the testnet address. This setting persists between power cycles.*
+*Note: If you've changed the app's configuration to show testnet addresses, the `Address` prompt will instead show the testnet address that begins with `ckt`. This setting persists between power cycles.*
 
 After accepting the prompt on the Ledger the output on `ckb-cli` will show information about the address:
  
