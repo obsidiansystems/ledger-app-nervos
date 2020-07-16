@@ -106,7 +106,7 @@ UX_STEP_CB(
     });
 UX_FLOW(ux_cfg_flow,
 		&ux_cfg_flow_1_step,
-		&ux_cfg_flow_2_step
+		&ux_cfg_flow_2_step,
 		&ux_cfg_flow_3_step
        );
 
