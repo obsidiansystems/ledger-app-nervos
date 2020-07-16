@@ -2,7 +2,7 @@
 
 This repository contains the Nervos BOLOS application for the Ledger Nano S and Ledger Nano X and tools for testing the application. While this app is currently under development, we do not recommend using it with mainnet CKB. 
 
-This application has been developed against our forks of [CKB-CLI](https://github.com/obsidiansystems/ckb-cli) and [CKB](https://github.com/obsidiansystems/ckb). Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS. Application and wallet developers who would like to support Ledger can do so with [LedgerJS](https://github.com/obsidiansystems/ledgerjs/tree/nervos).
+These applications has been developed against our forks of [CKB-CLI](https://github.com/obsidiansystems/ckb-cli) and [CKB](https://github.com/obsidiansystems/ckb). Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS. Application and wallet developers who would like to support Ledger can do so with [LedgerJS](https://github.com/obsidiansystems/ledgerjs/tree/nervos).
 
 # System Requirements
 
@@ -16,7 +16,7 @@ Installation requirements differ based on installation method:
 - **Installing Release Files**: Release files can be installed using Linux and Mac. Windows is not supported.
 - **Installing from Source**: The application can be built from source and installed on Linux machines with the Nix Package Manager.
 
-This applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware XXX. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
+These applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware 1.2.4-1. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
 
 ## For Application Usage
 
@@ -26,7 +26,7 @@ If you are using this application with a wallet, please refer to that wallet's s
 
 ## Preparing Your Linux Machine for Ledger Device Communication
 
-On Linux, the "udev" rules must be set up to allow your user to communicate with the ledger device.
+On Linux, the "udev" rules must be set up to allow your user to communicate with the ledger device. MacOS devices do not need any configuration to communicate with a Ledger device, so if you are using Mac you can ignore this section.
 
 ### NixOS
 
@@ -61,9 +61,9 @@ For more details, see [Ledger's documentation](https://support.ledger.com/hc/en-
 # Ledger App Installation
 
 There are 3 ways you can install this Ledger application:
-1. Ledger Live *(not yet available)*: [Ledger Live](https://www.ledger.com/ledger-live) is the easiest way to install applications on your Ledger device. However, this application is still in active development and not yet available in Ledger Live.
-2. [Installing from Release](#Installing-The-Ledger-Application-from-Release): This is the recommended installation method until this app is available in Ledger Live.
-3. Installing from Source: Recommended for development only.
+1. [Ledger Live](https://www.ledger.com/ledger-live) *(not yet available)*: Ledger Live is the easiest way to install applications on your Ledger device. However, this application is still in active development and not yet available in Ledger Live.
+2. [Installing from Release](#installing-the-ledger-application-from-release): This is the recommended installation method until this app is available in Ledger Live.
+3. [Installing from Source](#installing-the-ledger-application-from-source): Recommended for development only.
 
 *Note: You can only install applications on the Ledger Nano X through Ledger Live.*
 
@@ -176,6 +176,7 @@ $ git checkout master
 $ ./nix/install.sh s
 ```
 Some notes during app installation:
+- 'Starting bats': When building and installing the application from source, the client will run a suite of tests found in the `tests.sh` file. 'bats' stands for "[Bash Automated Testing System](https://github.com/bats-core/bats-core)". These tests may take some time to complete. When they are done, the app installation will proceed.
 - Unsafe Manager: you will see a prompt to either allow or deny 'unsafe manager' when running `./nix/install.sh s`. 'Unsafe Manager' is any manager which is not Ledger Live.
 - Permission Denied: If you get a “permission denied” error, your computer is not detecting the Ledger device correctly. Make sure the Ledger is connected properly, that it was plugged in since updating the `udev` rules.
 
@@ -198,11 +199,13 @@ Then run the following:
 
 If the results of that command match the results of `git rev-parse --short HEAD`, the installation was successful.
 
-# Using the Client
+# Using the Nervos Ledger App with CKB-CLI
+
+The Nervos Ledger app is built to work with CKB-CLI. Some of these CKB-CLI subcommands, such as `account import`, do not require that you're connected to a network such as the testnet Aggron or a devnet. Others, such as `wallet transfer` or `DAO operations`, must be submitted to a network for their result to be actualized. For testing purposes, we recommend [Using the Nervos Devnet](devnet.md), but you can also [Use the Nervos Testnet Aggron](using-testnet.md).
 
 ## Installing the Client
 
-To use the CKB command line utility with the Ledger, you must currently use the Obsidian fork of the client. To build and start it, run:
+To use the CKB command line utility with the Ledger, you must currently use the Obsidian fork of the client. To build and start it, run the following from within this repository:
 
 ``` sh
 $ nix run -f nix/dep/ckb-cli -c ckb-cli
@@ -210,7 +213,7 @@ $ nix run -f nix/dep/ckb-cli -c ckb-cli
 
 All commands that follow prefixed with ‘CKB>’ should be run in the prompt provided by the above command.
 
-## List Ledger Wallets ###
+## Listing Ledger Devices ###
 
 Use the `account list` command to see connected Ledger devices. Be sure to have the Nervos application open on the device, otherwise it will not be detected:
 
@@ -221,11 +224,11 @@ CKB> account list
   ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
 ```
 
-The `ledger_id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. the `ledger\_id` will be
+The `ledger_id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. the `ledger_id` will be
 used for ```<ledger-id>``` argument in the `account import` command as described below.
 
 If you have already imported the Ledger account, then `account list` command will instead give the account details.
-This will be shown even if the device is not connected.
+They will be shown even if the device is not connected.
 
 ``` sh
 CKB> account list
@@ -238,7 +241,7 @@ CKB> account list
   lock_hash: 0xc27b9ad3414cf5b1720713663d5f754e8968793f2da90b6428feb565bf94de4e
 ```
 
-## Import Ledger Wallet account ###
+## Account Import ###
 
 Use the `account import --ledger <ledger_id>` command to import the account to the `ckb-cli`.
 You will receive a confirmation prompt on the device which should say `Import Account`.
@@ -257,17 +260,17 @@ CKB> account import --ledger 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc89125
 
 Now that the account has been imported, it is remembered by the client and is visible when you run `account list`.
 
-### Get BIP44 Wallet Public Keys ###
+## Using your Account's Addresses ##
 
-Use the `account bip44-addresses` command to obtain the BIP44 addresses for the mainnet.
+### Get BIP44 Address Public Keys ###
 
-Note that this command is provided as a convenience by the `ckb-cli` to get a list of addresses with the derivation path quickly.
-
-**It is highly recommended to verify the account provided by this command on the Ledger device using the `account extended-address` command as described next.**
+Use the `account bip44-addresses` command to obtain the first 20 receiving and 10 change addresses for your account. 
 
 ``` sh
-CKB> account bip44-addresses --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
+CKB> account bip44-addresses --lock-arg <lock-arg>
 ```
+
+Note that this command is provided as a convenience by the `ckb-cli` to get a list of addresses with the derivation path quickly. Before sharing one of these receiving addresses, **it is highly recommended that you verify the address provided by this command on the Ledger device using the `account extended-address` command as described next.**
 
 ### Obtain / Verify Public Key ###
 
@@ -276,28 +279,24 @@ The `account extended-address` command should be used to
 - Verify the public key obtained via `account bip44-addresses` command on the Ledger device
 - Obtain the public key for any arbitrary BIP44 derivation path
 
+Here's an example command that provide the first receiving address for the lock-arg `0x327a95bd57966e686ffe590c331cd37002e1c631`:
+
 ``` sh
 CKB> account extended-address --path "m/44'/309'/0'/0/1" --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
 ```
 
-This should show up on the ledger as (in 2 screens):
+This should show up on the ledger as 2 prompts:
 
-``` text
-Provide 
-Public Key
-```
-``` text
-Address:
-ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
-```
-If you've changed the Ledger's configuration to show testnet address, the last screen will instead look like this:
+|   Prompt 1   	|                     Prompt 2                     	|
+|:------------:	|:------------------------------------------------:	|
+|   `Provide`  	|                     `Address`                    	|
+| `Public Key` 	| `ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh` 	|
 
-``` text
-Address:
-ckt1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsa64fqt
-```
+**Verifying the output address printed by `ckb-cli` matches the one shown on Ledger prompt is highly recommended. Please read [Ledger's documentation](https://support.ledger.com/hc/en-us/articles/360006433934) on the subject.**
 
-After accepting the prompt on the Ledger the output on `ckb-cli` should look like:
+*Note: If you've changed the app's configuration to show testnet addresses, the `Address` prompt will instead show the testnet address that begins with `ckt`. This setting persists between power cycles.*
+
+After accepting the prompt on the Ledger the output on `ckb-cli` will show information about the address:
  
 ``` text
 address:
@@ -307,152 +306,47 @@ lock_arg: 0x632c444199275d00b7c1fb65bf001d70bc609599
 lock_hash: 0xee0283c2d991992d6e015a4680c54318ad42c820ca0dc862c0a1d68c415499a8
 ```
 
-**It is highly recommended to verify that output address printed by `ckb-cli` matches the one shown on Ledger prompt**
+## Transfer CKB ##
 
-The “testnet” address is the one used for `<ledger-address>` in the next section.
-
-## Transferring ###
-
-### Creating a new account for local dev network ####
-
-Now, you must also create an account from ckb-cli so that an account
-can get the issued cells. This can be done with:
-
-```
-CKB> account new
-```
-
-Follow the prompts and choose a password to continue. Next, get the
-lock_arg for your account with:
-
-```
-CKB> account list
-- "#": 0
-  account_source: on-disk password-protected key store
-  address:
-    mainnet: ckb1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqpwltnt
-    testnet: ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-  lock_arg: 0xabaedbbb6d8de1d8ad4d036237c23c822f84e870
-  lock_hash: 0x21ad4eee4fb0f079f5f8166f42f0d4fbd1fd63b8f36a7ccfb9d3657f9a5aed43
-- "#": 1
-  account_source: ledger hardware wallet
-  address:
-    mainnet: ckb1qyqry754h4tevmngdll9jrpnrnfhqqhpcccskdl3en
-    testnet: ckt1qyqry754h4tevmngdll9jrpnrnfhqqhpcccstgpw40
-  lock_arg: 0x327a95bd57966e686ffe590c331cd37002e1c631
-  lock_hash: 0xc27b9ad3414cf5b1720713663d5f754e8968793f2da90b6428feb565bf94de4e
-```
-
-The value of “lock_arg: ...” is your-new-account-lock-arg.
-
-### Starting a local dev network ####
-
-Our instructions for starting a devnet are based on [Nervos' Dev Chain docs](https://docs.nervos.org/dev-guide/devchain.html). First, make a directory and init it for a dev network:
-``` sh
-$ nix run -f nix/dep/ckb # to make ckb available
-$ mkdir devnet
-$ cd devnet
-$ ckb init --chain dev
-```
-
-then modify the value at the end of ckb-miner.toml to be small:
-
-```
-value = 20
-```
-
-and also add this block to the end of ckb.toml:
-
-```
-[block_assembler]
-code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-args = "0xb57dd485a1b0c0a57c377e896a1a924d7ed02ab9"
-hash_type = "type"
-message = "0x"
-```
-
-finally, in specs/dev.toml, set genesis\_epoch\_length to 1 and
-uncomment permanent\_difficulty\_in\_dummy:
-
-```
-genesis_epoch_length = 1
-# For development and testing purposes only.
-# Keep difficulty be permanent if the pow is Dummy. (default: false)
-permanent_difficulty_in_dummy = true
-```
-
-and also pick one of the genesis issuance cells and set args to a lock
-arg from password-protected account above:
-
-```
-[[genesis.issued_cells]]
-capacity = 20_000_000_000_00000000
-lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-lock.args = "<your-new-account-lock-arg>"
-lock.hash_type = "type"
-```
-
-Then you can run 
-
-```
-ckb run &
-ckb miner
-```
-
-to start up the node and miner; the ledger account you added to
-genesis.issued\_cells should have a large quantity of CKB to spend
-testing.
-
-Note that you may have to suspend your miner to avoid hitting the
-maximum amount of deposited cells. You can do this with Ctrl-Z. Type
-‘fg’ followed by enter to continue running it later. The miner should
-be running when running any ckb-cli commands.
-
-### Getting CKB from the miner ####
-
-The dev network is set up to send CKBs to the on-disk account. To get
-money onto the Ledger, you need to do a transfer. This can be done
-with an initial transfer:
-
-```
-CKB> wallet transfer --from-account <your-new-account-lock-arg> --to-address <ledger-address> --capacity 1000 --tx-fee 0.001
-```
-
-### Verify address balance ####
-
-To continue, you need at least 100 CKB in your wallet. Do this with:
-
-``` sh
-CKB> wallet get-capacity --address <ledger-address>
-total: 100.0 (CKB)
-```
-
-If your node is not synced up, this will take up to a few hours. If
-the number is less than 100, you need to somehow get the coins some
-other way.
-
-### Transfer ####
-
-Transfer operation (use correct --from-account and
-derive-change-address value from “List Ledger Wallets” and “Get Public
-Key” above).
+Basic transfers can be done using the `wallet transfer` command:
 
 ``` sh
 CKB> wallet transfer \
-    --from-account <ledger-account-lock-arg> \
-    --to-address <ledger-address> \
-    --capacity 102 --tx-fee 0.00001 \
-    --derive-change-address <ledger-address> \
-    --derive-receiving-address-length 0 \
-    --derive-change-address-length 1
+    --from-account <lock-arg> \
+    --to-address <to-address> \
+    --capacity <capacity> \
+    --tx-fee <tx-fee> \
+```
+The on-device prompts for this command are as follows:
+
+|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|    Prompt 4    	|
+|:-------------:	|:------------:	|:----------:	|:--------------:	|
+|   `Confirm`   	|   `Amount`   	|    `Fee`   	|  `Destination` 	|
+| `Transaction` 	| `<capacity>` 	| `<tx-fee>` 	| `<to-address>` 	|
+
+More complicated transactions, such as those with multiple outputs, can be constructed in a JSON file. We recommend the following resources for more complex transactions:
+- [Handling Complex Transaction](https://github.com/nervosnetwork/ckb-cli/wiki/Handle-Complex-Transaction)
+- [How to use Multisigs with CKB-CLI](https://medium.com/@obsidian.systems/how-to-use-multisigs-with-ckb-cli-5fbd7f4f56e4)
+
+Note that more complicated transactions will have different on-device prompts so the user can verify all the aspects of what they are signing. (*TODO: show all variants of transaction prompts*)
+
+## Checking Chain Data ##
+
+### Verifying Address Balances ####
+
+Before or after a transaction, you may wish to verify the balance of an address. Do this with:
+
+``` sh
+CKB> wallet get-capacity --address <address>
+total: 100.0 (CKB)
 ```
 
-#### Get live cells ######
+### Geting an Address's Live Cells ####
 
 Get live cells:
 
 ``` sh
-CKB> wallet get-live-cells --address <ledger-address>
+CKB> wallet get-live-cells --address <address>
 current_capacity: 2000.0 (CKB)
 current_count: 1
 live_cells:
@@ -471,16 +365,16 @@ total_capacity: 2000.0 (CKB)
 total_count: 1
 ```
 
-### Message Signing ####
+## Message Signing ##
 To sign a message with their ledger a user may do the following:
 
 ```sh
-CKB> util sign-message --message "hello world i love nervos" --account <my-ledger-account>
+CKB> util sign-message --message "hello world i love nervos" --from-account <my-ledger-account>
 message-hash: <blake2b hash of: magic_bytes + message>
 recoverable: false
 signature: <signature>
 
-CKB> util verify-message --message "hello world i love nervos" --account <my-ledger-account> --signature <signature from above>
+CKB> util verify-message --message "hello world i love nervos" --from-account <my-ledger-account> --signature <signature from above>
 pubkey: <pubkey of my ledger's account root>
 recoverable: false
 verify-ok: true
@@ -489,42 +383,32 @@ If a message is longer than 64 characters the ledger will display the first 61 c
 The ckb-cli accepts utf8 strings in its `--message` argument, but the ledger can not display all chars. If the ledger comes accross a
 character that it is unnable to display it will display an asterisk (`\*`) instead.
 
-### DAO ####
+## DAO Operations ##
 
-#### Deposit #####
+### Deposit into the NervosDAO ###
 
-You can deposit to the dao like:
+You can deposit to the NervosDAO with the following command:
 
 ``` sh
 CKB> dao deposit \
-    --capacity 102 \
-    --from-account <ledger-id> \
-    --tx-fee 0.00001 \
-    --path "m/44'/309'/0'/1/0"
+    --capacity <capacity> \
+    --from-account <lock-arg> \
+    --path <path> \
+    --tx-fee <tx-fee> \
 ```
 Prompts on the Ledger device are as follows:
-``` text
-Confirm DAO
-Deposit
-```
-``` text
-Amount
-102
-```
-``` text
-Fee
-0.00001
-```
-``` text
-Source
-ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-```
-#### Get deposited cells #####
 
-Get deposited cells:
+|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|
+|:-------------:	|:------------:	|:----------:	|
+| `Confirm DAO` 	|   `Amount`   	|    `Fee`   	|
+|   `Deposit`   	| `<capacity>` 	| `<tx-fee>` 	|
+
+#### Get Cells Deposited in the NervosDAO ####
+
+After you've made a deposit to the NervosDAO, you can confirm it using `dao query-deposited-cells`:
 
 ``` sh
-CKB> dao query-deposited-cells --address <ledger-address>
+CKB> dao query-deposited-cells --address <address>
 live_cells:
   - capacity: 10200000000
     data_bytes: 8
@@ -541,47 +425,32 @@ live_cells:
 total_capacity: 10200000000
 ```
 
-Remember the values above for one of the live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `prepare` operation below which prepares a cell for withdrawal from the NervosDAO.
+Remember the values above for one of the live cells under `tx_hash` and `output_index`. You'll need these when constructing the `dao prepare` operation below which prepares a cell for withdrawal from the NervosDAO.
 
-#### Prepare #####
+### Prepare Cells for Withdrawal from the NervosDAO ###
 
-Prepare a cell for withdrawal from the NervosDAO:
+To prepare a cell for withdrawal from the NervosDAO:
 
 ``` sh
 CKB> dao prepare \
-    --from-account <ledger-id> \
+    --from-account <lock-arg> \
+    --path <path> \
     --out-point <tx_hash>-<output_index> \
-    --tx-fee 0.0001 \
-    --path "m/44'/309'/0'/1/0"
+    --tx-fee <tx-fee> \
 ```
 Prompts on the Ledger device are as follows:
-``` text
-Confirm DAO
-Prepare
-```
-``` text
-Amount
-102
-```
-``` text
-Fee
-0.00001
-```
-``` text
-Owner
-ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-```
-``` text
-Fee payer
-ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-```
 
-##### Get prepared cells #####
+|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|   Prompt 4   	|    Prompt 5   	|
+|:-------------:	|:------------:	|:----------:	|:------------:	|:-------------:	|
+| `Confirm DAO` 	|   `Amount`   	|    `Fee`   	|    `Owner`   	|  `Fee Payer`  	|
+|   `Prepare`   	| `<capacity>` 	| `<tx-fee>` 	| `<lock-arg>` 	| `<fee-payer>` 	|
 
-Get prepared cells:
+#### Get Cells Prepared for Withdrawal from NervosDAO ####
+
+After you've prepared your cell for withdrawal from the NervosDAO, you can confirm its status using `dao-query-prepared-cells`:
 
 ``` sh
-CKB> dao query-prepared-cells --address <ledger-address>
+CKB> dao query-prepared-cells --address <address>
 live_cells:
   - capacity: 10500000000
     data_bytes: 8
@@ -599,40 +468,25 @@ live_cells:
 total_maximum_withdraw: 10500154580
 ```
 
-Remember the values above for one of the live cells under “tx\_hash” and “output\_index”. You'll need these when constructing the `withdraw` operation below which withdraws CKB from the NervosDAO.
+Remember the values above for one of the live cells under `tx_hash` and `output_index`. You'll need these when constructing the `withdraw` operation below which withdraws CKB from the NervosDAO.
 
-#### Withdraw #####
+### Withdraw ###
 
-Withdraw a prepared cell:
+To withdraw a prepared cell from the NervosDAO:
 
 ``` sh
 CKB> dao withdraw \
-    --from-account <ledger-id> \
+    --from-account <lock-arg> \
+    --path <path> \
     --out-point <tx_hash>-<output_index> \
-    --tx-fee 0.00001 \
-    --path "m/44'/309'/0'/1/0"
+    --tx-fee <tx-fee> \
 ```
 Prompts on the Ledger device are as follows:
-``` text
-Confirm DAO
-Withdraw
-```
-``` text
-Amount
-102
-```
-``` text
-Fee
-0.00001
-```
-``` text
-Owner
-ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-```
-``` text
-Fee payer
-ckt1qyq2htkmhdkcmcwc44xsxc3hcg7gytuyapcqutp5lh
-```
+
+|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|   Prompt 4   	|    Prompt 5   	|
+|:-------------:	|:------------:	|:----------:	|:------------:	|:-------------:	|
+| `Confirm DAO` 	|   `Amount`   	|    `Fee`   	|    `Owner`   	|  `Fee Payer`  	|
+|   `Withdraw`  	| `<capacity>` 	| `<tx-fee>` 	| `<lock-arg>` 	| `<fee-payer>` 	|
 
 If you attempt to withdraw from the Nervos DAO prematurely, you'll see an error such as 
 ```
@@ -644,73 +498,16 @@ JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c7
 ```
 This means your prepared cell is not yet available to withdraw. You'll need to wait for the conclusion of your current deposit period before withdrawing.
 
-# Running the testnet #
-
-You can also run the above commands in the testnet instead of a
-devnet. This allows you to make transactions that are sent to the
-wider test network. Note that this means you will have to wait the 30
-day period for doing a DAO withdraw.
-
-Get ckb in your shell:
-
-``` sh
-$ nix run -f ./nix/dep/ckb
-```
-
-Create a testnet directory
-
-```
-$ mkdir -p testnet
-$ cd testnet/
-```
-
-Get aggron.toml:
-
-``` sh
-$ curl -o aggron.toml https://gist.githubusercontent.com/doitian/573513c345165c0fe4f3504ebc1c8f9f/raw/3032bed68550e0a50e91df2c706481e80b579c70/aggron.toml
-```
-
-Init the testnet toml:
-
-``` sh
-$ ckb init --import-spec ./aggron.toml --chain testnet
-```
-
-Run the node with:
-
-```
-$ ckb run
-```
-
-Leave this open in a separate terminal as you continue on the next steps.
-
-
 # Troubleshooting #
 
 ## Application Build Failure ##
 
 If you run into issues building the Ledger application using `nix-shell -A wallet.s --run 'make SHELL=sh all'`, we recommend trying `nix-shell -A wallet.s --run 'make SHELL=sh clean all`.
 
-## Devnet stops at 59594 blocks ##
+## Manually Removing Applications from a Ledger Device  ##
 
-At some point, you hit an issue where the node can’t hold the capacity of the miner. This can be resolved by, clearing your devnet and restarting like so:
+If an application is not listed in Ledger Live, it can only be uninstalled from the device over the command line similar to how it was installed.
 
-``` sh
-CTRL-C
-$ rm -rf data/
-$ ckb run &
-$ ckb miner
-```
+To uninstall, follow the [instructions for installing a release hex file](#installing-the-ledger-application-from-release) up to the [ledgerblue](#ledgerblue-the-python-module-for-ledger-nano-sx) installation. You can then run `python -m ledgerblue.deleteApp --targetId 0x31100004 --appName "<app-name>"` to uninstall an application, replacing `<app-name>` with the name of the application you'd like to delete.
 
-## Invalid cell status ##
-
-This can happen when you have switched networks between running
-ckb-cli. If this is the case, it can be fixed by clearing your cache.
-This can be done on the command line.
-
-First, quit out of ckb-cli so that we can modify our index by typing
-‘quit’. Then, clear your cache with:
-
-``` sh
-$ rm -rf $HOME/.ckb-cli/index-v1/
-```
+Note that side-loading applications on the Nano X is not supported with current firmware, thus applications can only be added or removed from a Nano X device through Ledger Live.

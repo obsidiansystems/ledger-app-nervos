@@ -86,4 +86,6 @@ void switch_sign_hash() {
     nvm_write((void*)&N_data, (void*)&data, sizeof(N_data));
 }
 
+#ifndef TARGET_NANOX
 _Static_assert(sizeof global <= 2120, "Size of globals_t exceeds the tested working limit");
+#endif
