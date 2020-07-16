@@ -75,7 +75,7 @@ void switch_network_cb(void) {
     ui_cfg_screen();
 }
 
-void switch_sign_hash_cp(void) {
+void switch_sign_hash_cb(void) {
     switch_sign_hash();
     ui_cfg_screen();
 }
