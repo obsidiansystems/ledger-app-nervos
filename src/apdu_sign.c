@@ -1003,24 +1003,22 @@ static void handle_long_message(uint8_t *buff, uint8_t *buff_size) {
 }
 
 /***********************************************************************/
+/* Sign message                                                        */
+/***********************************************************************/
 static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
   uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
   uint8_t const buff_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
   uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]);
   if (buff_size > MAX_APDU_SIZE) THROW(EXC_WRONG_LENGTH_FOR_INS);
   apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
-
   bool last = (p1 & P1_LAST_MARKER) != 0;
   switch (p1 & ~P1_LAST_MARKER) {
     case P1_FIRST:
+      // Must contain 1 byte as display-flag + bip32path
       clear_message_data();
-      uint32_t const account_index_raw = READ_UNALIGNED_BIG_ENDIAN(uint32_t, buff);
-      if (account_index_raw >= 0x80000000) THROW(EXC_WRONG_PARAM);
-      uint32_t const account_index = 0x80000000 + account_index_raw;
-      g_sign_msg->key.components[0] = 0x8000002C;
-      g_sign_msg->key.components[1] = 0x80000135;
-      g_sign_msg->key.components[2] = account_index;
-      g_sign_msg->key.length = 3;
+      if(buff_size <= 1) THROW(EXC_REJECT);
+      g_sign_msg->display_as_hex = READ_UNALIGNED_BIG_ENDIAN(bool, buff);
+      read_bip32_path(&g_sign_msg->key, buff+1, buff_size-1);
       return finalize_successful_send(0);
     case P1_NEXT:
       // Guard against overflow
@@ -1043,7 +1041,10 @@ static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
  
     //Remove magic bytes, because, even though we sign them, the user should not be aware of their existence
     slice_magic_bytes((char*)tmp_msg_buff, &tmp_msg_buff_size);
-    replace_undisplayable(tmp_msg_buff, &tmp_msg_buff_size);
+    if(!g_sign_msg->display_as_hex) { 
+      // If we are not displaying the hex, then replace all the non-displayable chars with '*'
+      replace_undisplayable(tmp_msg_buff, &tmp_msg_buff_size);
+    }
     handle_long_message(tmp_msg_buff, &tmp_msg_buff_size);
 
     // Move tmp to global storage
@@ -1061,7 +1062,11 @@ static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
     // Display the message
     static const char *const message_prompts[] = { PROMPT("Sign"), PROMPT("Message: "), NULL};
     REGISTER_STATIC_UI_VALUE(0, "Message");
-    register_ui_callback(1, copy_buffer, &g_sign_msg->display_as_buffer);
+    if(g_sign_msg->display_as_hex) {
+      register_ui_callback(1, buffer_to_hex, &g_sign_msg->display_as_buffer);
+    } else {
+      register_ui_callback(1, copy_buffer, &g_sign_msg->display_as_buffer);
+    }
     ui_callback_t const ok_sign = sign_message_ok;
 
     // Prompt and sign hash
@@ -1076,6 +1081,8 @@ size_t handle_apdu_sign_message(uint8_t instruction) {
   return handle_apdu_sign_message_impl(instruction);
 }
 
+/***********************************************************************/
+/* Sign message hash                                                   */
 /***********************************************************************/
 static int perform_message_hash_signature() {
   // g_smh --> Global_Sign_Message_Hash
