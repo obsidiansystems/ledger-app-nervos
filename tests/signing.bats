@@ -477,6 +477,8 @@
 }
 
 @test "Signing with a transaction having a type script outside of strict checking prompts with a hash" {
+  # Turn on the Sign Hash opt
+  clicks "rRrRlrLRrRlrLRrRrlRL"
   run apdu_fixed "8003400011048000002c800001358000000080000000"
   [ "$status" -eq 0 ]
   grep -q "<= b''9000" <(echo "$output")

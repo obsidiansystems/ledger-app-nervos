@@ -7,6 +7,7 @@ apdu_fixed () {
   echo "$*" | apdu | sed 's/HID //'
 }
 
+# l/r represent pushing button down, L/R represent releasing
 clicks() {
   echo "$1" > /dev/tcp/localhost/5667
 }

@@ -195,12 +195,14 @@ static size_t sign_complete(uint8_t instruction) {
     }
 
 unsafe:
+  if(N_data.sign_hash_type == SIGN_HASH_ON) {
     G.message_data_as_buffer.bytes = (uint8_t *)&G.u.tx.final_hash;
     G.message_data_as_buffer.size = sizeof(G.u.tx.final_hash);
     G.message_data_as_buffer.length = sizeof(G.u.tx.final_hash);
     // Base58 encoding of 32-byte hash is 43 bytes long.
     register_ui_callback(HASH_INDEX, buffer_to_hex, &G.message_data_as_buffer);
     ui_prompt(parse_fail_prompts, ok_c, sign_reject);
+  } else THROW(EXC_REJECT);
 }
 
 /***********************************************************/
@@ -1126,6 +1128,9 @@ static size_t handle_apdu_sign_message_hash_impl(void) {
 }
 
 size_t handle_apdu_sign_message_hash(uint8_t instruction) {
-  return handle_apdu_sign_message_hash_impl();
+  if(N_data.sign_hash_type == SIGN_HASH_ON)
+    return handle_apdu_sign_message_hash_impl();
+  else
+    THROW(EXC_REJECT);
 }
 
