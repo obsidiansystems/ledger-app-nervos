@@ -75,6 +75,11 @@ void switch_network_cb(void) {
     ui_cfg_screen();
 }
 
+void switch_sign_hash_cb(void) {
+    switch_sign_hash();
+    ui_cfg_screen();
+}
+
 UX_STEP_CB(
     ux_cfg_flow_1_step,
     bn,
@@ -86,6 +91,14 @@ UX_STEP_CB(
 UX_STEP_CB(
     ux_cfg_flow_2_step,
     bn,
+    switch_sign_hash_cb(),
+    {
+      "Allow sign hash",
+      N_data_real.sign_hash_prompt
+    });
+UX_STEP_CB(
+    ux_cfg_flow_3_step,
+    bn,
     ui_initial_screen(),
     {
       "Main menu",
@@ -93,7 +106,8 @@ UX_STEP_CB(
     });
 UX_FLOW(ux_cfg_flow,
 		&ux_cfg_flow_1_step,
-		&ux_cfg_flow_2_step
+		&ux_cfg_flow_2_step,
+		&ux_cfg_flow_3_step
        );
 
 UX_STEP_NOCB(
