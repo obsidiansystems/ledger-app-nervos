@@ -4,7 +4,7 @@ Using a Nervos devnet is recommended when doing testing, development, or experim
 
 ## Getting Set Up
 
-Before starting the devnet, we may want to create an account to either 1) receive an allocation of CKB in the genesis block or 2) receive block rewards for mining. If you'd like to use the account stored on your ledger device, see Account Import instructions. To use a software-based account, use the `account new` command. You will have to set a password to protect your key:
+Before starting the devnet, we may want to create an account to either 1) receive an allocation of CKB in the genesis block or 2) receive block rewards for mining. If you'd like to use the account stored on your ledger device, see [Account Import](README.md#account-import) instructions. To use a software-based account, use the `account new` command. You will have to set a password to protect your key:
 
 ```
 ckb-cli account new
@@ -23,7 +23,7 @@ You can now use the `lock-arg` of this account when configuring your devnet.
 
 ## Creating and Configuring a Local Devnet
 
-From within this repository, we will first make [CKB](https://github.com/nervosnetwork/ckb) available then proceed with initializing the dev chain:
+From within this repository, we will first make [CKB](https://github.com/nervosnetwork/ckb) available then proceed with initializing the dev chain. Do this in a separate, dedicated terminal:
 
 ``` sh
 $ nix run -f nix/dep/ckb # make ckb available

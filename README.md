@@ -409,7 +409,7 @@ message-hash: <blake2b hash of: magic_bytes + message>
 recoverable: false
 signature: <signature>
 
-CKB> util verify-message --message "hello world i love nervos" --from-account <my-ledger-account> --signature <signature from above>
+CKB> util verify-signature --message "hello world i love nervos" --from-account <my-ledger-account> --signature <signature from above>
 pubkey: <pubkey of my ledger's account root>
 recoverable: false
 verify-ok: true
