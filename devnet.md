@@ -4,7 +4,7 @@ Using a Nervos devnet is recommended when doing testing, development, or experim
 
 ## Getting Set Up
 
-Before starting the devnet, we may want to create an account to either 1) receive an allocation of CKB in the genesis block or 2) receive block rewards for mining. If you'd like to use the account stored on your ledger device, see [Account Import](readme.md#account-import) instructions. To use a software-based account, use the `account new` command. You will have to set a password to protect your key:
+Before starting the devnet, we may want to create an account to either 1) receive an allocation of CKB in the genesis block or 2) receive block rewards for mining. If you'd like to use the account stored on your ledger device, see [Account Import](README.md#account-import) instructions. To use a software-based account, use the `account new` command. You will have to set a password to protect your key:
 
 ```
 ckb-cli account new
