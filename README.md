@@ -401,22 +401,68 @@ total_count: 1
 ```
 
 ## Message Signing ##
-To sign a message with their ledger a user may do the following:
+To sign the hash of a message with their ledger a user may do the following:
 
 ```sh
-CKB> util sign-message --message "hello world i love nervos" --from-account <my-ledger-account>
+CKB> util sign-data --utf8-string "hello world i love nervos" --from-account <my-ledger-account>
 message-hash: <blake2b hash of: magic_bytes + message>
 recoverable: false
 signature: <signature>
-
-CKB> util verify-message --message "hello world i love nervos" --from-account <my-ledger-account> --signature <signature from above>
-pubkey: <pubkey of my ledger's account root>
-recoverable: false
-verify-ok: true
 ```
 If a message is longer than 64 characters the ledger will display the first 61 chars, followed by an ellipsis (`...`)
-The ckb-cli accepts utf8 strings in its `--message` argument, but the ledger can not display all chars. If the ledger comes accross a
+The ckb-cli accepts utf8 strings in its `--utf8-string` argument, but the ledger can not display all chars. If the ledger comes accross a
 character that it is unnable to display it will display an asterisk (`\*`) instead.
+
+Prompts on the Ledger device are as follows:
+```
+|    Prompt 1   |   Prompt 2   	|
+|:-------------:|:------------:	|
+|  Sign  	      |  Message: 	  |
+|  Message    	|  <message>  	|
+
+```
+One can verfiy the signature as follows:
+
+```bash
+CKB> util verify-signature --utf8-string "hello world i love nervos" --from-account <my-ledger-account> --signature <signature from above>
+pubkey: <pubkey of my ledger's account root>
+recoverable: <signature type>
+verify-ok: true
+```
+A user can also choose to sign the hash of a message with an extended address, or with a recoverable signature ( these options are mutually inclusive):
+
+```bash
+CKB> util sign-data --utf8-string "hello world i love nervos" \ 
+--from-account <my-ledger-account> --extended-address <address> --recoverable
+
+message-hash: <blake2b hash of: magic_bytes + message>
+recoverable: true
+signature: <signature>
+```
+
+A user may also switch out the `--utf8-string` option with a `--binary-hex` option, and the ledger will display
+the message as hex, instead of ascii characters
+```
+CKB> util sign-data --binary-hex '0x61' --from-account <my-ledger-account> 
+```
+
+### Signing a Hash ###
+The ledger also allows for the signing of a pre-hashed message. Due to the potential security risks of this option, a user must "opt-in" to this
+setting by going into the `Configuration` section of the app, and setting `Allow sign hash` to `On`.
+```
+CKB> util sign-message --message 'message hash' --from-account <my-ledger-account> 
+```
+The ledger will display the following:
+```
+|    Prompt 1   |   Prompt 2   	|
+|:-------------:|:------------:	|
+|  Sign  	      |  Message: 	  |
+|  Hash        	|  <hash>      	|
+```
+If the length of the hash is greater than 64 bytes, or if the `Allow sign hash` is set to `Off`, the ledger will reject the message.
+
+The user may also use the `Sign Hash` feature by selecting the `--no-magic-bytes` flag in a `util sign-data` command. If this is the case,
+the client will hash the data for the user and send it to the ledger to sign.
 
 ## DAO Operations ##
 
