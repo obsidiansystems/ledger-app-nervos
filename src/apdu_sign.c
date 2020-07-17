@@ -103,7 +103,7 @@ static size_t sign_complete(uint8_t instruction) {
         //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
         register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
+        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -118,7 +118,27 @@ static size_t sign_complete(uint8_t instruction) {
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Self-Transfer");
         register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
+        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
+
+        ui_prompt(transaction_prompts, ok_c, sign_reject);
+
+    } break;
+    case OPERATION_TAG_MULTI_INPUT_TRANSFER: {
+        static const uint32_t TYPE_INDEX = 0;
+        static const uint32_t INPUT_COUNT_INDEX = 1;
+        static const uint32_t SOURCE_INDEX = 2;
+        static const uint32_t AMOUNT_INDEX = 3;
+        static const uint32_t FEE_INDEX = 4;
+        static const uint32_t DESTINATION_INDEX = 5;
+        static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Input"), PROMPT("Source"),
+                                                          PROMPT("Amount"), PROMPT("Fee"),
+                                                          PROMPT("Destination"), NULL};
+        REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Multi-Input Transaction");
+        register_ui_callback(INPUT_COUNT_INDEX, uint64_tuple_to_string, &G.maybe_transaction.v.input_count);
+        register_ui_callback(SOURCE_INDEX, lock_arg_to_sighash_address, &G.current_lock_arg);
+        register_ui_callback(AMOUNT_INDEX, frac_ckb_tuple_to_string_indirect, &G.maybe_transaction.v.amount);
+        register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -319,10 +339,10 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
 
 void input_lock_arg_end() {
     if(!G.cell_state.active) return;
-    // Relax the check for multisig input
-    if(G.cell_state.is_multisig) return;
-    if(G.cell_state.lock_arg_nonequal)
-        REJECT("Can't securely sign transactions containing inputs we don't control");
+
+    if (memcmp(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg)))
+        G.distinct_input_sources += 1;
+    memcpy(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg));
 }
 
 void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
@@ -372,7 +392,12 @@ void finish_input_cell_data() {
         if(G.cell_state.data_size !=0) {
             REJECT("Data found in non-dao cell");
         }
-        G.plain_input_amount += G.cell_state.capacity;
+        // total input amount
+        G.input_amount.snd += G.cell_state.capacity;
+        if(!G.cell_state.lock_arg_nonequal) {
+            // amount we are signing
+            G.input_amount.fst += G.cell_state.capacity;
+        }
         G.signing_multisig_input |= G.cell_state.is_multisig;
     }
 }
@@ -386,7 +411,7 @@ const AnnotatedCellInput_cb annotatedCellInput_callbacks = {
         .chunk = blake2b_chunk,
         .previous_output = &(OutPoint_cb) {
             .tx_hash = &(Byte32_cb) { { input_save_tx_hash } },
-            .index = &(Uint32_cb) { { input_save_index } } 
+            .index = &(Uint32_cb) { { input_save_index } }
         }
     },
     .source = &(RawTransaction_cb) {
@@ -524,13 +549,25 @@ void finalize_raw_transaction(void) {
             break;
         case OPERATION_TAG_NOT_SET:
         case OPERATION_TAG_PLAIN_TRANSFER:
-            G.maybe_transaction.v.tag = G.u.tx.is_self_transfer ? 
-              OPERATION_TAG_SELF_TRANSFER : OPERATION_TAG_PLAIN_TRANSFER;
-            G.maybe_transaction.v.amount = G.u.tx.plain_output_amount;
+            if (G.distinct_input_sources > 1) {
+                if (G.signing_multisig_input)
+                    REJECT("Signing multi-input transaction with multisig input is not supported");
+                G.maybe_transaction.v.tag = OPERATION_TAG_MULTI_INPUT_TRANSFER;
+                G.maybe_transaction.v.input_count.fst = 1;
+                G.maybe_transaction.v.input_count.snd = G.distinct_input_sources;
+                // Display the complete input amount we are signing, without deducting change
+                G.maybe_transaction.v.amount.fst = G.input_amount.fst;
+                // In plain_output_amount, the change has been deducted
+                G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
+            } else {
+                G.maybe_transaction.v.tag = G.u.tx.is_self_transfer ? 
+                    OPERATION_TAG_SELF_TRANSFER : OPERATION_TAG_PLAIN_TRANSFER;
+                G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
+            }
             break;
         // Shouldn't actually hit this case because of the handling of TAG_NOT_SET above
         case OPERATION_TAG_SELF_TRANSFER:
-            G.maybe_transaction.v.amount = G.u.tx.plain_output_amount;
+            G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
             break;
         case OPERATION_TAG_DAO_DEPOSIT:
             G.maybe_transaction.v.dao_amount = G.u.tx.dao_output_amount;
@@ -545,7 +582,7 @@ void finalize_raw_transaction(void) {
             if(G.u.tx.plain_output_amount != 0) REJECT("DAO withdrawals cannot be sent directly to another account");
             break;
     }
-    G.maybe_transaction.v.total_fee = (G.plain_input_amount + G.dao_input_amount) - (G.u.tx.plain_output_amount + G.u.tx.dao_output_amount + G.u.tx.change_amount);
+    G.maybe_transaction.v.total_fee = (G.input_amount.snd + G.dao_input_amount) - (G.u.tx.plain_output_amount + G.u.tx.dao_output_amount + G.u.tx.change_amount);
     if(G.maybe_transaction.v.tag == OPERATION_TAG_DAO_WITHDRAW) {
         // Can't compute fee without a bunch more info, calculating return instead and putting that in this slot so the user can get equivalent info.
         G.maybe_transaction.v.total_fee = -G.maybe_transaction.v.total_fee;
