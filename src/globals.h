@@ -91,19 +91,21 @@ typedef struct {
     bip32_path_t temp_key;
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
+    standard_lock_arg_t last_input_lock_arg;
 
     struct maybe_transaction maybe_transaction;
 
     blake2b_hash_state_t hash_state;
 
     uint32_t input_count;
+    uint32_t distinct_input_sources; // distinct input lock_args
 
     cell_state_t cell_state;
 
     _Alignas(uint32_t) uint8_t transaction_stack[512];
 
     uint64_t dao_input_amount;
-    uint64_t plain_input_amount;
+    uint64_tuple_t input_amount;
 
     uint8_t *lock_arg_cmp;
     lock_arg_t lock_arg_tmp;

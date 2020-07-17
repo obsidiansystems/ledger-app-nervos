@@ -26,6 +26,16 @@ typedef struct {
     uint8_t *bytes;
 } buffer_t;
 
+typedef struct {
+    uint64_t fst;
+    uint64_t snd;
+} uint64_tuple_t;
+
+typedef struct {
+    uint32_t fst;
+    uint32_t snd;
+} uint32_tuple_t;
+
 // UI
 typedef bool (*ui_callback_t)(void); // return true to go back to idle screen
 
@@ -107,6 +117,7 @@ enum operation_tag {
     OPERATION_TAG_NOT_SET = 0, // Used for "value not yet determined" during parsing.
     OPERATION_TAG_PLAIN_TRANSFER = 1,
     OPERATION_TAG_SELF_TRANSFER,
+    OPERATION_TAG_MULTI_INPUT_TRANSFER,
     OPERATION_TAG_DAO_DEPOSIT,
     OPERATION_TAG_DAO_PREPARE,
     OPERATION_TAG_DAO_WITHDRAW
@@ -151,10 +162,11 @@ typedef union {
 
 struct parsed_transaction {
     uint64_t total_fee;
-    uint64_t amount; // 0 where inappropriate
+    // (input amount (total amount we are signing (change is not deducted), total of outputs (- change))
+    uint64_tuple_t amount; // 0 where inappropriate
     uint64_t dao_amount;
     uint64_t dao_output_amount;
-    uint32_t source_acct;
+    uint64_tuple_t input_count;
     lock_arg_t destination;
     enum operation_tag tag;
     uint8_t flags;   // Interpretation depends on operation type
