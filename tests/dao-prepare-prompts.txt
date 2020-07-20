@@ -2,7 +2,7 @@ Prompt 0:
 Confirm DAO
 Prepare
 Prompt 1:
-Amount
+Deposit Amount
 1000
 Prompt 2:
 Fee
