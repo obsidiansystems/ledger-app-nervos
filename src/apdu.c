@@ -32,39 +32,6 @@ size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const 
     return finalize_successful_send(tx);
 }
 
-size_t provide_account_import(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey, extended_public_key_t const *const external_pubkey, extended_public_key_t const *const change_pubkey) {
-    check_null(io_buffer);
-    check_null(pubkey);
-    check_null(external_pubkey);
-    check_null(change_pubkey);
-    size_t tx = 0;
-
-    // pubkey
-    size_t keySize = pubkey->W_len;
-    io_buffer[tx++] = keySize;
-    memmove(io_buffer + tx, pubkey->W, keySize);
-    tx += keySize;
-
-    // external_pubkey
-    keySize = external_pubkey->public_key.W_len;
-    io_buffer[tx++] = keySize;
-    memmove(io_buffer + tx, external_pubkey->public_key.W, keySize);
-    tx += keySize;
-    io_buffer[tx++] = CHAIN_CODE_DATA_SIZE;
-    memmove(io_buffer + tx, external_pubkey->chain_code, CHAIN_CODE_DATA_SIZE);
-    tx += CHAIN_CODE_DATA_SIZE;
-
-    // change_pubkey
-    keySize = change_pubkey->public_key.W_len;
-    io_buffer[tx++] = keySize;
-    memmove(io_buffer + tx, change_pubkey->public_key.W, keySize);
-    tx += keySize;
-    io_buffer[tx++] = CHAIN_CODE_DATA_SIZE;
-    memmove(io_buffer + tx, change_pubkey->chain_code, CHAIN_CODE_DATA_SIZE);
-    tx += CHAIN_CODE_DATA_SIZE;
-    return finalize_successful_send(tx);
-}
-
 size_t handle_apdu_error(uint8_t __attribute__((unused)) instruction) {
     THROW(EXC_INVALID_INS);
 }

@@ -88,7 +88,7 @@ static void multi_output_prompts_cb(size_t which) {
             {
                 static const char prompt[]="Amount";
                 memcpy(global.ui.prompt.active_prompt, (const void*)PIC(prompt), sizeof(prompt));
-                frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.amount);
+                frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.amount.snd);
             }
 	    break;
         case 2:
@@ -155,7 +155,7 @@ static size_t sign_complete(uint8_t instruction) {
         //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
         register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
+        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -173,7 +173,27 @@ static size_t sign_complete(uint8_t instruction) {
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Self-Transfer");
         register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount);
+        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
+
+        ui_prompt(transaction_prompts, ok_c, sign_reject);
+
+    } break;
+    case OPERATION_TAG_MULTI_INPUT_TRANSFER: {
+        static const uint32_t TYPE_INDEX = 0;
+        static const uint32_t INPUT_COUNT_INDEX = 1;
+        static const uint32_t SOURCE_INDEX = 2;
+        static const uint32_t AMOUNT_INDEX = 3;
+        static const uint32_t FEE_INDEX = 4;
+        static const uint32_t DESTINATION_INDEX = 5;
+        static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Input"), PROMPT("Source"),
+                                                          PROMPT("Amount"), PROMPT("Fee"),
+                                                          PROMPT("Destination"), NULL};
+        REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Multi-Input Transaction");
+        register_ui_callback(INPUT_COUNT_INDEX, uint64_tuple_to_string, &G.maybe_transaction.v.input_count);
+        register_ui_callback(SOURCE_INDEX, lock_arg_to_sighash_address, &G.current_lock_arg);
+        register_ui_callback(AMOUNT_INDEX, frac_ckb_tuple_to_string_indirect, &G.maybe_transaction.v.amount);
+        register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -230,12 +250,14 @@ static size_t sign_complete(uint8_t instruction) {
     }
 
 unsafe:
+  if(N_data.sign_hash_type == SIGN_HASH_ON) {
     G.message_data_as_buffer.bytes = (uint8_t *)&G.u.tx.final_hash;
     G.message_data_as_buffer.size = sizeof(G.u.tx.final_hash);
     G.message_data_as_buffer.length = sizeof(G.u.tx.final_hash);
     // Base58 encoding of 32-byte hash is 43 bytes long.
     register_ui_callback(HASH_INDEX, buffer_to_hex, &G.message_data_as_buffer);
     ui_prompt(parse_fail_prompts, ok_c, sign_reject);
+  } else THROW(EXC_REJECT);
 }
 
 /***********************************************************/
@@ -350,7 +372,7 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
         return;
     }
 
-    memcpy(&G.lock_arg_tmp+current_offset, buf, buflen);
+    memcpy(((uint8_t*) &G.lock_arg_tmp) + current_offset, buf, buflen);
     G.cell_state.lock_arg_index+=buflen;
 
     for(mol_num_t i=0;i<buflen;i++) {
@@ -374,10 +396,10 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
 
 void input_lock_arg_end() {
     if(!G.cell_state.active) return;
-    // Relax the check for multisig input
-    if(G.cell_state.is_multisig) return;
-    if(G.cell_state.lock_arg_nonequal)
-        REJECT("Can't securely sign transactions containing inputs we don't control");
+
+    if (memcmp(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg)))
+        G.distinct_input_sources += 1;
+    memcpy(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg));
 }
 
 void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
@@ -427,7 +449,12 @@ void finish_input_cell_data() {
         if(G.cell_state.data_size !=0) {
             REJECT("Data found in non-dao cell");
         }
-        G.plain_input_amount += G.cell_state.capacity;
+        // total input amount
+        G.input_amount.snd += G.cell_state.capacity;
+        if(!G.cell_state.lock_arg_nonequal) {
+            // amount we are signing
+            G.input_amount.fst += G.cell_state.capacity;
+        }
         G.signing_multisig_input |= G.cell_state.is_multisig;
     }
 }
@@ -441,7 +468,7 @@ const AnnotatedCellInput_cb annotatedCellInput_callbacks = {
         .chunk = blake2b_chunk,
         .previous_output = &(OutPoint_cb) {
             .tx_hash = &(Byte32_cb) { { input_save_tx_hash } },
-            .index = &(Uint32_cb) { { input_save_index } } 
+            .index = &(Uint32_cb) { { input_save_index } }
         }
     },
     .source = &(RawTransaction_cb) {
@@ -588,16 +615,29 @@ void finalize_raw_transaction(void) {
             break;
         case OPERATION_TAG_NOT_SET:
         case OPERATION_TAG_PLAIN_TRANSFER:
-            G.maybe_transaction.v.tag = G.u.tx.is_self_transfer ? 
-              OPERATION_TAG_SELF_TRANSFER : OPERATION_TAG_PLAIN_TRANSFER;
-            G.maybe_transaction.v.amount = G.u.tx.plain_output_amount;
+            if (G.distinct_input_sources > 1) {
+                if (G.signing_multisig_input)
+                    REJECT("Signing multi-input transaction with multisig input is not supported");
+                G.maybe_transaction.v.tag = OPERATION_TAG_MULTI_INPUT_TRANSFER;
+                G.maybe_transaction.v.input_count.fst = 1;
+                G.maybe_transaction.v.input_count.snd = G.distinct_input_sources;
+                // Display the complete input amount we are signing, without deducting change
+                G.maybe_transaction.v.amount.fst = G.input_amount.fst;
+                // In plain_output_amount, the change has been deducted
+                G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
+            } else {
+                G.maybe_transaction.v.tag = G.u.tx.is_self_transfer ? 
+                    OPERATION_TAG_SELF_TRANSFER : OPERATION_TAG_PLAIN_TRANSFER;
+                G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
+            }
             break;
         // Shouldn't actually hit this case because of the handling of TAG_NOT_SET above
         case OPERATION_TAG_SELF_TRANSFER:
-            G.maybe_transaction.v.amount = G.u.tx.plain_output_amount;
+            G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
             break;
         case OPERATION_TAG_MULTI_OUTPUT_TRANSFER:
-	    G.maybe_transaction.v.amount = G.u.tx.plain_output_amount;
+	    if(G.distinct_input_sources > 1) REJECT("Multi-input multi-output transactions are not supported");
+	    G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
 	    break;
         case OPERATION_TAG_DAO_DEPOSIT:
             G.maybe_transaction.v.dao_amount = G.u.tx.dao_output_amount;
@@ -612,7 +652,7 @@ void finalize_raw_transaction(void) {
             if(G.u.tx.plain_output_amount != 0) REJECT("DAO withdrawals cannot be sent directly to another account");
             break;
     }
-    G.maybe_transaction.v.total_fee = (G.plain_input_amount + G.dao_input_amount) - (G.u.tx.plain_output_amount + G.u.tx.dao_output_amount + G.u.tx.change_amount);
+    G.maybe_transaction.v.total_fee = (G.input_amount.snd + G.dao_input_amount) - (G.u.tx.plain_output_amount + G.u.tx.dao_output_amount + G.u.tx.change_amount);
     if(G.maybe_transaction.v.tag == OPERATION_TAG_DAO_WITHDRAW) {
         // Can't compute fee without a bunch more info, calculating return instead and putting that in this slot so the user can get equivalent info.
         G.maybe_transaction.v.total_fee = -G.maybe_transaction.v.total_fee;
@@ -680,39 +720,109 @@ void set_change_path(void) {
 }
 
 void witness_offsets(struct WitnessArgs_state *state) {
-    int lock_wit_len = state->input_type_offset-state->lock_offset;
-    int shift = 69-lock_wit_len;
-    mol_num_t new_header[4];
-    new_header[0] = state->total_size + shift;
-    new_header[1] = state->lock_offset;
-    new_header[2] = state->input_type_offset + shift;
-    new_header[3] = state->output_type_offset + shift;
+    if (G.signing_multisig_input) {
+        // Assume the WitnessArgs are correct
+        mol_num_t header[4];
+        header[0] = state->total_size;
+        header[1] = state->lock_offset;
+        header[2] = state->input_type_offset;
+        header[3] = state->output_type_offset;
 
-    uint64_t len64 = new_header[0];
-    blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
-    blake2b_incremental_hash((uint8_t*) new_header, sizeof(new_header), &G.hash_state);
-    static const uint8_t zero_witness[] = {
-        0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    blake2b_incremental_hash(zero_witness, sizeof(zero_witness), &G.hash_state);
+        uint64_t len64 = header[0];
+        blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
+        blake2b_incremental_hash((uint8_t*) header, sizeof(header), &G.hash_state);
+        /* PRINTF("witness_multisig header %.*h\n", 16, header ); */
+    } else {
+        int lock_wit_len = state->input_type_offset-state->lock_offset;
+        int shift = 69-lock_wit_len;
+        mol_num_t new_header[4];
+        new_header[0] = state->total_size + shift;
+        new_header[1] = state->lock_offset;
+        new_header[2] = state->input_type_offset + shift;
+        new_header[3] = state->output_type_offset + shift;
+
+        uint64_t len64 = new_header[0];
+        blake2b_incremental_hash((uint8_t*) &len64, sizeof(uint64_t), &G.hash_state);
+        blake2b_incremental_hash((uint8_t*) new_header, sizeof(new_header), &G.hash_state);
+        static const uint8_t zero_witness[] = {
+            0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        blake2b_incremental_hash(zero_witness, sizeof(zero_witness), &G.hash_state);
+    }
 }
 
-void witness_chunk(uint8_t* chunk, mol_num_t length) {
-    blake2b_incremental_hash(chunk, length, &G.hash_state);
+void witness_lock_arg_size(mol_num_t size) {
+    if (!G.signing_multisig_input) return;
+    uint32_t size_adjusted = size-4;
+    blake2b_incremental_hash((void*) &size_adjusted, 4, &G.hash_state);
+}
+
+// multisig_script | Signature1 | Signature2 | ...
+//
+// Where the components are of the following format:
+//
+// multisig_script: S | R | M | N | PubKeyHash1 | PubKeyHash2 | ...
+//
+// +-------------+------------------------------------+-------+
+// |             |           Description              | Bytes |
+// +-------------+------------------------------------+-------+
+// | S           | reserved field, must be zero       |     1 |
+// | R           | first nth public keys must match   |     1 |
+// | M           | threshold                          |     1 |
+// | N           | total public keys                  |     1 |
+// | PubkeyHashN | blake160 hash of compressed pubkey |    20 |
+// | SignatureN  | recoverable signature              |    65 |
+// +-------------+------------------------------------+-------+
+
+void witness_lock_arg_body_chunk(uint8_t *buf, mol_num_t buflen) {
+    if (!G.signing_multisig_input) return;
+    mol_num_t consumed = G.u.tx.witness_multisig_lock_arg_consumed;
+    if (consumed == 0 && (buf[0] != 0))
+        REJECT("Reserved field of multisig_script is non-zero");
+    if (consumed < 3) {
+        mol_num_t threshold_index = 2 - consumed;
+        G.u.tx.witness_multisig_threshold = buf[threshold_index];
+    }
+    if (consumed < 4) {
+        mol_num_t pubkeys_cnt_index = 3 - consumed;
+        G.u.tx.witness_multisig_pubkeys_cnt = buf[pubkeys_cnt_index];
+    }
+    if (G.u.tx.witness_multisig_pubkeys_cnt > 0) {
+        size_t multisig_script_len = 4 /* FLAGS_SIZE */ + 20 /* BLAKE160_SIZE */ * G.u.tx.witness_multisig_pubkeys_cnt;
+        size_t signatures_start = multisig_script_len - consumed;
+        if (signatures_start > 0 && buflen > signatures_start) {
+            // Zero signatures
+            for(mol_num_t i = signatures_start; i < buflen; i++) {
+                buf[i] = 0;
+            }
+        }
+    }
+    /* PRINTF("witness threshold %d\n", G.u.tx.witness_multisig_threshold); */
+    /* PRINTF("witness pubkeys_cnt %d\n", G.u.tx.witness_multisig_pubkeys_cnt); */
+    /* PRINTF("witness_lock_arg_body_chunk %.*h\n", buflen, buf); */
+    blake2b_chunk(buf, buflen);
+    G.u.tx.witness_multisig_lock_arg_consumed += buflen;
 }
 
 const WitnessArgs_cb WitnessArgs_rewrite_callbacks = {
     .offsets = witness_offsets,
-    .input_type = &(BytesOpt_cb) { .chunk = witness_chunk },
-    .output_type = &(BytesOpt_cb) { .chunk = witness_chunk }
+    .lock = &(BytesOpt_cb) { .item = &(Bytes_cb) {
+        .size = witness_lock_arg_size,
+        .body_chunk = witness_lock_arg_body_chunk
+    }},
+    .input_type = &(BytesOpt_cb) { .chunk = blake2b_chunk },
+    .output_type = &(BytesOpt_cb) { .chunk = blake2b_chunk }
 };
 
 void begin_witness(mol_num_t index) {
     G.u.tx.witness_idx = index;
     if(G.u.tx.witness_idx==0) {
+        G.u.tx.witness_multisig_threshold = 0;
+        G.u.tx.witness_multisig_pubkeys_cnt = 0;
+        G.u.tx.witness_multisig_lock_arg_consumed = 0;
         explicit_bzero(&G.hash_state, sizeof(G.hash_state));
         blake2b_incremental_hash(G.u.tx.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
         MolReader_WitnessArgs_init_state(G.u.tx.witness_stack+sizeof(G.u.tx.witness_stack), (struct WitnessArgs_state*)G.u.tx.witness_stack, &WitnessArgs_rewrite_callbacks);
@@ -871,6 +981,10 @@ static inline void clear_message_data(void) {
   memset(&global.apdu.u.sign_msg, 0, sizeof(global.apdu.u.sign_msg));
 }
 
+static inline void clear_message_hash_data(void) {
+  memset(&global.apdu.u.sign_msg_hash, 0, sizeof(global.apdu.u.sign_msg_hash));
+}
+
 static int perform_message_signature() {
   apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
   uint8_t *const data = g_sign_msg->final_hash;
@@ -898,7 +1012,7 @@ static bool check_magic_bytes(uint8_t const * message, uint8_t message_len) {
 static void copy_buffer(char *const out, size_t const out_size, buffer_t const *const in) {
   if(in->size > out_size) THROW(EXC_MEMORY_ERROR);
 
-  // if we dont do this we have stuff from the old buffer getting displayed
+  // if we dont do this then we have stuff from the old buffer getting displayed
   memset(out, 0, out_size);
   memcpy(out, in->bytes, in->size);
 }
@@ -956,6 +1070,7 @@ static void handle_long_message(uint8_t *buff, uint8_t *buff_size) {
   }
 }
 
+/* Sign message                                                        */
 /***********************************************************************/
 static size_t handle_apdu_sign_message_impl(uint8_t const __attribute__((unused)) _instruction) {
   uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
@@ -963,18 +1078,14 @@ static size_t handle_apdu_sign_message_impl(uint8_t const __attribute__((unused)
   uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]);
   if (buff_size > MAX_APDU_SIZE) THROW(EXC_WRONG_LENGTH_FOR_INS);
   apdu_sign_message_state_t *g_sign_msg = &global.apdu.u.sign_msg;
-
   bool last = (p1 & P1_LAST_MARKER) != 0;
   switch (p1 & ~P1_LAST_MARKER) {
     case P1_FIRST:
+      // Must contain 1 byte as display-flag + bip32path
       clear_message_data();
-      uint32_t const account_index_raw = READ_UNALIGNED_BIG_ENDIAN(uint32_t, buff);
-      if (account_index_raw >= 0x80000000) THROW(EXC_WRONG_PARAM);
-      uint32_t const account_index = 0x80000000 + account_index_raw;
-      g_sign_msg->key.components[0] = 0x8000002C;
-      g_sign_msg->key.components[1] = 0x80000135;
-      g_sign_msg->key.components[2] = account_index;
-      g_sign_msg->key.length = 3;
+      if(buff_size <= 1) THROW(EXC_REJECT);
+      g_sign_msg->display_as_hex = READ_UNALIGNED_BIG_ENDIAN(bool, buff);
+      read_bip32_path(&g_sign_msg->key, buff+1, buff_size-1);
       return finalize_successful_send(0);
     case P1_NEXT:
       // Guard against overflow
@@ -997,7 +1108,10 @@ static size_t handle_apdu_sign_message_impl(uint8_t const __attribute__((unused)
  
     //Remove magic bytes, because, even though we sign them, the user should not be aware of their existence
     slice_magic_bytes((char*)tmp_msg_buff, &tmp_msg_buff_size);
-    replace_undisplayable(tmp_msg_buff, &tmp_msg_buff_size);
+    if(!g_sign_msg->display_as_hex) { 
+      // If we are not displaying the hex, then replace all the non-displayable chars with '*'
+      replace_undisplayable(tmp_msg_buff, &tmp_msg_buff_size);
+    }
     handle_long_message(tmp_msg_buff, &tmp_msg_buff_size);
 
     // Move tmp to global storage
@@ -1015,7 +1129,11 @@ static size_t handle_apdu_sign_message_impl(uint8_t const __attribute__((unused)
     // Display the message
     static const char *const message_prompts[] = { PROMPT("Sign"), PROMPT("Message: "), NULL};
     REGISTER_STATIC_UI_VALUE(0, "Message");
-    register_ui_callback(1, copy_buffer, &g_sign_msg->display_as_buffer);
+    if(g_sign_msg->display_as_hex) {
+      register_ui_callback(1, buffer_to_hex, &g_sign_msg->display_as_buffer);
+    } else {
+      register_ui_callback(1, copy_buffer, &g_sign_msg->display_as_buffer);
+    }
     ui_callback_t const ok_sign = sign_message_ok;
 
     // Prompt and sign hash
@@ -1029,3 +1147,64 @@ static size_t handle_apdu_sign_message_impl(uint8_t const __attribute__((unused)
 size_t handle_apdu_sign_message(uint8_t instruction) {
   return handle_apdu_sign_message_impl(instruction);
 }
+
+/***********************************************************************/
+/* Sign message hash                                                   */
+/***********************************************************************/
+static int perform_message_hash_signature() {
+  // g_smh --> Global_Sign_Message_Hash
+  apdu_sign_message_hash_state_t *g_smh = &global.apdu.u.sign_msg_hash;
+  uint8_t *const data = g_smh->hash_to_sign;
+  uint8_t const data_size = g_smh->hash_to_sign_size;
+  size_t final_size = 0;
+  final_size+=WITH_KEY_PAIR(g_smh->key, key_pair, size_t,
+                      ({ sign(&G_io_apdu_buffer[final_size], MAX_SIGNATURE_SIZE, key_pair, data, data_size); }));
+  clear_message_hash_data();
+  return finalize_successful_send(final_size);
+}
+
+static bool sign_message_hash_ok(void) {
+  delayed_send(perform_message_hash_signature());
+  return true; 
+}
+
+static size_t handle_apdu_sign_message_hash_impl(void) {
+  uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
+  uint8_t const buff_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
+  uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]);
+  if (buff_size > MAX_APDU_SIZE) THROW(EXC_WRONG_LENGTH_FOR_INS);
+
+  // g_smh --> Global_Sign_Message_Hash
+  apdu_sign_message_hash_state_t *g_smh = &global.apdu.u.sign_msg_hash;
+  switch (p1) {
+    case P1_FIRST:
+      clear_message_hash_data();
+      read_bip32_path(&g_smh->key, buff, buff_size);
+      return finalize_successful_send(0);
+    case P1_LAST_MARKER:
+      if(buff_size > 64) PARSE_ERROR();
+      memcpy(g_smh->hash_to_sign, buff, buff_size);
+      g_smh->hash_to_sign_size = buff_size;
+      break;
+    default:
+        THROW(EXC_WRONG_PARAM);
+  }
+  g_smh->display_as_buffer.bytes = g_smh->hash_to_sign;
+  g_smh->display_as_buffer.size = g_smh->hash_to_sign_size;
+  g_smh->display_as_buffer.length = g_smh->hash_to_sign_size;
+
+  static const char *const message_prompts[] = { PROMPT("Sign"), PROMPT("Message Hash: "), NULL};
+  REGISTER_STATIC_UI_VALUE(0, "Message Hash");
+  register_ui_callback(1, buffer_to_hex, &g_smh->display_as_buffer);
+  ui_callback_t const ok_sign = sign_message_hash_ok;
+  // Prompt and sign hash
+  ui_prompt(message_prompts, ok_sign, sign_reject);
+}
+
+size_t handle_apdu_sign_message_hash(uint8_t instruction) {
+  if(N_data.sign_hash_type == SIGN_HASH_ON)
+    return handle_apdu_sign_message_hash_impl();
+  else
+    THROW(EXC_REJECT);
+}
+

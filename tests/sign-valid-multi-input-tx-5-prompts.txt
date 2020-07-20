@@ -1,0 +1,18 @@
+Prompt 0:
+Confirm
+Multi-Input Transaction
+Prompt 1:
+Input
+1 of 6
+Prompt 2:
+Source
+ckb1qyqxyt6gphlcwvw3tjpj6g35ae8da5x0uwvq7yakn7
+Prompt 3:
+Amount
+1659.9988 of 14000
+Prompt 4:
+Fee
+0.0001
+Prompt 5:
+Destination
+ckb1qyqwggd90hnw6kqp39rrzvwvkm2cg0dtjawsuayfag

@@ -298,9 +298,15 @@ void switch_network_cb(unsigned int cb) {
     UX_MENU_DISPLAY(0, configuration_menu_data, NULL);
 }
 
+void switch_sign_hash_cb(unsigned int cb) {
+    switch_sign_hash(cb);
+    UX_MENU_DISPLAY(1, configuration_menu_data, NULL);
+}
+
 static const ux_menu_entry_t configuration_menu_data[] = {
     {NULL, switch_network_cb, 0, NULL, "Addresses for", N_data_real.network_prompt, 0, 0},
-    {main_menu_data, NULL, 1, NULL, "Back", NULL, 61, 40}, // TODO: Put icon for "back" in
+    {NULL, switch_sign_hash_cb, 1, NULL, "Allow sign hash", N_data_real.sign_hash_prompt, 0, 0},
+    {main_menu_data, NULL, 2, NULL, "Back", NULL, 61, 40}, // TODO: Put icon for "back" in
     UX_MENU_END};
 
 void main_menu() {

@@ -67,6 +67,9 @@ typedef struct {
         // Things we need exclusively after doing validate_context_txn
         struct {
             uint32_t witness_idx;
+            uint32_t witness_multisig_threshold;
+            uint32_t witness_multisig_pubkeys_cnt;
+            uint32_t witness_multisig_lock_arg_consumed;
             _Alignas(uint32_t) uint8_t witness_stack[64]; 
             uint32_t current_output_index;
 
@@ -88,19 +91,21 @@ typedef struct {
     bip32_path_t temp_key;
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
+    standard_lock_arg_t last_input_lock_arg;
 
     struct maybe_transaction maybe_transaction;
 
     blake2b_hash_state_t hash_state;
 
     uint32_t input_count;
+    uint32_t distinct_input_sources; // distinct input lock_args
 
     cell_state_t cell_state;
 
     _Alignas(uint32_t) uint8_t transaction_stack[512];
 
     uint64_t dao_input_amount;
-    uint64_t plain_input_amount;
+    uint64_tuple_t input_amount;
 
     uint8_t *lock_arg_cmp;
     lock_arg_t lock_arg_tmp;
@@ -111,6 +116,7 @@ typedef struct {
 
 typedef struct {
     buffer_t display_as_buffer;
+    bool display_as_hex;
     bip32_path_t key;
     blake2b_hash_state_t hash_state;
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
@@ -120,17 +126,16 @@ typedef struct {
 
 typedef struct {
     bip32_path_t key;
+    buffer_t display_as_buffer;
+    uint8_t hash_to_sign[64];  // Max message hash size we accept = 64 bytes
+    uint8_t hash_to_sign_size;
+} apdu_sign_message_hash_state_t;
+
+typedef struct {
+    bip32_path_t key;
     extended_public_key_t ext_public_key;
     cx_blake2b_t hash_state;
 } apdu_pubkey_state_t;
-
-typedef struct {
-    bip32_path_t path;
-    cx_blake2b_t hash_state;
-    extended_public_key_t root_public_key;
-    extended_public_key_t external_public_key;
-    extended_public_key_t change_public_key;
-} apdu_account_import_state_t;
 
 typedef struct {
     void *stack_root;
@@ -172,7 +177,7 @@ typedef struct {
             apdu_pubkey_state_t pubkey;
             apdu_sign_state_t sign;
             apdu_sign_message_state_t sign_msg;
-            apdu_account_import_state_t account_import;
+            apdu_sign_message_hash_state_t sign_msg_hash;
         } u;
 
         struct {
