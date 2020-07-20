@@ -7,6 +7,7 @@ apdu_fixed () {
   echo "$*" | apdu | sed 's/HID //'
 }
 
+# l/r represent pushing button down, L/R represent releasing
 clicks() {
   echo "$1" > /dev/tcp/localhost/5667
 }
@@ -54,7 +55,10 @@ check_signature () {
 }
 
 get_key_in_pem() {
-  derivation=${1:-8002000015058000002c80000135800000000000000000000000}
+  bip_path="$1"
+  bip_path_len=$((${#bip_path}/2))
+  bip_fmt="$(printf "%02x" $bip_path_len)$bip_path"
+  derivation="80020000${bip_fmt}"
   result="$(apdu_with_clicks $derivation "rR" |& egrep "b'41.*'9000" | sed "s/^<= b'41//;s/'9000$//")"
   echo "-----BEGIN PUBLIC KEY-----"
   cat tests/public_key_der_prefix.der <(xxd -ps -r <<<"$result") | base64
