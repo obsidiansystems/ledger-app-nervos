@@ -1,0 +1,24 @@
+Prompt 0:
+Confirm
+Transaction
+Prompt 1:
+Amount
+1000
+Prompt 2:
+Fee
+0.00001
+Prompt 3:
+Output 1/5
+200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7scaqc8pnyu
+Prompt 4:
+Output 2/5
+200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7scasdxft30
+Prompt 5:
+Output 3/5
+200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7qffs5ek
+Prompt 6:
+Output 4/5
+200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sclqx5lwjs
+Prompt 7:
+Output 5/5
+200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sclsn4hk8r

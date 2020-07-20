@@ -76,6 +76,7 @@ typedef struct {
             uint64_t change_amount;
             uint64_t plain_output_amount;
             uint64_t dao_output_amount;
+	    uint32_t current_output_chunk;
             bool hash_only;
             bool first_witness_done;
             bool is_self_transfer;
@@ -145,6 +146,7 @@ typedef struct {
         uint32_t ux_step_count;
 
         uint32_t timeout_cycle_count;
+        void (*switch_screen)(uint32_t which);
 #endif
 
         struct {
