@@ -117,7 +117,7 @@ void ui_display(const bagl_element_t *elems, size_t sz, ui_callback_t ok_c, ui_c
     G.ok_callback = ok_c;
     G.cxl_callback = cxl_c;
     if (!is_idling()) {
-        switch_screen(0);
+        G.switch_screen(0);
     }
     ux.elements = elems;
     ux.elements_count = sz;
@@ -152,7 +152,7 @@ unsigned char io_event(__attribute__((unused)) unsigned char channel) {
                 // prepare next screen
                 G.ux_step = (G.ux_step + 1) % G.ux_step_count;
                 if (!is_idling()) {
-                    switch_screen(G.ux_step);
+                    G.switch_screen(G.ux_step);
                 }
 
                 // check if we've timed out
@@ -206,7 +206,6 @@ void switch_screen(uint32_t which) {
     if (which >= MAX_SCREEN_COUNT)
         THROW(EXC_MEMORY_ERROR);
     const char *label = (const char *)PIC(global.ui.prompt.prompts[which]);
-
     strncpy(global.ui.prompt.active_prompt, label, sizeof(global.ui.prompt.active_prompt));
     if (global.ui.prompt.callbacks[which] == NULL)
         THROW(EXC_MEMORY_ERROR);
@@ -220,6 +219,13 @@ void clear_ui_callbacks(void) {
     }
 }
 
+void ui_prompt_debug(size_t screen_count) {
+    for(uint32_t i=0; i<screen_count; i++) {
+        G.switch_screen(i);
+        PRINTF("Prompt %d:\n%s\n%s\n", i, global.ui.prompt.active_prompt, global.ui.prompt.active_value);
+    }
+}
+
 __attribute__((noreturn)) void ui_prompt(const char *const *labels, ui_callback_t ok_c, ui_callback_t cxl_c) {
     check_null(labels);
     global.ui.prompt.prompts = labels;
@@ -229,16 +235,30 @@ __attribute__((noreturn)) void ui_prompt(const char *const *labels, ui_callback_
         const char *label = (const char *)PIC(labels[i]);
         if (i >= MAX_SCREEN_COUNT || strlen(label) > PROMPT_WIDTH)
             THROW(EXC_MEMORY_ERROR);
-#ifdef NERVOS_DEBUG
-        global.ui.prompt.callbacks[i](global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value),
-                                      global.ui.prompt.callback_data[i]);
-        PRINTF("Prompt %d:\n%s\n%s\n", i, label, global.ui.prompt.active_value);
-#endif
     }
     size_t screen_count = i;
 
+    G.switch_screen=&switch_screen;
+
     ui_display(ui_multi_screen, NUM_ELEMENTS(ui_multi_screen), ok_c, cxl_c, screen_count);
 #ifdef NERVOS_DEBUG
+    ui_prompt_debug(screen_count);
+    // In debug mode, the THROW below produces a PRINTF statement in an invalid position and causes the screen to blank,
+    // so instead we just directly call the equivalent longjmp for debug only.
+    longjmp(try_context_get()->jmp_buf, ASYNC_EXCEPTION);
+#else
+    THROW(ASYNC_EXCEPTION);
+#endif
+}
+
+__attribute__((noreturn)) void ui_prompt_with_cb(void (*switch_screen_cb)(uint32_t), size_t screen_count, ui_callback_t ok_c, ui_callback_t cxl_c) {
+    check_null(switch_screen_cb);
+
+    G.switch_screen=switch_screen_cb;
+
+    ui_display(ui_multi_screen, NUM_ELEMENTS(ui_multi_screen), ok_c, cxl_c, screen_count);
+#ifdef NERVOS_DEBUG
+    ui_prompt_debug(screen_count);
     // In debug mode, the THROW below produces a PRINTF statement in an invalid position and causes the screen to blank,
     // so instead we just directly call the equivalent longjmp for debug only.
     longjmp(try_context_get()->jmp_buf, ASYNC_EXCEPTION);

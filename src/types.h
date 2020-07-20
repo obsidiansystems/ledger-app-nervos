@@ -106,6 +106,7 @@ enum operation_tag {
     OPERATION_TAG_NONE = -1, // Sentinal value, as 0 is possibly used for something
     OPERATION_TAG_NOT_SET = 0, // Used for "value not yet determined" during parsing.
     OPERATION_TAG_PLAIN_TRANSFER = 1,
+    OPERATION_TAG_MULTI_OUTPUT_TRANSFER,
     OPERATION_TAG_SELF_TRANSFER,
     OPERATION_TAG_DAO_DEPOSIT,
     OPERATION_TAG_DAO_PREPARE,
@@ -146,8 +147,15 @@ typedef union {
     } f; // full
 } render_address_payload_t;
 
+struct output_t {
+	uint64_t capacity;
+	lock_arg_t destination;
+};
+
 #define HAS_DESTINATION_ADDRESS 0x01
 #define HAS_CHANGE_ADDRESS      0x02
+
+#define MAX_OUTPUTS 3
 
 struct parsed_transaction {
     uint64_t total_fee;
@@ -159,6 +167,9 @@ struct parsed_transaction {
     enum operation_tag tag;
     uint8_t flags;   // Interpretation depends on operation type
     uint8_t group_input_count;
+
+    size_t output_count;
+    struct output_t outputs[MAX_OUTPUTS];
 };
 
 // Maximum number of APDU instructions

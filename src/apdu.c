@@ -118,6 +118,7 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
     while (true) {
         BEGIN_TRY {
             TRY {
+                app_stack_canary=0xdeadbeef;
                 // Process APDU of size rx
 
                 if (rx == 0) {
@@ -137,16 +138,16 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     THROW(EXC_WRONG_LENGTH);
                 }
 
-		unsigned int canary=app_stack_canary;
-
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
+
                 apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
 
-                if(canary != app_stack_canary) {
+                size_t const tx = cb(instruction);
+
+                if(app_stack_canary != 0xdeadbeef) {
+                    PRINTF("STACK ERROR: canary has value 0x%.*h rather than 0xdeadbeef\n", 4, &app_stack_canary);
                     THROW(EXC_STACK_ERROR);
                 }
-
-                size_t const tx = cb(instruction);
 
                 rx = io_exchange(CHANNEL_APDU, tx);
             }
