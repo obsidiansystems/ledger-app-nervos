@@ -183,7 +183,7 @@ static size_t sign_complete(uint8_t instruction) {
         static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"),
                                                           PROMPT("Deposit Amount"),
                                                           PROMPT("Compensation"),
-                                                          PROMPT("Cell Owner "),
+                                                          PROMPT("Cell Owner"),
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Withdrawal");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
