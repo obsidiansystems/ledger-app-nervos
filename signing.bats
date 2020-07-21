@@ -1,12 +1,12 @@
 
 . ./tests/lib.sh
 
-@test "Signing APDU rejects when given garbage to sign and strict checking is enabled." {
-  run apdu_fixed "8003c0000400001111"
-  [ "$status" -eq 0 ]
-  grep -q "<= b''9405" <(echo "$output")
-  echo $output
-}
+#@test "Signing APDU rejects when given garbage to sign and strict checking is enabled." {
+#  run apdu_fixed "8003c0000400001111"
+#  [ "$status" -eq 0 ]
+#  grep -q "<= b''9405" <(echo "$output")
+#  echo $output
+#}
 
 # This a self transfer transaction with signing path "m/44'/309'/0'/0/0"
 
