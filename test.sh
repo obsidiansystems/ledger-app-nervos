@@ -45,4 +45,6 @@ bats -p tests/
 bats_result=$?
 echo "Done with bats"
 
+grep "Free space between globals and maximum stack:" speculos.log | sort -t: -k2 -un | head -n1
+
 exit $bats_result

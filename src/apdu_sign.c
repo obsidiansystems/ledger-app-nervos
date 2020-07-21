@@ -73,6 +73,57 @@ static bool sign_reject(void) {
     return true; // Return to idle
 }
 
+static void multi_output_prompts_cb(size_t which) {
+    switch(which) {
+        case 0:
+            {
+                static const char prompt[]="Confirm";
+                static const char value[]="Transaction";
+                memcpy(global.ui.prompt.active_prompt, (const void*)PIC(prompt), sizeof(prompt));
+                memcpy(global.ui.prompt.active_value, (const void*)PIC(value), sizeof(value));
+            }
+	    break;
+        case 1:
+            {
+                static const char prompt[]="Amount";
+                memcpy(global.ui.prompt.active_prompt, (const void*)PIC(prompt), sizeof(prompt));
+                frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.amount.snd);
+            }
+	    break;
+        case 2:
+            {
+                static const char prompt[]="Fee";
+                memcpy(global.ui.prompt.active_prompt, (const void*)PIC(prompt), sizeof(prompt));
+                frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.total_fee);
+            }
+	    break;
+        default:
+            {
+                if(sizeof(global.ui.prompt.active_prompt)<13) THROW(EXC_WRONG_LENGTH);
+                if(sizeof(global.ui.prompt.active_value)<29) THROW(EXC_WRONG_LENGTH);
+                static const char prompt[]="Output ";
+                memcpy(global.ui.prompt.active_prompt, (const void*)PIC(prompt), sizeof(prompt));
+                size_t prompt_fill=sizeof(prompt)-1;
+                if(which<100) prompt_fill+=number_to_string(global.ui.prompt.active_prompt+prompt_fill, which-2);
+                if(G.maybe_transaction.v.output_count<100) {
+                    global.ui.prompt.active_prompt[prompt_fill++]='/';
+                    number_to_string(global.ui.prompt.active_prompt+prompt_fill, G.maybe_transaction.v.output_count+1);
+                }
+
+                frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.outputs[which-3].capacity);
+                // Maximum of 20
+                size_t value_fill=strnlen(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value));
+                static const char separator[]=" CKB -> ";
+                memcpy(global.ui.prompt.active_value+value_fill, separator, sizeof(separator));
+                // Maximum of 28
+                value_fill+=sizeof(separator)-1;
+
+                void (*lock_arg_to_destination_address)(char *const, size_t const, lock_arg_t const *const) = G.u.tx.sending_to_multisig_output ? lock_arg_to_multisig_address : lock_arg_to_sighash_address;
+                lock_arg_to_destination_address(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.outputs[which-3].destination);
+            }
+    }
+}
+
 #define MAX_NUMBER_CHARS (MAX_INT_DIGITS + 2) // include decimal point and terminating null
 
 static size_t sign_complete(uint8_t instruction) {
@@ -107,6 +158,9 @@ static size_t sign_complete(uint8_t instruction) {
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
+    } break;
+    case OPERATION_TAG_MULTI_OUTPUT_TRANSFER: {
+        ui_prompt_with_cb(&multi_output_prompts_cb, 4 + G.maybe_transaction.v.output_count, ok_c, sign_reject);
     } break;
     case OPERATION_TAG_SELF_TRANSFER: {
         static const uint32_t TYPE_INDEX = 0;
@@ -494,6 +548,8 @@ void output_end(void) {
     if(G.cell_state.is_dao) {
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
+	if(!G.cell_state.is_change && G.cell_state.lock_arg_nonequal)
+		REJECT("Not allowing DAO outputs to be sent to a non-self address");
     } else {
         if(G.cell_state.is_multisig) {
             G.u.tx.sending_to_multisig_output = true;
@@ -515,13 +571,20 @@ void output_end(void) {
           }
         }
         else if(G.cell_state.lock_arg_nonequal) {
-            G.u.tx.plain_output_amount += G.cell_state.capacity;
             if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination.hash, G.lock_arg_tmp.hash, 20)) {
-                REJECT("Can't handle transactions with multiple non-change destination addresses");
-            } else {
+                if(G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET && G.maybe_transaction.v.tag != OPERATION_TAG_MULTI_OUTPUT_TRANSFER)
+                    REJECT("Can't handle mixed transaction types with multiple non-change destination addresses. Tag: %d", G.maybe_transaction.v.tag);
+                G.maybe_transaction.v.tag = OPERATION_TAG_MULTI_OUTPUT_TRANSFER;
+                if(G.maybe_transaction.v.output_count+1>=MAX_OUTPUTS) REJECT("Can't handle more than five outputs");
+                G.maybe_transaction.v.output_count++;
+                memcpy(&G.maybe_transaction.v.outputs[G.maybe_transaction.v.output_count].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+            } else if( !(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) ) {
                 G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
                 memcpy(&G.maybe_transaction.v.destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+                memcpy(&G.maybe_transaction.v.outputs[0].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
             }
+            G.u.tx.plain_output_amount += G.cell_state.capacity;
+            G.maybe_transaction.v.outputs[G.maybe_transaction.v.output_count].capacity+=G.cell_state.capacity;
         } else {
             G.u.tx.change_amount += G.cell_state.capacity;
         }
@@ -573,6 +636,10 @@ void finalize_raw_transaction(void) {
         case OPERATION_TAG_SELF_TRANSFER:
             G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
             break;
+        case OPERATION_TAG_MULTI_OUTPUT_TRANSFER:
+	    if(G.distinct_input_sources > 1) REJECT("Multi-input multi-output transactions are not supported");
+	    G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
+	    break;
         case OPERATION_TAG_DAO_DEPOSIT:
             G.maybe_transaction.v.dao_amount = G.u.tx.dao_output_amount;
             break;
@@ -1006,10 +1073,9 @@ static void handle_long_message(uint8_t *buff, uint8_t *buff_size) {
   }
 }
 
-/***********************************************************************/
 /* Sign message                                                        */
 /***********************************************************************/
-static size_t handle_apdu_sign_message_impl(uint8_t const _instruction) {
+static size_t handle_apdu_sign_message_impl(uint8_t const __attribute__((unused)) _instruction) {
   uint8_t *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
   uint8_t const buff_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
   uint8_t const p1 = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_P1]);

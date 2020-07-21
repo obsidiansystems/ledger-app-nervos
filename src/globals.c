@@ -68,9 +68,9 @@ void switch_network() {
     const bool isMain = data.address_type == ADDRESS_MAINNET; 
     data.address_type = isMain ? ADDRESS_TESTNET : ADDRESS_MAINNET;
     if(isMain)
-      strcpy(&data.network_prompt, testnet_prompt);
+      strcpy(data.network_prompt, testnet_prompt);
     else
-      strcpy(&data.network_prompt, mainnet_prompt);
+      strcpy(data.network_prompt, mainnet_prompt);
 
     nvm_write((void*)&N_data, (void*)&data, sizeof(N_data));
 }
@@ -80,9 +80,9 @@ void switch_sign_hash() {
     const bool isOn = data.sign_hash_type == SIGN_HASH_ON; 
     data.sign_hash_type = isOn ? SIGN_HASH_OFF : SIGN_HASH_ON;
     if(isOn)
-      strcpy(&data.sign_hash_prompt, sign_hash_prompt_off);
+      strcpy(data.sign_hash_prompt, sign_hash_prompt_off);
     else
-      strcpy(&data.sign_hash_prompt, sign_hash_prompt_on);
+      strcpy(data.sign_hash_prompt, sign_hash_prompt_on);
     nvm_write((void*)&N_data, (void*)&data, sizeof(N_data));
 }
 
