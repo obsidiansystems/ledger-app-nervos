@@ -14,9 +14,6 @@ clicks() {
 
 apdu_with_clicks () {
   echo "$1" | apdu &
-  if [ -n "$DEBUG" ] ; then
-	  until (tail -n3 speculos.log | head -n1 | egrep -q 'Prompt [0-9]*:'); do echo "Waiting" >2; sleep 0.1; done;
-  fi
   sleep 1;
   clicks "$2"
 }
