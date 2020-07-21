@@ -202,13 +202,15 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
         static const uint32_t DESTINATION_INDEX = 3;
-        static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"), PROMPT("Deposit Amount"), PROMPT("Fee"),
+        static const uint32_t OWNER_INDEX = 4;
+        static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"), PROMPT("Deposit Amount"), PROMPT("Fee"), PROMPT("Cell Owner"),
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
         // register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
         register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.maybe_transaction.v.outputs[1].destination);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -217,14 +219,17 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t TYPE_INDEX = 0;
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
+        static const uint32_t OWNER_INDEX = 3;
         static const char *const prepare_prompts_full[] = {
                                                             PROMPT("Confirm DAO"),
                                                             PROMPT("Deposit Amount"), 
                                                             PROMPT("Fee"), 
+                                                            PROMPT("Cell Owner"), 
                                                             NULL };
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Prepare");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.maybe_transaction.v.outputs[1].destination);
         ui_prompt(prepare_prompts_full,
                   ok_c, sign_reject);
         break;
@@ -241,8 +246,8 @@ static size_t sign_complete(uint8_t instruction) {
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Withdrawal");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
-        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.maybe_transaction.v.destination);
         register_ui_callback(COMPENSATION_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.maybe_transaction.v.outputs[1].destination);
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
     } break;
@@ -437,6 +442,8 @@ void check_cell_data_data_chunk(uint8_t *buf, mol_num_t length) {
 void finish_input_cell_data() {
     if(!G.cell_state.active) return;
     if(G.cell_state.is_dao) {
+      // Putting it in outputs is a space-preserving measure that should be reverted when we gain more space
+        memcpy(&G.maybe_transaction.v.outputs[1].destination, &G.current_lock_arg, sizeof(G.current_lock_arg));
         if(G.cell_state.data_size != 8) REJECT("DAO data must be 8 bytes");
         G.dao_input_amount += G.cell_state.capacity;
         if(G.cell_state.dao_data_is_nonzero) {
@@ -546,6 +553,8 @@ void output_end(void) {
   G.u.tx.processed_change_cell |= G.cell_state.is_change;
 
     if(G.cell_state.is_dao) {
+      // Putting it in outputs is a space-preserving measure that should be reverted when we gain more space
+        memcpy(&G.maybe_transaction.v.outputs[1].destination, &G.current_lock_arg, sizeof(G.current_lock_arg));
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
 	if(!G.cell_state.is_change && G.cell_state.lock_arg_nonequal)
@@ -657,8 +666,6 @@ void finalize_raw_transaction(void) {
     if(G.maybe_transaction.v.tag == OPERATION_TAG_DAO_WITHDRAW) {
         // Can't compute fee without a bunch more info, calculating return instead and putting that in this slot so the user can get equivalent info.
         G.maybe_transaction.v.total_fee = -G.maybe_transaction.v.total_fee;
-        // Use destination to hold Cell-Owner
-        memcpy(&G.maybe_transaction.v.destination, &G.current_lock_arg, sizeof(G.current_lock_arg));
     }
     blake2b_finish_hash(G.u.tx.transaction_hash, sizeof(G.u.tx.transaction_hash), &G.hash_state);
 }
@@ -1185,7 +1192,8 @@ static size_t handle_apdu_sign_message_hash_impl(void) {
       read_bip32_path(&g_smh->key, buff, buff_size);
       return finalize_successful_send(0);
     case P1_LAST_MARKER:
-      if(buff_size > 64) PARSE_ERROR();
+      // If the hash is > than 32 bytes, we can't display it (64 chars is the limit, and each byte gets displayed as 2 chars)
+      if(buff_size > 32) PARSE_ERROR();
       memcpy(g_smh->hash_to_sign, buff, buff_size);
       g_smh->hash_to_sign_size = buff_size;
       break;
