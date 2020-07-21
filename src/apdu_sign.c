@@ -1190,7 +1190,8 @@ static size_t handle_apdu_sign_message_hash_impl(void) {
       read_bip32_path(&g_smh->key, buff, buff_size);
       return finalize_successful_send(0);
     case P1_LAST_MARKER:
-      if(buff_size > 64) PARSE_ERROR();
+      // If the hash is > than 32 bytes, we can't display it (64 chars is the limit, and each byte gets displayed as 2 chars)
+      if(buff_size > 32) PARSE_ERROR();
       memcpy(g_smh->hash_to_sign, buff, buff_size);
       g_smh->hash_to_sign_size = buff_size;
       break;
