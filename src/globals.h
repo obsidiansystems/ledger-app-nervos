@@ -151,6 +151,7 @@ typedef struct {
         uint32_t ux_step_count;
 
         uint32_t timeout_cycle_count;
+        void (*switch_screen)(uint32_t which);
 #endif
 
         struct {
@@ -195,7 +196,7 @@ extern const uint8_t multisigLockScript[];
 
 extern const uint8_t blake2b_personalization[17];
 
-extern unsigned int app_stack_canary; // From SDK
+extern unsigned int volatile app_stack_canary; // From SDK
 
 // Used by macros that we don't control.
 #ifdef TARGET_NANOX

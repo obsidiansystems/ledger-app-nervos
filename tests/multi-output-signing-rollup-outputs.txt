@@ -1,0 +1,15 @@
+Prompt 0:
+Confirm
+Transaction
+Prompt 1:
+Amount
+600
+Prompt 2:
+Fee
+400.00001
+Prompt 3:
+Output 1/2
+400 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7scaqc8pnyu
+Prompt 4:
+Output 2/2
+200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7qffs5ek

@@ -70,7 +70,7 @@ let
         GIT_DESCRIBE = gitDescribe;
         BOLOS_SDK = bolos.sdk;
         BOLOS_ENV = bolos.env;
-        DEBUG=debug;
+        DEBUG=if debug then "1" else "0";
         installPhase = ''
           mkdir -p $out
           cp -R bin $out
