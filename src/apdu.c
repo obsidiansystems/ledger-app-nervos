@@ -127,7 +127,7 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                 app_stack_canary=0xdeadbeef;
 
 #ifdef STACK_MEASURE
-                stack_deadbeef();
+                stack_sentry_fill();
 #endif
 
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
