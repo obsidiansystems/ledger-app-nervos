@@ -44,7 +44,6 @@ static void blake2b_incremental_hash(
 static void blake2b_finish_hash(
     /*out*/ uint8_t *const out, size_t const out_size,
     /*in/out*/ blake2b_hash_state_t *const state) {
-	DBGOUT();
     check_null(out);
     check_null(state);
 
