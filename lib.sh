@@ -14,7 +14,7 @@ clicks() {
 
 apdu_with_clicks () {
   echo "$1" | apdu &
-  sleep 1
+  sleep 1;
   clicks "$2"
 }
 
