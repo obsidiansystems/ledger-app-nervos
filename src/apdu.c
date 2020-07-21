@@ -78,6 +78,25 @@ size_t handle_apdu_get_wallet_id(uint8_t __attribute__((unused)) instruction) {
     return finalize_successful_send(rv);
 }
 
+#ifdef STACK_MEASURE
+__attribute__((noinline)) void stack_sentry_fill() {
+  uint32_t* p;
+  volatile int top;
+  top=5;
+  memset((void*)(&app_stack_canary+1), 42, ((uint8_t*)(&top-10))-((uint8_t*)&app_stack_canary));
+}
+
+void measure_stack_max() {
+  uint32_t* p;
+  volatile int top;
+  for(p=&app_stack_canary+1; p<((&top)-10); p++)
+    if(*p != 0x2a2a2a2a) {
+	    PRINTF("Free space between globals and maximum stack: %d\n", 4*(p-&app_stack_canary));
+	    return;
+    }
+}
+#endif
+
 #define CLA 0x80
 
 __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, size_t const handlers_size) {
@@ -104,20 +123,30 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     THROW(EXC_WRONG_LENGTH);
                 }
 
-		unsigned int canary=app_stack_canary;
+                app_stack_canary=0xdeadbeef;
+
+#ifdef STACK_MEASURE
+                stack_deadbeef();
+#endif
 
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
                 apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
 
-                if(canary != app_stack_canary) {
+                size_t const tx = cb(instruction);
+
+                if(0xdeadbeef != app_stack_canary) {
                     THROW(EXC_STACK_ERROR);
                 }
-
-                size_t const tx = cb(instruction);
+#ifdef STACK_MEASURE
+		measure_stack_max();
+#endif
 
                 rx = io_exchange(CHANNEL_APDU, tx);
             }
             CATCH(ASYNC_EXCEPTION) {
+#ifdef STACK_MEASURE
+		measure_stack_max();
+#endif
                 rx = io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, 0);
             }
             CATCH(EXCEPTION_IO_RESET) {
