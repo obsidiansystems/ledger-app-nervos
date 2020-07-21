@@ -417,8 +417,8 @@ Prompts on the Ledger device are as follows:
 ```
 |    Prompt 1   |   Prompt 2   	|
 |:-------------:|:------------:	|
-|  Sign  	      |  Message: 	  |
-|  Message    	|  <message>  	|
+|  Sign         |  Message:     |
+|  Message      |  <message>    |
 
 ```
 One can verfiy the signature as follows:
@@ -450,13 +450,13 @@ CKB> util sign-data --binary-hex '0x61' --from-account <my-ledger-account>
 The ledger also allows for the signing of a pre-hashed message. Due to the potential security risks of this option, a user must "opt-in" to this
 setting by going into the `Configuration` section of the app, and setting `Allow sign hash` to `On`.
 ```
-CKB> util sign-message --message 'message hash' --from-account <my-ledger-account> 
+CKB> util sign-message --message <message hash> --from-account <my-ledger-account> 
 ```
 The ledger will display the following:
 ```
 |    Prompt 1   |   Prompt 2   	|
 |:-------------:|:------------:	|
-|  Sign  	      |  Message: 	  |
+|  Sign  	      |  Message:     |
 |  Hash        	|  <hash>      	|
 ```
 If the length of the hash is greater than 64 bytes, or if the `Allow sign hash` is set to `Off`, the ledger will reject the message.

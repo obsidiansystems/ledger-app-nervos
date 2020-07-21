@@ -148,7 +148,7 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
         static const uint32_t DESTINATION_INDEX = 3;
-        static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"), PROMPT("Amount"), PROMPT("Fee"),
+        static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"), PROMPT("Deposit Amount"), PROMPT("Fee"),
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
         // register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
@@ -164,7 +164,10 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
         static const char *const prepare_prompts_full[] = {
-            PROMPT("Confirm DAO"), PROMPT("Amount"),    PROMPT("Fee"), NULL };
+                                                            PROMPT("Confirm DAO"),
+                                                            PROMPT("Deposit Amount"), 
+                                                            PROMPT("Fee"), 
+                                                            NULL };
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Prepare");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
@@ -174,19 +177,18 @@ static size_t sign_complete(uint8_t instruction) {
     }
     case OPERATION_TAG_DAO_WITHDRAW: {
         static const uint32_t TYPE_INDEX = 0;
-        static const uint32_t DEPOSIT_INDEX = 1;
-        static const uint32_t RETURN_INDEX = 2;
-        //static const uint32_t SOURCE_INDEX = 3;
+        static const uint32_t AMOUNT_INDEX = 1;
+        static const uint32_t COMPENSATION_INDEX = 2;
+        static const uint32_t OWNER_INDEX = 3;
         static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"),
-                                                          PROMPT("Deposit"),
-                                                          PROMPT("Return"),
-        //                                                  PROMPT("Source"),
+                                                          PROMPT("Deposit Amount"),
+                                                          PROMPT("Compensation"),
+                                                          PROMPT("Cell Owner"),
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Withdrawal");
-        register_ui_callback(DEPOSIT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
-        register_ui_callback(RETURN_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.dao_source);
-
+        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.maybe_transaction.v.destination);
+        register_ui_callback(COMPENSATION_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
     } break;
@@ -588,6 +590,8 @@ void finalize_raw_transaction(void) {
     if(G.maybe_transaction.v.tag == OPERATION_TAG_DAO_WITHDRAW) {
         // Can't compute fee without a bunch more info, calculating return instead and putting that in this slot so the user can get equivalent info.
         G.maybe_transaction.v.total_fee = -G.maybe_transaction.v.total_fee;
+        // Use destination to hold Cell-Owner
+        memcpy(&G.maybe_transaction.v.destination, &G.current_lock_arg, sizeof(G.current_lock_arg));
     }
     blake2b_finish_hash(G.u.tx.transaction_hash, sizeof(G.u.tx.transaction_hash), &G.hash_state);
 }
