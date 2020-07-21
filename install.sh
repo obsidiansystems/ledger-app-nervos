@@ -22,7 +22,7 @@ fi
 set -x
 python -m ledgerblue.loadApp \
     --appFlags 0x00 \
-    --dataSize "0" \
+    --dataSize "256" \
     --tlv \
     --curve ed25519 \
     --curve secp256k1 \
