@@ -23,12 +23,8 @@ globals_t global;
 const uint8_t blake2b_personalization[] = "ckb-default-hash";
 
 // These are strange variables that the SDK relies on us to define but uses directly itself.
-#ifdef TARGET_NANOX
 ux_state_t G_ux;
 bolos_ux_params_t G_ux_params;
-#else
-ux_state_t ux;
-#endif
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
@@ -39,12 +35,8 @@ void clear_apdu_globals(void) {
 void init_globals(void) {
     memset(&global, 0, sizeof(global));
 
-#ifdef TARGET_NANOX
     memset(&G_ux, 0, sizeof(G_ux));
     memset(&G_ux_params, 0, sizeof(G_ux_params));
-#else
-    memset(&ux, 0, sizeof(ux));
-#endif
 
     memset(G_io_seproxyhal_spi_buffer, 0, sizeof(G_io_seproxyhal_spi_buffer));
 }

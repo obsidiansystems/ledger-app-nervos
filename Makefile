@@ -77,6 +77,8 @@ SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 SDK_SOURCE_PATH  += lib_ux
 else
 DEFINES   += IO_SEPROXYHAL_BUFFER_SIZE_B=128
+DEFINES   += HAVE_UX_FLOW
+SDK_SOURCE_PATH  += lib_ux
 endif
 
 # Enabling debug PRINTF

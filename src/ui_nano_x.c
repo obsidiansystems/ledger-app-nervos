@@ -1,7 +1,5 @@
 #include "bolos_target.h"
 
-#ifdef TARGET_NANOX
-
 #include "ui.h"
 
 #include "exception.h"
@@ -142,14 +140,18 @@ UX_FLOW(ux_idle_flow,
 
 // prompt
 #define PROMPT_SCREEN_NAME(idx) ux_prompt_flow_ ## idx ## _step
+#define EVAL(...) __VA_ARGS__
+#define UXSTEPNOCB(...) EVAL(UX_STEP_NOCB EVAL(__VA_ARGS__))
+#define BLANK() 
 #define PROMPT_SCREEN_TPL(idx) \
-    UX_STEP_NOCB( \
+    EVAL(UX_STEP_NOCB_INIT BLANK() ( \
         PROMPT_SCREEN_NAME(idx), \
         bnnn_paging, \
+	G.switch_screen(idx-G.prompt.offset),\
         { \
-            .title = G.prompt.screen[idx].prompt, \
-            .text = G.prompt.screen[idx].value, \
-        })
+            .title = G.prompt.active_prompt, \
+            .text = G.prompt.active_value, \
+        }))
 
 PROMPT_SCREEN_TPL(0);
 PROMPT_SCREEN_TPL(1);
@@ -219,9 +221,28 @@ void ui_initial_screen(void) {
 
 }
 
+void switch_screen(uint32_t which) {
+    if (which >= MAX_SCREEN_COUNT)
+        THROW(EXC_MEMORY_ERROR);
+    const char *label = (const char *)PIC(global.ui.prompt.prompts[which]);
+    strncpy(global.ui.prompt.active_prompt, label, sizeof(global.ui.prompt.active_prompt));
+    if (global.ui.prompt.callbacks[which] == NULL)
+        THROW(EXC_MEMORY_ERROR);
+    global.ui.prompt.callbacks[which](global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value),
+                                      global.ui.prompt.callback_data[which]);
+}
+
+void ui_prompt_debug(size_t screen_count) {
+    for(uint32_t i=0; i<screen_count; i++) {
+        G.switch_screen(i);
+        PRINTF("Prompt %d:\n%s\n%s\n", i, global.ui.prompt.active_prompt, global.ui.prompt.active_value);
+    }
+}
+
 __attribute__((noreturn))
 void ui_prompt(const char *const *labels, ui_callback_t ok_c, ui_callback_t cxl_c) {
     check_null(labels);
+    global.ui.prompt.prompts = labels;
 
     size_t const screen_count = ({
         size_t i = 0;
@@ -229,16 +250,23 @@ void ui_prompt(const char *const *labels, ui_callback_t ok_c, ui_callback_t cxl_
         i;
     });
 
+
     // We fill the destination buffers at the end instead of the beginning so we can
     // use the same array for any number of screens.
     size_t const offset = MAX_SCREEN_COUNT - screen_count;
-    for (size_t i = 0; labels[i] != NULL; i++) {
+
+    G.switch_screen=switch_screen;
+    G.prompt.offset=MAX_SCREEN_COUNT-screen_count;
+    
+    ui_prompt_debug(screen_count);
+
+    /*for (size_t i = 0; labels[i] != NULL; i++) {
         const char *const label = (const char *)PIC(labels[i]);
         if (strlen(label) > sizeof(G.prompt.screen[i].prompt)) THROW(EXC_MEMORY_ERROR);
         strcpy(G.prompt.screen[offset + i].prompt, label);
 
         G.prompt.callbacks[i](G.prompt.screen[offset + i].value, sizeof(G.prompt.screen[offset + i].value), G.prompt.callback_data[i]);
-    }
+    }*/
 
     G.ok_callback = ok_c;
     G.cxl_callback = cxl_c;
@@ -246,4 +274,3 @@ void ui_prompt(const char *const *labels, ui_callback_t ok_c, ui_callback_t cxl_
     THROW(ASYNC_EXCEPTION);
 }
 
-#endif // #ifdef TARGET_NANOX

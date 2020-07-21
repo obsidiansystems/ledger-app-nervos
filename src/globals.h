@@ -145,30 +145,22 @@ typedef struct {
         ui_callback_t ok_callback;
         ui_callback_t cxl_callback;
 
-#ifndef TARGET_NANOX
         uint32_t ux_step;
         uint32_t ux_step_count;
 
         uint32_t timeout_cycle_count;
         void (*switch_screen)(uint32_t which);
-#endif
 
         struct {
             string_generation_callback callbacks[MAX_SCREEN_COUNT];
             const void *callback_data[MAX_SCREEN_COUNT];
 
-#ifdef TARGET_NANOX
-            struct {
-                char prompt[PROMPT_WIDTH + 1];
-                char value[VALUE_WIDTH + 1];
-            } screen[MAX_SCREEN_COUNT];
-#else
             char active_prompt[PROMPT_WIDTH + 1];
             char active_value[VALUE_WIDTH + 1];
 
             // This will and must always be static memory full of constants
             const char *const *prompts;
-#endif
+	    size_t offset;
         } prompt;
     } ui;
 

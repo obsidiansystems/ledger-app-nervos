@@ -160,7 +160,7 @@ static size_t sign_complete(uint8_t instruction) {
 
     } break;
     case OPERATION_TAG_MULTI_OUTPUT_TRANSFER: {
-        ui_prompt_with_cb(&multi_output_prompts_cb, 4 + G.maybe_transaction.v.output_count, ok_c, sign_reject);
+        // ui_prompt_with_cb(&multi_output_prompts_cb, 4 + G.maybe_transaction.v.output_count, ok_c, sign_reject);
     } break;
     case OPERATION_TAG_SELF_TRANSFER: {
         static const uint32_t TYPE_INDEX = 0;
