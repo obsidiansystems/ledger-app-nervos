@@ -96,7 +96,7 @@ let
 
         cat > "$out/app.manifest" <<EOF
         name='${name}'
-        nvram_size=$(cat '${nvramDataSize appDir}')
+        nvram_size=256 # $(cat '${nvramDataSize appDir}')
         target='nano_${bolos.name}'
         target_id=${bolos.targetId}
         version=$(echo '${gitDescribe}' | cut -f1 -d- | cut -f2 -dv)
