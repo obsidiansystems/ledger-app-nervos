@@ -1,7 +1,7 @@
 
 . tests/lib.sh
 
-@test "Ledger app version returns 0.1.0" {
+@test "Ledger app version returns 0.3.0" {
   run apdu_fixed "8000000000"
   [ "$status" -eq 0 ]
   diff tests/version_apdu_stdout.txt <(echo "$output")
