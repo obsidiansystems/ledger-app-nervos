@@ -196,14 +196,16 @@ void buffer_to_hex(char *const out, size_t const out_size, buffer_t const *const
 }
 
 void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
-    global.apdu.priv.render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
-    global.apdu.priv.render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
+    render_address_payload_t render_address_payload;
+    render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
+    render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
 
-    memcpy(&global.apdu.priv.render_address_payload.s.hash, lock_arg->hash, sizeof(global.apdu.priv.render_address_payload.s.hash));
-    render_pkh(dest, buff_size, &global.apdu.priv.render_address_payload);
+    memcpy(&render_address_payload.s.hash, lock_arg->hash, sizeof(render_address_payload.s.hash));
+    render_pkh(dest, buff_size, &render_address_payload);
 }
 
 void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
+    render_address_payload_t render_address_payload;
     bool has_timelock = false;
     for (int i = 0; i < 8; i++) {
         if (lock_arg->lock_period[i] != 0) {
@@ -212,18 +214,18 @@ void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock
         }
     }
     if (has_timelock) {
-        global.apdu.priv.render_address_payload.f.address_format_type = ADDRESS_FORMAT_TYPE_FULL_TYPE;
-        memcpy(&global.apdu.priv.render_address_payload.f.code_hash, multisigLockScript,
-               sizeof(global.apdu.priv.render_address_payload.f.code_hash));
-        memcpy(&global.apdu.priv.render_address_payload.f.lock_arg, lock_arg, sizeof(global.apdu.priv.render_address_payload.f.lock_arg));
+        render_address_payload.f.address_format_type = ADDRESS_FORMAT_TYPE_FULL_TYPE;
+        memcpy(&render_address_payload.f.code_hash, multisigLockScript,
+               sizeof(render_address_payload.f.code_hash));
+        memcpy(&render_address_payload.f.lock_arg, lock_arg, sizeof(render_address_payload.f.lock_arg));
     } else {
-        global.apdu.priv.render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
-        global.apdu.priv.render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_MULTISIG;
-        memcpy(&global.apdu.priv.render_address_payload.s.hash, lock_arg->hash,
-               sizeof(global.apdu.priv.render_address_payload.s.hash));
+        render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
+        render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_MULTISIG;
+        memcpy(&render_address_payload.s.hash, lock_arg->hash,
+               sizeof(render_address_payload.s.hash));
     }
 
-    render_pkh(dest, buff_size, &global.apdu.priv.render_address_payload);
+    render_pkh(dest, buff_size, &render_address_payload);
 }
 
 // (x, h) -> "x of y"

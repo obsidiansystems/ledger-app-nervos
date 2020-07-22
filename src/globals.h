@@ -138,6 +138,7 @@ typedef struct {
     bip32_path_t key;
     extended_public_key_t ext_public_key;
     cx_blake2b_t hash_state;
+    standard_lock_arg_t render_address_lock_arg;
 } apdu_pubkey_state_t;
 
 typedef struct {
@@ -185,7 +186,6 @@ typedef struct {
 
         struct {
             struct priv_generate_key_pair generate_key_pair;
-            render_address_payload_t render_address_payload;
         } priv;
     } apdu;
     nvram_data new_data;
