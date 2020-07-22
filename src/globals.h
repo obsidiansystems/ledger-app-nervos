@@ -66,7 +66,6 @@ typedef struct {
 
         // Things we need exclusively after doing validate_context_txn
         struct {
-            uint32_t witness_idx;
             uint32_t witness_multisig_threshold;
             uint32_t witness_multisig_pubkeys_cnt;
             uint32_t witness_multisig_lock_arg_consumed;
@@ -79,6 +78,7 @@ typedef struct {
             uint64_t change_amount;
             uint64_t plain_output_amount;
             uint64_t dao_output_amount;
+            uint8_t is_first_witness : 1;
             uint8_t hash_only : 1;
             uint8_t first_witness_done : 1;
             uint8_t is_self_transfer : 1;
