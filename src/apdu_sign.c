@@ -405,8 +405,17 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
 void input_lock_arg_end() {
     if(!G.cell_state.active) return;
 
-    if (memcmp(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg)))
+    if (memcmp(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg))) {
         G.distinct_input_sources += 1;
+        if (G.cell_state.lock_arg_nonequal == 0) {
+            // We are signing this input
+            // Store the 'index' of this input wrt all other inputs
+            // The 'index' starts from 1
+            if (G.maybe_transaction.v.input_count.fst != 0)
+                REJECT("Input cells in AnnotatedTransaction are not in expected order");
+            G.maybe_transaction.v.input_count.fst = G.distinct_input_sources;
+        }
+    }
     memcpy(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg));
 }
 
@@ -627,7 +636,9 @@ void finalize_raw_transaction(void) {
                 if (G.signing_multisig_input)
                     REJECT("Signing multi-input transaction with multisig input is not supported");
                 G.maybe_transaction.v.tag = OPERATION_TAG_MULTI_INPUT_TRANSFER;
-                G.maybe_transaction.v.input_count.fst = 1;
+                // The input 'index' we are signing should have been set to non-zero value
+                if (G.maybe_transaction.v.input_count.fst == 0)
+                    REJECT("Internal error in handling multi-input transaction");
                 G.maybe_transaction.v.input_count.snd = G.distinct_input_sources;
                 // Display the complete input amount we are signing, without deducting change
                 G.maybe_transaction.v.amount.fst = G.input_amount.fst;

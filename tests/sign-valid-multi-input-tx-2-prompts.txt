@@ -3,7 +3,7 @@ Confirm
 Multi-Input Transaction
 Prompt 1:
 Input
-1 of 2
+2 of 2
 Prompt 2:
 Source
 ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7sugcvv9
