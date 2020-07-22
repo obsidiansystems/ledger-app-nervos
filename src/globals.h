@@ -113,7 +113,6 @@ typedef struct {
 
     uint8_t *lock_arg_cmp;
     lock_arg_t lock_arg_tmp;
-    buffer_t message_data_as_buffer;
     uint8_t signing_multisig_input;
 } apdu_sign_state_t;
 
