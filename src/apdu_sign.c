@@ -432,7 +432,7 @@ void cell_type_arg_length(mol_num_t length) {
 
 void set_cell_data_size(mol_num_t size) {
     if(!G.cell_state.active) return;
-    G.cell_state.data_size = size-4; // size includes the 4-byte size header in Bytes
+    G.cell_state.data_size = MIN(15, size-4); // size includes the 4-byte size header in Bytes
 }
 
 void check_cell_data_data_chunk(uint8_t *buf, mol_num_t length) {
@@ -710,24 +710,24 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
 };
 
 void init_bip32(mol_num_t size) {
-    if(size-4 > sizeof(G.temp_key.components)) REJECT_HARD("Too many components in bip32 path");
-    G.temp_key.length=0;
+    if(size-4 > sizeof(G.u.temp_key.components)) REJECT_HARD("Too many components in bip32 path");
+    G.u.temp_key.length=0;
 }
 
 void bip32_component(uint8_t* buf, mol_num_t len) {
     (void) len;
-    G.temp_key.components[G.temp_key.length++]=*(uint32_t*)buf;
+    G.u.temp_key.components[G.u.temp_key.length++]=*(uint32_t*)buf;
 }
 
 void set_sign_path(void) {
-    memcpy(&G.key, &G.temp_key, sizeof(G.key));
+    memcpy(&G.key, &G.u.temp_key, sizeof(G.key));
     prep_lock_arg(&G.key, &G.current_lock_arg);
     // Default the change lock arg to the one we're currently going to sign for
     memcpy(&G.change_lock_arg, G.current_lock_arg, 20);
 }
 
 void set_change_path(void) {
-    prep_lock_arg(&G.temp_key, &G.change_lock_arg);
+    prep_lock_arg(&G.u.temp_key, &G.change_lock_arg);
 }
 
 void witness_offsets(struct WitnessArgs_state *state) {

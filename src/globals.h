@@ -49,18 +49,19 @@ typedef struct {
 
 typedef struct {
     uint64_t capacity;
+    uint8_t lock_arg_index : 5;
+    uint8_t data_size : 4;
     uint8_t active : 1;
     uint8_t is_dao : 1;
     uint8_t is_change : 1;
     uint8_t is_multisig : 1;
     uint8_t dao_data_is_nonzero : 1;
     uint8_t lock_arg_nonequal : 1;
-    uint8_t lock_arg_index;
-    uint32_t data_size;
 } cell_state_t;
 
 typedef struct {
     union {
+        bip32_path_t temp_key;
         input_state_t input_state;
 
         // Things we need exclusively after doing validate_context_txn
@@ -91,7 +92,7 @@ typedef struct {
     } u;
 
     bip32_path_t key;
-    bip32_path_t temp_key;
+
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
     standard_lock_arg_t last_input_lock_arg;
