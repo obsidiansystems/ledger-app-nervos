@@ -122,7 +122,7 @@ typedef struct {
     bip32_path_t key;
     blake2b_hash_state_t hash_state;
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
-    uint8_t display_as_hex : 1;
+    uint8_t display_as_hex;
     uint8_t display[64];
     uint8_t final_hash[SIGN_HASH_SIZE];
 } apdu_sign_message_state_t;
