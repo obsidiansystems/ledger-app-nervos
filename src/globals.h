@@ -75,13 +75,13 @@ typedef struct {
             uint8_t transaction_hash[SIGN_HASH_SIZE];
             uint8_t final_hash[SIGN_HASH_SIZE];
 
-            size_t output_count;
             struct output_t outputs[MAX_OUTPUTS];
 
             uint64_t dao_bitmask;
             uint64_t change_amount;
             uint64_t plain_output_amount;
             uint64_t dao_output_amount;
+            uint8_t output_count;
             uint8_t is_first_witness : 1;
             uint8_t hash_only : 1;
             uint8_t first_witness_done : 1;
@@ -114,8 +114,7 @@ typedef struct {
     uint8_t *lock_arg_cmp;
     lock_arg_t lock_arg_tmp;
     buffer_t message_data_as_buffer;
-    uint8_t signing_multisig_input : 1;
-
+    uint8_t signing_multisig_input;
 } apdu_sign_state_t;
 
 typedef struct {
