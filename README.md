@@ -236,7 +236,7 @@ If the results of that command match the results of `git rev-parse --short HEAD`
 
 # Using the Nervos Ledger App with CKB-CLI
 
-The Nervos Ledger app is built to work with CKB-CLI. Some of these CKB-CLI subcommands, such as `account import`, do not require that you're connected to a network such as the testnet Aggron or a devnet. Others, such as `wallet transfer` or `DAO operations`, must be submitted to a network for their result to be actualized. For testing purposes, we recommend [Using the Nervos Devnet](devnet.md), but you can also [Use the Nervos Testnet Aggron](using-testnet.md).
+The Nervos Ledger app is built to work with CKB-CLI. Some of these CKB-CLI subcommands, such as `account import`, do not require that you're connected to a network such as the testnet Aggron or a devnet. Others, such as `wallet transfer` or `DAO operations`, must be submitted to a network for their result to be actualized. For testing purposes, we recommend [Using the Nervos Devnet](using-devnet.md), but you can also [Use the Nervos Testnet Aggron](using-testnet.md).
 
 ## Installing the Client
 
