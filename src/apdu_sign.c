@@ -105,12 +105,12 @@ static void multi_output_prompts_cb(size_t which) {
                 memcpy(global.ui.prompt.active_prompt, (const void*)PIC(prompt), sizeof(prompt));
                 size_t prompt_fill=sizeof(prompt)-1;
                 if(which<100) prompt_fill+=number_to_string(global.ui.prompt.active_prompt+prompt_fill, which-2);
-                if(G.maybe_transaction.v.output_count<100) {
+                if(G.u.tx.output_count<100) {
                     global.ui.prompt.active_prompt[prompt_fill++]='/';
-                    number_to_string(global.ui.prompt.active_prompt+prompt_fill, G.maybe_transaction.v.output_count+1);
+                    number_to_string(global.ui.prompt.active_prompt+prompt_fill, G.u.tx.output_count+1);
                 }
 
-                frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.outputs[which-3].capacity);
+                frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3].capacity);
                 // Maximum of 20
                 size_t value_fill=strnlen(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value));
                 static const char separator[]=" CKB -> ";
@@ -119,7 +119,7 @@ static void multi_output_prompts_cb(size_t which) {
                 value_fill+=sizeof(separator)-1;
 
                 void (*lock_arg_to_destination_address)(char *const, size_t const, lock_arg_t const *const) = G.u.tx.sending_to_multisig_output ? lock_arg_to_multisig_address : lock_arg_to_sighash_address;
-                lock_arg_to_destination_address(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.outputs[which-3].destination);
+                lock_arg_to_destination_address(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3].destination);
             }
     }
 }
@@ -152,7 +152,7 @@ static size_t sign_complete(uint8_t instruction) {
                                                           PROMPT("Destination"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
         //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
 
@@ -160,7 +160,7 @@ static size_t sign_complete(uint8_t instruction) {
 
     } break;
     case OPERATION_TAG_MULTI_OUTPUT_TRANSFER: {
-        ui_prompt_with_cb(&multi_output_prompts_cb, 4 + G.maybe_transaction.v.output_count, ok_c, sign_reject);
+        ui_prompt_with_cb(&multi_output_prompts_cb, 4 + G.u.tx.output_count, ok_c, sign_reject);
     } break;
     case OPERATION_TAG_SELF_TRANSFER: {
         static const uint32_t TYPE_INDEX = 0;
@@ -170,7 +170,7 @@ static size_t sign_complete(uint8_t instruction) {
         static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"),      PROMPT("Fee"),
                                                           PROMPT("Destination"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Self-Transfer");
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
 
@@ -192,7 +192,7 @@ static size_t sign_complete(uint8_t instruction) {
         register_ui_callback(SOURCE_INDEX, lock_arg_to_sighash_address, &G.current_lock_arg);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_tuple_to_string_indirect, &G.maybe_transaction.v.amount);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -207,10 +207,11 @@ static size_t sign_complete(uint8_t instruction) {
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
         // register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.maybe_transaction.v.destination);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
-        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.maybe_transaction.v.outputs[1].destination);
+        // The dao cell owner is always current_lock_arg
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.current_lock_arg);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -229,7 +230,8 @@ static size_t sign_complete(uint8_t instruction) {
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Prepare");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.maybe_transaction.v.outputs[1].destination);
+        // The dao cell owner is always current_lock_arg
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.current_lock_arg);
         ui_prompt(prepare_prompts_full,
                   ok_c, sign_reject);
         break;
@@ -246,8 +248,8 @@ static size_t sign_complete(uint8_t instruction) {
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Withdrawal");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.current_lock_arg);
         register_ui_callback(COMPENSATION_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.maybe_transaction.v.outputs[1].destination);
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
     } break;
@@ -442,8 +444,6 @@ void check_cell_data_data_chunk(uint8_t *buf, mol_num_t length) {
 void finish_input_cell_data() {
     if(!G.cell_state.active) return;
     if(G.cell_state.is_dao) {
-      // Putting it in outputs is a space-preserving measure that should be reverted when we gain more space
-        memcpy(&G.maybe_transaction.v.outputs[1].destination, &G.current_lock_arg, sizeof(G.current_lock_arg));
         if(G.cell_state.data_size != 8) REJECT("DAO data must be 8 bytes");
         G.dao_input_amount += G.cell_state.capacity;
         if(G.cell_state.dao_data_is_nonzero) {
@@ -553,8 +553,7 @@ void output_end(void) {
   G.u.tx.processed_change_cell |= G.cell_state.is_change;
 
     if(G.cell_state.is_dao) {
-      // Putting it in outputs is a space-preserving measure that should be reverted when we gain more space
-        memcpy(&G.maybe_transaction.v.outputs[1].destination, &G.current_lock_arg, sizeof(G.current_lock_arg));
+        // The dao cell owner is always current_lock_arg
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
 	if(!G.cell_state.is_change && G.cell_state.lock_arg_nonequal)
@@ -572,28 +571,27 @@ void output_end(void) {
           }
           G.u.tx.plain_output_amount += G.cell_state.capacity;
           uint8_t *dest_to_show = dest_is_src ? G.lock_arg_tmp.hash : G.change_lock_arg;
-          if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination.hash, dest_to_show, 20)) {
+          if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.u.tx.outputs[0].destination.hash, dest_to_show, 20)) {
               REJECT("Can't handle transactions with multiple non-change destination addresses");
           } else {
               G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-              memcpy(G.maybe_transaction.v.destination.hash, dest_to_show, 20);
+              memcpy(G.u.tx.outputs[0].destination.hash, dest_to_show, 20);
           }
         }
         else if(G.cell_state.lock_arg_nonequal) {
-            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.maybe_transaction.v.destination.hash, G.lock_arg_tmp.hash, 20)) {
+            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.u.tx.outputs[0].destination.hash, G.lock_arg_tmp.hash, 20)) {
                 if(G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET && G.maybe_transaction.v.tag != OPERATION_TAG_MULTI_OUTPUT_TRANSFER)
                     REJECT("Can't handle mixed transaction types with multiple non-change destination addresses. Tag: %d", G.maybe_transaction.v.tag);
                 G.maybe_transaction.v.tag = OPERATION_TAG_MULTI_OUTPUT_TRANSFER;
-                if(G.maybe_transaction.v.output_count+1>=MAX_OUTPUTS) REJECT("Can't handle more than five outputs");
-                G.maybe_transaction.v.output_count++;
-                memcpy(&G.maybe_transaction.v.outputs[G.maybe_transaction.v.output_count].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+                if(G.u.tx.output_count+1>=MAX_OUTPUTS) REJECT("Can't handle more than five outputs");
+                G.u.tx.output_count++;
+                memcpy(&G.u.tx.outputs[G.u.tx.output_count].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
             } else if( !(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) ) {
                 G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-                memcpy(&G.maybe_transaction.v.destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
-                memcpy(&G.maybe_transaction.v.outputs[0].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+                memcpy(&G.u.tx.outputs[0].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
             }
             G.u.tx.plain_output_amount += G.cell_state.capacity;
-            G.maybe_transaction.v.outputs[G.maybe_transaction.v.output_count].capacity+=G.cell_state.capacity;
+            G.u.tx.outputs[G.u.tx.output_count].capacity+=G.cell_state.capacity;
         } else {
             G.u.tx.change_amount += G.cell_state.capacity;
         }
