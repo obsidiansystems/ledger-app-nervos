@@ -571,6 +571,8 @@ Prompts on the Ledger device are as follows:
 | `Confirm DAO` 	| `Deposit Amount` 	|    `Compensation`   	|       `Cell Owner`      	|
 |   `Withdraw`  	|   `<capacity>`   	| `<return-capacity>` 	| `<cell-owners-address>` 	|
 
+Compensation is the amount of CKB you have earned for having CKB deposited in the NervosDAO. It does not include the the original deposited amount. For more information about compensation, we recommend reading the [Nervos DAO RFC](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0023-dao-deposit-withdraw/0023-dao-deposit-withdraw.md).
+
 If you attempt to withdraw from the Nervos DAO prematurely, you'll see an error such as 
 ```
 JSON-RPC 2.0 Error: Server error (Transaction: Immature)
