@@ -236,7 +236,7 @@ If the results of that command match the results of `git rev-parse --short HEAD`
 
 # Using the Nervos Ledger App with CKB-CLI
 
-The Nervos Ledger app is built to work with CKB-CLI. Some of these CKB-CLI subcommands, such as `account import`, do not require that you're connected to a network such as the testnet Aggron or a devnet. Others, such as `wallet transfer` or `DAO operations`, must be submitted to a network for their result to be actualized. For testing purposes, we recommend [Using the Nervos Devnet](devnet.md), but you can also [Use the Nervos Testnet Aggron](using-testnet.md).
+The Nervos Ledger app is built to work with CKB-CLI. Some of these CKB-CLI subcommands, such as `account import`, do not require that you're connected to a network such as the testnet Aggron or a devnet. Others, such as `wallet transfer` or `DAO operations`, must be submitted to a network for their result to be actualized. For testing purposes, we recommend [Using the Nervos Devnet](using-devnet.md), but you can also [Use the Nervos Testnet Aggron](using-testnet.md).
 
 ## Installing the Client
 
@@ -350,7 +350,7 @@ CKB> wallet transfer \
     --from-account <lock-arg> \
     --to-address <to-address> \
     --capacity <capacity> \
-    --tx-fee <tx-fee> \
+    --tx-fee <tx-fee>
 ```
 The on-device prompts for this command are as follows:
 
@@ -359,11 +359,15 @@ The on-device prompts for this command are as follows:
 |   `Confirm`   	|   `Amount`   	|    `Fee`   	|  `Destination` 	|
 | `Transaction` 	| `<capacity>` 	| `<tx-fee>` 	| `<to-address>` 	|
 
-More complicated transactions, such as those with multiple outputs, can be constructed in a JSON file. We recommend the following resources for more complex transactions:
+### Complex Transfers ###
+
+More complicated transactions, such as those with multiple outputs or inputs from different lock-args, can be constructed in a JSON file. We recommend the following resources for more complex transactions:
 - [Handling Complex Transaction](https://github.com/nervosnetwork/ckb-cli/wiki/Handle-Complex-Transaction)
 - [How to use Multisigs with CKB-CLI](https://medium.com/@obsidian.systems/how-to-use-multisigs-with-ckb-cli-5fbd7f4f56e4)
 
-Note that more complicated transactions will have different on-device prompts so the user can verify all the aspects of what they are signing. (*TODO: show all variants of transaction prompts*)
+When doing more complex transactions, please note: 
+- Different transaction variants may have different on-device prompts so the user can verify all the aspects of what they are signing. (*TODO: show all variants of transaction prompts*)
+- There are restrictions you may encounter due to device constraints. For instance, The Nano S can only sign a transaction with a maximum of 3 non-change outputs. The Nano X can sign a maximum of 5 non-change outputs in a single transaction.
 
 ## Checking Chain Data ##
 
@@ -382,6 +386,7 @@ Get live cells:
 
 ``` sh
 CKB> wallet get-live-cells --address <address>
+
 current_capacity: 2000.0 (CKB)
 current_count: 1
 live_cells:
@@ -414,13 +419,12 @@ The ckb-cli accepts utf8 strings in its `--utf8-string` argument, but the ledger
 character that it is unnable to display it will display an asterisk (`\*`) instead.
 
 Prompts on the Ledger device are as follows:
-```
-|    Prompt 1   |   Prompt 2   	|
-|:-------------:|:------------:	|
-|  Sign         |  Message:     |
-|  Message      |  <message>    |
 
-```
+|  Prompt 1 	|   Prompt 2  	|
+|:---------:	|:-----------:	|
+|   `Sign`  	|  `Message`  	|
+| `Message` 	| `<message>` 	|
+
 One can verfiy the signature as follows:
 
 ```bash
@@ -453,12 +457,12 @@ setting by going into the `Configuration` section of the app, and setting `Allow
 CKB> util sign-message --message <message hash> --from-account <my-ledger-account> 
 ```
 The ledger will display the following:
-```
-|    Prompt 1   |   Prompt 2   	|
-|:-------------:|:------------:	|
-|  Sign  	      |  Message:     |
-|  Hash        	|  <hash>      	|
-```
+
+|    Prompt 1    	|   Prompt 2  	|
+|:--------------:	|:-----------:	|
+|     `Sign`     	|  `Message`  	|
+| `Message Hash` 	| `<message>` 	|
+
 If the length of the hash is greater than 64 bytes, or if the `Allow sign hash` is set to `Off`, the ledger will reject the message.
 
 The user may also use the `Sign Hash` feature by selecting the `--no-magic-bytes` flag in a `util sign-data` command. If this is the case,
@@ -475,14 +479,14 @@ CKB> dao deposit \
     --capacity <capacity> \
     --from-account <lock-arg> \
     --path <path> \
-    --tx-fee <tx-fee> \
+    --tx-fee <tx-fee>
 ```
 Prompts on the Ledger device are as follows:
 
-|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|
-|:-------------:	|:------------:	|:----------:	|
-| `Confirm DAO` 	|   `Amount`   	|    `Fee`   	|
-|   `Deposit`   	| `<capacity>` 	| `<tx-fee>` 	|
+|    Prompt 1   	|     Prompt 2     	| Prompt 3   	| Prompt 4                	|
+|:-------------:	|:----------------:	|:------------:|:-------------------------:	|
+| `Confirm DAO` 	| `Deposit Amount` 	| `Fee`      	| `Cell Owner`            	|
+|   `Deposit`   	|   `<capacity>`   	| `<tx-fee>` 	| `<cell-owners-address>` 	|
 
 #### Get Cells Deposited in the NervosDAO ####
 
@@ -490,6 +494,7 @@ After you've made a deposit to the NervosDAO, you can confirm it using `dao quer
 
 ``` sh
 CKB> dao query-deposited-cells --address <address>
+
 live_cells:
   - capacity: 10200000000
     data_bytes: 8
@@ -517,14 +522,14 @@ CKB> dao prepare \
     --from-account <lock-arg> \
     --path <path> \
     --out-point <tx_hash>-<output_index> \
-    --tx-fee <tx-fee> \
+    --tx-fee <tx-fee>
 ```
 Prompts on the Ledger device are as follows:
 
-|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|   Prompt 4   	|    Prompt 5   	|
-|:-------------:	|:------------:	|:----------:	|:------------:	|:-------------:	|
-| `Confirm DAO` 	|   `Amount`   	|    `Fee`   	|    `Owner`   	|  `Fee Payer`  	|
-|   `Prepare`   	| `<capacity>` 	| `<tx-fee>` 	| `<lock-arg>` 	| `<fee-payer>` 	|
+|    Prompt 1   	|     Prompt 2     	|  Prompt 3  	|         Prompt 4        	|
+|:-------------:	|:----------------:	|:----------:	|:-----------------------:	|
+| `Confirm DAO` 	| `Deposit Amount` 	|    `Fee`   	|       `Cell Owner`      	|
+|   `Prepare`   	|   `<capacity>`   	| `<tx-fee>` 	| `<cell-owners-address>` 	|
 
 #### Get Cells Prepared for Withdrawal from NervosDAO ####
 
@@ -532,6 +537,7 @@ After you've prepared your cell for withdrawal from the NervosDAO, you can confi
 
 ``` sh
 CKB> dao query-prepared-cells --address <address>
+
 live_cells:
   - capacity: 10500000000
     data_bytes: 8
@@ -560,14 +566,16 @@ CKB> dao withdraw \
     --from-account <lock-arg> \
     --path <path> \
     --out-point <tx_hash>-<output_index> \
-    --tx-fee <tx-fee> \
+    --tx-fee <tx-fee>
 ```
 Prompts on the Ledger device are as follows:
 
-|    Prompt 1   	|   Prompt 2   	|  Prompt 3  	|   Prompt 4   	|    Prompt 5   	|
-|:-------------:	|:------------:	|:----------:	|:------------:	|:-------------:	|
-| `Confirm DAO` 	|   `Amount`   	|    `Fee`   	|    `Owner`   	|  `Fee Payer`  	|
-|   `Withdraw`  	| `<capacity>` 	| `<tx-fee>` 	| `<lock-arg>` 	| `<fee-payer>` 	|
+|    Prompt 1   	|     Prompt 2     	|       Prompt 3      	|         Prompt 4        	|
+|:-------------:	|:----------------:	|:-------------------:	|:-----------------------:	|
+| `Confirm DAO` 	| `Deposit Amount` 	|    `Compensation`   	|       `Cell Owner`      	|
+|   `Withdraw`  	|   `<capacity>`   	| `<return-capacity>` 	| `<cell-owners-address>` 	|
+
+Compensation is the amount of CKB you have earned for having CKB deposited in the NervosDAO. It does not include the the original deposited amount. For more information about compensation, we recommend reading the [Nervos DAO RFC](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0023-dao-deposit-withdraw/0023-dao-deposit-withdraw.md).
 
 If you attempt to withdraw from the Nervos DAO prematurely, you'll see an error such as 
 ```
