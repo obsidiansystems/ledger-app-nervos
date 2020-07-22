@@ -826,8 +826,8 @@ const WitnessArgs_cb WitnessArgs_rewrite_callbacks = {
 };
 
 void begin_witness(mol_num_t index) {
-    G.u.tx.witness_idx = index;
-    if(G.u.tx.witness_idx==0) {
+    G.u.tx.is_first_witness = index == 0;
+    if(G.u.tx.is_first_witness) {
         G.u.tx.witness_multisig_threshold = 0;
         G.u.tx.witness_multisig_pubkeys_cnt = 0;
         G.u.tx.witness_multisig_lock_arg_consumed = 0;
@@ -838,14 +838,14 @@ void begin_witness(mol_num_t index) {
 }
 
 void hash_witness_length(mol_num_t size) {
-    if(!(G.u.tx.witness_idx==0)) {
+    if(!(G.u.tx.is_first_witness)) {
         uint64_t size_as_64 = size-4;
         blake2b_incremental_hash((void*) &size_as_64, 8, &G.hash_state);
     }
 }
 
 void process_witness(uint8_t *buff, mol_num_t buff_size) {
-  if(G.u.tx.witness_idx == 0) { // First witness handling
+  if(G.u.tx.is_first_witness) { // First witness handling
 
     struct mol_chunk chunk = { buff, buff_size, 0 };
     mol_rv rv = MolReader_WitnessArgs_parse(G.u.tx.witness_stack+sizeof(G.u.tx.witness_stack), (struct WitnessArgs_state*)G.u.tx.witness_stack, &chunk, &WitnessArgs_rewrite_callbacks, MOL_NUM_MAX);
@@ -860,7 +860,7 @@ void process_witness(uint8_t *buff, mol_num_t buff_size) {
 
 void process_witness_end() {
     // If something went wrong parsing the first arg, just assume that it's the usual empty one.
-    if(G.u.tx.witness_idx==0 && G.u.tx.first_witness_done!=1) {
+    if(G.u.tx.is_first_witness && G.u.tx.first_witness_done!=1) {
         G.u.tx.first_witness_done=1;
         explicit_bzero(&G.hash_state, sizeof(G.hash_state));
         blake2b_incremental_hash(G.u.tx.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
