@@ -55,9 +55,8 @@ typedef struct {
     uint8_t is_multisig : 1;
     uint8_t dao_data_is_nonzero : 1;
     uint8_t lock_arg_nonequal : 1;
-    uint32_t arg_chunk_ctr;
+    uint8_t lock_arg_index;
     uint32_t data_size;
-    uint32_t lock_arg_index;
 } cell_state_t;
 
 typedef struct {
