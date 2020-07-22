@@ -31,9 +31,9 @@ typedef struct {
 } blake2b_hash_state_t;
 
 struct maybe_transaction {
-    uint8_t is_valid;
-    uint8_t unsafe;
-    uint8_t hard_reject;
+    uint8_t is_valid : 1;
+    uint8_t unsafe : 1;
+    uint8_t hard_reject : 1;
     struct parsed_transaction v;
 };
 
@@ -91,8 +91,6 @@ typedef struct {
         } tx;
     } u;
 
-    bip32_path_t key;
-
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
     standard_lock_arg_t last_input_lock_arg;
@@ -114,6 +112,10 @@ typedef struct {
 
     uint8_t *lock_arg_cmp;
     lock_arg_t lock_arg_tmp;
+
+    uint32_t key_path_components[3];
+    uint8_t key_length;
+
     uint8_t signing_multisig_input;
 } apdu_sign_state_t;
 

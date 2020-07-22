@@ -720,8 +720,13 @@ void bip32_component(uint8_t* buf, mol_num_t len) {
 }
 
 void set_sign_path(void) {
-    memcpy(&G.key, &G.u.temp_key, sizeof(G.key));
-    prep_lock_arg(&G.key, &G.current_lock_arg);
+    bip32_path_t key;
+    memcpy(&key, &G.u.temp_key, sizeof(key));
+    prep_lock_arg(&key, &G.current_lock_arg);
+
+    memcpy(G.key_path_components, key.components + 2, sizeof(G.key_path_components));
+    G.key_length = key.length;
+
     // Default the change lock arg to the one we're currently going to sign for
     memcpy(&G.change_lock_arg, G.current_lock_arg, 20);
 }
@@ -980,7 +985,13 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
     uint8_t const *const data = G.u.tx.final_hash;        // on_hash ? G.u.tx.final_hash : G.message_data;
     size_t const data_length = sizeof(G.u.tx.final_hash); // on_hash ? sizeof(G.u.tx.final_hash) : G.message_data_length;
 
-    tx += WITH_KEY_PAIR(G.key, key_pair, size_t,
+    bip32_path_t key;
+    key.components[0] = 0x8000002C;
+    key.components[1] = 0x80000135;
+    key.length = G.key_length;
+    memcpy(key.components + 2, G.key_path_components, sizeof(G.key_path_components));
+
+    tx += WITH_KEY_PAIR(key, key_pair, size_t,
                         ({ sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, data, data_length); }));
 
     clear_data();
