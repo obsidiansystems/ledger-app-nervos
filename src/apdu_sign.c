@@ -210,8 +210,7 @@ static size_t sign_complete(uint8_t instruction) {
         register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
-        // The dao cell owner is always current_lock_arg
-        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.current_lock_arg);
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.dao_cell_owner);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -230,8 +229,7 @@ static size_t sign_complete(uint8_t instruction) {
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Prepare");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
         register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        // The dao cell owner is always current_lock_arg
-        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.current_lock_arg);
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.dao_cell_owner);
         ui_prompt(prepare_prompts_full,
                   ok_c, sign_reject);
         break;
@@ -248,7 +246,7 @@ static size_t sign_complete(uint8_t instruction) {
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Withdrawal");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
-        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.current_lock_arg);
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.dao_cell_owner);
         register_ui_callback(COMPENSATION_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -453,6 +451,7 @@ void check_cell_data_data_chunk(uint8_t *buf, mol_num_t length) {
 void finish_input_cell_data() {
     if(!G.cell_state.active) return;
     if(G.cell_state.is_dao) {
+        memcpy(&G.dao_cell_owner, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
         if(G.cell_state.data_size != 8) REJECT("DAO data must be 8 bytes");
         G.dao_input_amount += G.cell_state.capacity;
         if(G.cell_state.dao_data_is_nonzero) {
@@ -562,7 +561,7 @@ void output_end(void) {
   G.u.tx.processed_change_cell |= G.cell_state.is_change;
 
     if(G.cell_state.is_dao) {
-        // The dao cell owner is always current_lock_arg
+        memcpy(&G.dao_cell_owner, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
 	if(!G.cell_state.is_change && G.cell_state.lock_arg_nonequal)
