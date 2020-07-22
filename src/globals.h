@@ -27,13 +27,13 @@ struct priv_generate_key_pair {
 
 typedef struct {
     cx_blake2b_t state;
-    bool initialized;
+    uint8_t initialized;
 } blake2b_hash_state_t;
 
 struct maybe_transaction {
-    bool is_valid;
-    bool unsafe;
-    bool hard_reject;
+    uint8_t is_valid;
+    uint8_t unsafe;
+    uint8_t hard_reject;
     struct parsed_transaction v;
 };
 
@@ -49,15 +49,15 @@ typedef struct {
 
 typedef struct {
     uint64_t capacity;
-    bool active;
-    bool is_dao;
-    bool is_change;
-    bool is_multisig;
-    uint8_t dao_data_is_nonzero;
+    uint8_t active : 1;
+    uint8_t is_dao : 1;
+    uint8_t is_change : 1;
+    uint8_t is_multisig : 1;
+    uint8_t dao_data_is_nonzero : 1;
+    uint8_t lock_arg_nonequal : 1;
     uint32_t arg_chunk_ctr;
     uint32_t data_size;
     uint32_t lock_arg_index;
-    uint8_t lock_arg_nonequal;
 } cell_state_t;
 
 typedef struct {
@@ -66,24 +66,28 @@ typedef struct {
 
         // Things we need exclusively after doing validate_context_txn
         struct {
-            uint32_t witness_idx;
             uint32_t witness_multisig_threshold;
             uint32_t witness_multisig_pubkeys_cnt;
             uint32_t witness_multisig_lock_arg_consumed;
-            _Alignas(uint32_t) uint8_t witness_stack[64]; 
+            _Alignas(uint32_t) uint8_t witness_stack[64];
             uint32_t current_output_index;
 
             uint8_t transaction_hash[SIGN_HASH_SIZE];
             uint8_t final_hash[SIGN_HASH_SIZE];
+
+            struct output_t outputs[MAX_OUTPUTS];
+
             uint64_t dao_bitmask;
             uint64_t change_amount;
             uint64_t plain_output_amount;
             uint64_t dao_output_amount;
-            bool hash_only;
-            bool first_witness_done;
-            bool is_self_transfer;
-            bool processed_change_cell; // Has at least one change-address been processed?
-            bool sending_to_multisig_output;
+            uint8_t output_count;
+            uint8_t is_first_witness : 1;
+            uint8_t hash_only : 1;
+            uint8_t first_witness_done : 1;
+            uint8_t is_self_transfer : 1;
+            uint8_t processed_change_cell : 1; // Has at least one change-address been processed?
+            uint8_t sending_to_multisig_output : 1;
         } tx;
     } u;
 
@@ -92,6 +96,7 @@ typedef struct {
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
     standard_lock_arg_t last_input_lock_arg;
+    standard_lock_arg_t dao_cell_owner;
 
     struct maybe_transaction maybe_transaction;
 
@@ -110,16 +115,15 @@ typedef struct {
     uint8_t *lock_arg_cmp;
     lock_arg_t lock_arg_tmp;
     buffer_t message_data_as_buffer;
-    bool signing_multisig_input;
-
+    uint8_t signing_multisig_input;
 } apdu_sign_state_t;
 
 typedef struct {
     buffer_t display_as_buffer;
-    bool display_as_hex;
     bip32_path_t key;
     blake2b_hash_state_t hash_state;
     uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
+    uint8_t display_as_hex;
     uint8_t display[64];
     uint8_t final_hash[SIGN_HASH_SIZE];
 } apdu_sign_message_state_t;
@@ -135,6 +139,7 @@ typedef struct {
     bip32_path_t key;
     extended_public_key_t ext_public_key;
     cx_blake2b_t hash_state;
+    standard_lock_arg_t render_address_lock_arg;
 } apdu_pubkey_state_t;
 
 typedef struct {
@@ -174,7 +179,6 @@ typedef struct {
 
         struct {
             struct priv_generate_key_pair generate_key_pair;
-            render_address_payload_t render_address_payload;
         } priv;
     } apdu;
     nvram_data new_data;

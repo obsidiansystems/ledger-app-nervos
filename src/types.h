@@ -167,7 +167,7 @@ struct output_t {
 #define HAS_CHANGE_ADDRESS      0x02
 
 #ifndef TARGET_NANOX
-  #define MAX_OUTPUTS 2
+  #define MAX_OUTPUTS 3
 #else
   #define MAX_OUTPUTS 5
 #endif
@@ -179,13 +179,9 @@ struct parsed_transaction {
     uint64_t dao_amount;
     uint64_t dao_output_amount;
     uint64_tuple_t input_count;
-    lock_arg_t destination;
     enum operation_tag tag;
     uint8_t flags;   // Interpretation depends on operation type
     uint8_t group_input_count;
-
-    size_t output_count;
-    struct output_t outputs[MAX_OUTPUTS];
 };
 
 // Maximum number of APDU instructions

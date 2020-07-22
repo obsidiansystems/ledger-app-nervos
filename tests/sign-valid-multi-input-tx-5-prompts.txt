@@ -3,7 +3,7 @@ Confirm
 Multi-Input Transaction
 Prompt 1:
 Input
-1 of 6
+6 of 6
 Prompt 2:
 Source
 ckb1qyqxyt6gphlcwvw3tjpj6g35ae8da5x0uwvq7yakn7
