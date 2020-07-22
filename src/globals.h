@@ -75,6 +75,10 @@ typedef struct {
 
             uint8_t transaction_hash[SIGN_HASH_SIZE];
             uint8_t final_hash[SIGN_HASH_SIZE];
+
+            size_t output_count;
+            struct output_t outputs[MAX_OUTPUTS];
+
             uint64_t dao_bitmask;
             uint64_t change_amount;
             uint64_t plain_output_amount;

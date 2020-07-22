@@ -179,9 +179,6 @@ struct parsed_transaction {
     enum operation_tag tag;
     uint8_t flags;   // Interpretation depends on operation type
     uint8_t group_input_count;
-
-    size_t output_count;
-    struct output_t outputs[MAX_OUTPUTS];
 };
 
 // Maximum number of APDU instructions

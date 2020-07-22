@@ -105,12 +105,12 @@ static void multi_output_prompts_cb(size_t which) {
                 memcpy(global.ui.prompt.active_prompt, (const void*)PIC(prompt), sizeof(prompt));
                 size_t prompt_fill=sizeof(prompt)-1;
                 if(which<100) prompt_fill+=number_to_string(global.ui.prompt.active_prompt+prompt_fill, which-2);
-                if(G.maybe_transaction.v.output_count<100) {
+                if(G.u.tx.output_count<100) {
                     global.ui.prompt.active_prompt[prompt_fill++]='/';
-                    number_to_string(global.ui.prompt.active_prompt+prompt_fill, G.maybe_transaction.v.output_count+1);
+                    number_to_string(global.ui.prompt.active_prompt+prompt_fill, G.u.tx.output_count+1);
                 }
 
-                frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.outputs[which-3].capacity);
+                frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3].capacity);
                 // Maximum of 20
                 size_t value_fill=strnlen(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value));
                 static const char separator[]=" CKB -> ";
@@ -119,7 +119,7 @@ static void multi_output_prompts_cb(size_t which) {
                 value_fill+=sizeof(separator)-1;
 
                 void (*lock_arg_to_destination_address)(char *const, size_t const, lock_arg_t const *const) = G.u.tx.sending_to_multisig_output ? lock_arg_to_multisig_address : lock_arg_to_sighash_address;
-                lock_arg_to_destination_address(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.outputs[which-3].destination);
+                lock_arg_to_destination_address(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3].destination);
             }
     }
 }
@@ -160,7 +160,7 @@ static size_t sign_complete(uint8_t instruction) {
 
     } break;
     case OPERATION_TAG_MULTI_OUTPUT_TRANSFER: {
-        ui_prompt_with_cb(&multi_output_prompts_cb, 4 + G.maybe_transaction.v.output_count, ok_c, sign_reject);
+        ui_prompt_with_cb(&multi_output_prompts_cb, 4 + G.u.tx.output_count, ok_c, sign_reject);
     } break;
     case OPERATION_TAG_SELF_TRANSFER: {
         static const uint32_t TYPE_INDEX = 0;
@@ -582,16 +582,16 @@ void output_end(void) {
                 if(G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET && G.maybe_transaction.v.tag != OPERATION_TAG_MULTI_OUTPUT_TRANSFER)
                     REJECT("Can't handle mixed transaction types with multiple non-change destination addresses. Tag: %d", G.maybe_transaction.v.tag);
                 G.maybe_transaction.v.tag = OPERATION_TAG_MULTI_OUTPUT_TRANSFER;
-                if(G.maybe_transaction.v.output_count+1>=MAX_OUTPUTS) REJECT("Can't handle more than five outputs");
-                G.maybe_transaction.v.output_count++;
-                memcpy(&G.maybe_transaction.v.outputs[G.maybe_transaction.v.output_count].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+                if(G.u.tx.output_count+1>=MAX_OUTPUTS) REJECT("Can't handle more than five outputs");
+                G.u.tx.output_count++;
+                memcpy(&G.u.tx.outputs[G.u.tx.output_count].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
             } else if( !(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) ) {
                 G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
                 memcpy(&G.maybe_transaction.v.destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
-                memcpy(&G.maybe_transaction.v.outputs[0].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+                memcpy(&G.u.tx.outputs[0].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
             }
             G.u.tx.plain_output_amount += G.cell_state.capacity;
-            G.maybe_transaction.v.outputs[G.maybe_transaction.v.output_count].capacity+=G.cell_state.capacity;
+            G.u.tx.outputs[G.u.tx.output_count].capacity+=G.cell_state.capacity;
         } else {
             G.u.tx.change_amount += G.cell_state.capacity;
         }
