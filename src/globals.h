@@ -111,6 +111,7 @@ typedef struct {
     lock_arg_t lock_arg_tmp;
     buffer_t message_data_as_buffer;
     bool signing_multisig_input;
+    lock_arg_t dao_cell_owner;
 
 } apdu_sign_state_t;
 
