@@ -96,6 +96,7 @@ typedef struct {
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
     standard_lock_arg_t last_input_lock_arg;
+    standard_lock_arg_t dao_cell_owner;
 
     struct maybe_transaction maybe_transaction;
 
