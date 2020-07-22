@@ -141,8 +141,7 @@ UX_FLOW(ux_idle_flow,
 // prompt
 #define PROMPT_SCREEN_NAME(idx) ux_prompt_flow_ ## idx ## _step
 #define EVAL(...) __VA_ARGS__
-#define UXSTEPNOCB(...) EVAL(UX_STEP_NOCB EVAL(__VA_ARGS__))
-#define BLANK() 
+#define BLANK()
 #define PROMPT_SCREEN_TPL(idx) \
     EVAL(UX_STEP_NOCB_INIT BLANK() ( \
         PROMPT_SCREEN_NAME(idx), \
@@ -250,27 +249,39 @@ void ui_prompt(const char *const *labels, ui_callback_t ok_c, ui_callback_t cxl_
         i;
     });
 
-
+    G.switch_screen=switch_screen;
     // We fill the destination buffers at the end instead of the beginning so we can
     // use the same array for any number of screens.
     size_t const offset = MAX_SCREEN_COUNT - screen_count;
 
     G.switch_screen=switch_screen;
     G.prompt.offset=MAX_SCREEN_COUNT-screen_count;
-    
+
     ui_prompt_debug(screen_count);
-
-    /*for (size_t i = 0; labels[i] != NULL; i++) {
-        const char *const label = (const char *)PIC(labels[i]);
-        if (strlen(label) > sizeof(G.prompt.screen[i].prompt)) THROW(EXC_MEMORY_ERROR);
-        strcpy(G.prompt.screen[offset + i].prompt, label);
-
-        G.prompt.callbacks[i](G.prompt.screen[offset + i].value, sizeof(G.prompt.screen[offset + i].value), G.prompt.callback_data[i]);
-    }*/
 
     G.ok_callback = ok_c;
     G.cxl_callback = cxl_c;
-    ux_flow_init(0, &ux_prompts_flow[offset], NULL);
+    ux_flow_init(0, &ux_prompts_flow[G.prompt.offset], NULL);
     THROW(ASYNC_EXCEPTION);
+}
+
+__attribute__((noreturn)) void ui_prompt_with_cb(void (*switch_screen_cb)(uint32_t), size_t screen_count, ui_callback_t ok_c, ui_callback_t cxl_c) {
+    check_null(switch_screen_cb);
+
+    G.switch_screen=switch_screen_cb;
+    G.prompt.offset=MAX_SCREEN_COUNT-screen_count;
+
+    G.ok_callback = ok_c;
+    G.cxl_callback = cxl_c;
+    ux_flow_init(0, &ux_prompts_flow[G.prompt.offset], NULL);
+
+#ifdef NERVOS_DEBUG
+    ui_prompt_debug(screen_count);
+    // In debug mode, the THROW below produces a PRINTF statement in an invalid position and causes the screen to blank,
+    // so instead we just directly call the equivalent longjmp for debug only.
+    longjmp(try_context_get()->jmp_buf, ASYNC_EXCEPTION);
+#else
+    THROW(ASYNC_EXCEPTION);
+#endif
 }
 

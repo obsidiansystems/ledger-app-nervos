@@ -87,7 +87,7 @@ __attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callba
         NULL,
     };
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
-    register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.render_address_payload);
+    register_ui_callback(ADDRESS_INDEX, lock_arg_to_sighash_address, &G.render_address_lock_arg);
     ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
@@ -104,7 +104,7 @@ __attribute__((noreturn)) static void prompt_ext_path(ui_callback_t ok_cb, ui_ca
     };
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Extended Public Key");
     register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
-    register_ui_callback(ADDRESS_INDEX, render_pkh, &GPriv.render_address_payload);
+    register_ui_callback(ADDRESS_INDEX, lock_arg_to_sighash_address, &G.render_address_lock_arg);
     ui_prompt(pubkey_labels, ok_cb, cxl_cb);
 }
 
@@ -120,12 +120,8 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
 
     generate_public_key(&G.ext_public_key, &G.key);
 
-    // write tags
-    GPriv.render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
-    GPriv.render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
-
     // write lock arg
-    generate_lock_arg_for_pubkey(&G.ext_public_key.public_key, &GPriv.render_address_payload.s.hash);
+    generate_lock_arg_for_pubkey(&G.ext_public_key.public_key, &G.render_address_lock_arg);
 
     if (instruction == INS_PROMPT_EXT_PUBLIC_KEY) {
       ui_callback_t cb = ext_pubkey_ok;
