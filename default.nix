@@ -84,11 +84,21 @@ let
         doCheck = bolos.test;
         checkTarget = "test";
       };
-      nvramDataSize = appDir: pkgs.runCommand "nvram-data-size" {} ''
-        envram_data="$(grep _envram_data '${appDir + /debug/app.map}' | tr -s ' ' | cut -f2 -d' ')"
-        nvram_data="$(grep _nvram_data '${appDir + /debug/app.map}' | tr -s ' ' | cut -f2 -d' ')"
-        echo "$(($envram_data - $nvram_data))" > "$out"
-      '';
+      ## Note: This has been known to change between sdk upgrades. Make sure to consult
+      ## the $COMMON_LOAD_PARAMS in the Makefile.defines of both SDKs
+        nvramDataSize = appDir: deviceName: 
+          let mapPath = appDir + /debug/app.map;
+          in pkgs.runCommand "nvram-data-size" {} ''
+            nvram_data=0x${ if deviceName == "s"
+              then "$(grep _nvram_data "+ mapPath + " | tr -s ' ' | cut -f2 -d' ' | cut -f2 -d'x')"
+              else "$(grep _nvram_data "+ mapPath + " | cut -f1 -d' ')"
+            }
+            envram_data=0x${ if deviceName == "s"
+              then "$(grep _envram_data "+ mapPath + " | tr -s ' ' | cut -f2 -d' '| cut -f2 -d'x')"
+              else "$(grep _envram_data "+ mapPath + " | cut -f1 -d' ')"
+            }
+            echo "$(($envram_data - $nvram_data))" > "$out"
+          '';
       mkRelease = short_name: name: appDir: pkgs.runCommand "${short_name}-nano-${bolos.name}-release-dir" {} ''
         mkdir -p "$out"
 
@@ -96,7 +106,7 @@ let
 
         cat > "$out/app.manifest" <<EOF
         name='${name}'
-        nvram_size=256 # $(cat '${nvramDataSize appDir}')
+        nvram_size=$(cat '${nvramDataSize appDir bolos.name}')
         target='nano_${bolos.name}'
         target_id=${bolos.targetId}
         version=$(echo '${gitDescribe}' | cut -f1 -d- | cut -f2 -dv)
