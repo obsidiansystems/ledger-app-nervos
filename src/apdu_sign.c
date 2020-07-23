@@ -256,14 +256,7 @@ static size_t sign_complete(uint8_t instruction) {
     }
 
 unsafe:
-  if(N_data.sign_hash_type == SIGN_HASH_ON) {
-    G.message_data_as_buffer.bytes = (uint8_t *)&G.u.tx.final_hash;
-    G.message_data_as_buffer.size = sizeof(G.u.tx.final_hash);
-    G.message_data_as_buffer.length = sizeof(G.u.tx.final_hash);
-    // Base58 encoding of 32-byte hash is 43 bytes long.
-    register_ui_callback(HASH_INDEX, buffer_to_hex, &G.message_data_as_buffer);
-    ui_prompt(parse_fail_prompts, ok_c, sign_reject);
-  } else THROW(EXC_REJECT);
+  THROW(EXC_REJECT);
 }
 
 /***********************************************************/
@@ -439,7 +432,7 @@ void cell_type_arg_length(mol_num_t length) {
 
 void set_cell_data_size(mol_num_t size) {
     if(!G.cell_state.active) return;
-    G.cell_state.data_size = size-4; // size includes the 4-byte size header in Bytes
+    G.cell_state.data_size = MIN(15, size-4); // size includes the 4-byte size header in Bytes
 }
 
 void check_cell_data_data_chunk(uint8_t *buf, mol_num_t length) {
@@ -717,24 +710,29 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
 };
 
 void init_bip32(mol_num_t size) {
-    if(size-4 > sizeof(G.temp_key.components)) REJECT_HARD("Too many components in bip32 path");
-    G.temp_key.length=0;
+    if(size-4 > sizeof(G.u.temp_key.components)) REJECT_HARD("Too many components in bip32 path");
+    G.u.temp_key.length=0;
 }
 
 void bip32_component(uint8_t* buf, mol_num_t len) {
     (void) len;
-    G.temp_key.components[G.temp_key.length++]=*(uint32_t*)buf;
+    G.u.temp_key.components[G.u.temp_key.length++]=*(uint32_t*)buf;
 }
 
 void set_sign_path(void) {
-    memcpy(&G.key, &G.temp_key, sizeof(G.key));
-    prep_lock_arg(&G.key, &G.current_lock_arg);
+    bip32_path_t key;
+    memcpy(&key, &G.u.temp_key, sizeof(key));
+    prep_lock_arg(&key, &G.current_lock_arg);
+
+    memcpy(G.key_path_components, key.components + 2, sizeof(G.key_path_components));
+    G.key_length = key.length;
+
     // Default the change lock arg to the one we're currently going to sign for
     memcpy(&G.change_lock_arg, G.current_lock_arg, 20);
 }
 
 void set_change_path(void) {
-    prep_lock_arg(&G.temp_key, &G.change_lock_arg);
+    prep_lock_arg(&G.u.temp_key, &G.change_lock_arg);
 }
 
 void witness_offsets(struct WitnessArgs_state *state) {
@@ -987,7 +985,13 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
     uint8_t const *const data = G.u.tx.final_hash;        // on_hash ? G.u.tx.final_hash : G.message_data;
     size_t const data_length = sizeof(G.u.tx.final_hash); // on_hash ? sizeof(G.u.tx.final_hash) : G.message_data_length;
 
-    tx += WITH_KEY_PAIR(G.key, key_pair, size_t,
+    bip32_path_t key;
+    key.components[0] = 0x8000002C;
+    key.components[1] = 0x80000135;
+    key.length = G.key_length;
+    memcpy(key.components + 2, G.key_path_components, sizeof(G.key_path_components));
+
+    tx += WITH_KEY_PAIR(key, key_pair, size_t,
                         ({ sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, data, data_length); }));
 
     clear_data();
