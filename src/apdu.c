@@ -124,8 +124,6 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     THROW(EXC_WRONG_LENGTH);
                 }
 
-                app_stack_canary=0xdeadbeef;
-
 #ifdef STACK_MEASURE
                 stack_sentry_fill();
 #endif

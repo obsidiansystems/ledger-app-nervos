@@ -104,7 +104,7 @@ typedef struct {
 
     cell_state_t cell_state;
 
-    _Alignas(uint32_t) uint8_t transaction_stack[512];
+    _Alignas(uint32_t) uint8_t transaction_stack[440];
 
     uint64_t dao_input_amount;
     uint64_tuple_t input_amount;
