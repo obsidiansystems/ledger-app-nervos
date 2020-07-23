@@ -15,10 +15,13 @@ clicks() {
 apdu_with_clicks () {
   echo "$1" | apdu &
   sleep 1;
-  clicks "$2"
+  while read -n1 click; do
+	  clicks $click
+	  sleep 0.1
+  done <<<"$2"
 }
 
-
+ACCEPT_CLICKS="rRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrlRL"
 
 COMMIT="$(echo "$GIT_DESCRIBE" | sed 's/-dirty/*/')"
 HEXCOMMIT="$(echo -n ${COMMIT}|xxd -ps -g0)"
@@ -56,7 +59,7 @@ get_key_in_pem() {
   bip_path_len=$((${#bip_path}/2))
   bip_fmt="$(printf "%02x" $bip_path_len)$bip_path"
   derivation="80020000${bip_fmt}"
-  result="$(apdu_with_clicks $derivation "rR" |& egrep "b'41.*'9000" | sed "s/^<= b'41//;s/'9000$//")"
+  result="$(apdu_with_clicks $derivation "$ACCEPT_CLICKS" |& egrep "b'41.*'9000" | sed "s/^<= b'41//;s/'9000$//")"
   echo "-----BEGIN PUBLIC KEY-----"
   cat tests/public_key_der_prefix.der <(xxd -ps -r <<<"$result") | base64
   echo "-----END PUBLIC KEY-----"
@@ -83,10 +86,10 @@ sendTransaction() {
   bytes=$(printf "%02x" $(($(wc -c <<<"$toSend")/2)))
   echo TO SEND: $toSend
   if [ -z "$2" ]; then
-    apdu_with_clicks "8003c100$bytes$toSend" "rR"
+    apdu_with_clicks "8003c100$bytes$toSend" "$ACCEPT_CLICKS"
 
   elif [ "$2" = "--no-hard-check" ]; then
-    apdu_with_clicks "80038100$bytes$toSend" "rR"
+    apdu_with_clicks "80038100$bytes$toSend" "$ACCEPT_CLICKS"
   elif [ "$2" = "--expectReject" ]; then
     apdu_fixed "8003c100$bytes$toSend"
   else # [ "$2" = "--isCtxd" ]

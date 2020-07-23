@@ -1,6 +1,6 @@
 #include "bolos_target.h"
 
-#ifndef TARGET_NANOX
+#ifdef TARGET_NANOX_NOT
 
 #include "ui.h"
 

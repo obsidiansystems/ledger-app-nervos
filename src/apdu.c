@@ -124,8 +124,6 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     THROW(EXC_WRONG_LENGTH);
                 }
 
-                app_stack_canary=0xdeadbeef;
-
 #ifdef STACK_MEASURE
                 stack_sentry_fill();
 #endif
@@ -134,7 +132,10 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
 
                 apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
 
+		PRINTF("SIZOF1: %d SIZEOF2: %d\n", sizeof(G_ux), sizeof(G_ux_params));
+		PRINTF("Calling handler\n");
                 size_t const tx = cb(instruction);
+		PRINTF("Normal return\n");
 
                 if(0xdeadbeef != app_stack_canary) {
                     THROW(EXC_STACK_ERROR);
