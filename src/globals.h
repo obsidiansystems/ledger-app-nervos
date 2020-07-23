@@ -68,8 +68,6 @@ typedef struct {
 
         // Things we need exclusively after doing finish_inputs
         struct {
-            uint32_t witness_multisig_threshold;
-            uint32_t witness_multisig_pubkeys_cnt;
             uint32_t witness_multisig_lock_arg_consumed;
             _Alignas(uint32_t) uint8_t witness_stack[64];
             uint32_t current_output_index;
@@ -83,6 +81,10 @@ typedef struct {
             uint64_t change_amount;
             uint64_t plain_output_amount;
             uint64_t dao_output_amount;
+            // threshold and pubkey_cnt are actually uint32_t
+            // but here we save space as we expect them to be < 256
+            uint8_t witness_multisig_threshold;
+            uint8_t witness_multisig_pubkeys_cnt;
             uint8_t output_count;
             uint8_t is_first_witness : 1;
             uint8_t hash_only : 1;
