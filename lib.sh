@@ -21,7 +21,7 @@ apdu_with_clicks () {
   done <<<"$2"
 }
 
-ACCEPT_CLICKS="rRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrlRL"
+ACCEPT_CLICKS="rRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrRrlRL"
 
 COMMIT="$(echo "$GIT_DESCRIBE" | sed 's/-dirty/*/')"
 HEXCOMMIT="$(echo -n ${COMMIT}|xxd -ps -g0)"
