@@ -61,9 +61,12 @@ typedef struct {
 typedef struct {
     union {
         bip32_path_t temp_key;
-        input_state_t input_state;
+        struct {
+            input_state_t input_state;
+            standard_lock_arg_t last_input_lock_arg;
+        } inp;
 
-        // Things we need exclusively after doing validate_context_txn
+        // Things we need exclusively after doing finish_inputs
         struct {
             uint32_t witness_multisig_threshold;
             uint32_t witness_multisig_pubkeys_cnt;
@@ -92,7 +95,6 @@ typedef struct {
 
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
-    standard_lock_arg_t last_input_lock_arg;
     standard_lock_arg_t dao_cell_owner;
 
     struct maybe_transaction maybe_transaction;
