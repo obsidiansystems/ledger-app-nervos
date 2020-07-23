@@ -924,13 +924,14 @@ static size_t handle_apdu(uint8_t const instruction) {
             clear_data();
 
             PRINTF("Initializing parser\n");
-            MolReader_AnnotatedTransaction_init_state(G.transaction_stack+sizeof(G.transaction_stack), (struct AnnotatedTransaction_state*)G.transaction_stack, &annotatedTransaction_callbacks);
+	    PRINTF("SIZEOF TRANSSTACK: %d\n", sizeof(struct AnnotatedTransaction_state));
+            MolReader_AnnotatedTransaction_init_state(&G.transaction_stack+sizeof(G.transaction_stack), &G.transaction_stack, &annotatedTransaction_callbacks);
             PRINTF("Initialized parser\n");
             // NO BREAK
         case P1_NEXT:
             if(G.maybe_transaction.hard_reject) THROW(EXC_PARSE_ERROR);
             PRINTF("Calling parser\n");
-            rv = MolReader_AnnotatedTransaction_parse(G.transaction_stack+sizeof(G.transaction_stack), (struct AnnotatedTransaction_state*)G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);
+            rv = MolReader_AnnotatedTransaction_parse(&G.transaction_stack+sizeof(G.transaction_stack), &G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);
 
             if(last) {
                 if(rv != COMPLETE || G.maybe_transaction.hard_reject) {
@@ -959,6 +960,8 @@ static size_t handle_apdu(uint8_t const instruction) {
         return finalize_successful_send(0);
     }
 }
+
+_Static_assert(sizeof G.transaction_stack == sizeof(struct AnnotatedTransaction_state), "Size of transaction_stack is not equal to AnnotatedTransaction_state");
 
 size_t handle_apdu_sign(uint8_t instruction) {
     return handle_apdu(instruction);

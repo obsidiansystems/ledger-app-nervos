@@ -166,6 +166,7 @@ struct state_stack the_stack;
 
 // Byte parser
 struct byte_state { };
+struct byte_state_u { };
 struct byte_callbacks { void (*end)(uint8_t); };
 
 //MOLECULE_API_DECORATOR void MolReader_byte_init_state(struct byte_state* __attribute__((unused)) g, struct mol_chunk *chunk, struct byte_callbacks *cb) {
@@ -223,10 +224,11 @@ void* alignment_fix(void* in) {
     return (void*)((((uint32_t)(in+3))/4)*4);
 }
 
-#define STATE_PUSH(state, item) (struct item ## _state*) (alignment_fix(state+1)); if(((void*)((alignment_fix(state+1)) + sizeof(struct item ## _state)))>stack_end) { mol_printf("Stack blown; fixme, end: %x new: %x\n", stack_end, alignment_fix(state+1)); mol_emerg_reject; }
+//#define STATE_PUSH(state, item) (struct item ## _state*) (alignment_fix(state+1)); if(((void*)((alignment_fix(state+1)) + sizeof(struct item ## _state)))>stack_end) { mol_printf("Stack blown; fixme, end: %x new: %x\n", stack_end, alignment_fix(state+1)); mol_emerg_reject; }
+#define STATE_PUSH(state, item) &(state->u.item);
 
 #define MOL_CALL_SUBPARSER(field, type, size) { \
-	struct type ## _state *substate = STATE_PUSH(s, type) \
+	struct type ## _state *substate = STATE_PUSH(s, field) \
 	mol_rv rv = MolReader_ ## type ## _parse(stack_end, substate, chunk, (cb?MOL_PIC_STRUCT(struct type ## _callbacks, cb->field):NULL), size); \
 	if(rv != COMPLETE) { \
 		if(rv == REJECT) mol_printf("Subparser for " #field " rejected; rejecting.");\
@@ -236,7 +238,7 @@ void* alignment_fix(void* in) {
 }
 
 #define MOL_INIT_SUBPARSER(field, type) { \
-	struct type ## _state *nextstate = STATE_PUSH(s, type) \
+	struct type ## _state *nextstate = STATE_PUSH(s, field) \
 	MolReader_ ## type ## _init_state(stack_end, nextstate, (cb?MOL_PIC_STRUCT(struct type ## _callbacks, cb->field):NULL)); \
 }
 

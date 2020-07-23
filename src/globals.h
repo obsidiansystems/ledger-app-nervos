@@ -1,7 +1,6 @@
 #pragma once
 
 #include "types.h"
-
 #include "bolos_target.h"
 
 // Zeros out all globals that can keep track of APDU instruction state.
@@ -104,7 +103,8 @@ typedef struct {
 
     cell_state_t cell_state;
 
-    _Alignas(uint32_t) uint8_t transaction_stack[440];
+    _Alignas(uint32_t) uint8_t transaction_stack[240];
+    // struct AnnotatedTransaction_state transaction_stack; - not just replacing because the "headers" are badly formed.
 
     uint64_t dao_input_amount;
     uint64_tuple_t input_amount;
