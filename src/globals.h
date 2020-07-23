@@ -1,7 +1,6 @@
 #pragma once
 
 #include "types.h"
-
 #include "bolos_target.h"
 
 // Zeros out all globals that can keep track of APDU instruction state.
@@ -69,7 +68,7 @@ typedef struct {
         // Things we need exclusively after doing finish_inputs
         struct {
             uint32_t witness_multisig_lock_arg_consumed;
-            _Alignas(uint32_t) uint8_t witness_stack[64];
+            _Alignas(uint32_t) uint8_t witness_stack[40];
             uint32_t current_output_index;
 
             uint8_t transaction_hash[SIGN_HASH_SIZE];
@@ -108,7 +107,8 @@ typedef struct {
 
     cell_state_t cell_state;
 
-    _Alignas(uint32_t) uint8_t transaction_stack[440];
+    _Alignas(uint32_t) uint8_t transaction_stack[240];
+    // struct AnnotatedTransaction_state transaction_stack; - not just replacing because the "headers" are badly formed.
 
     uint64_t dao_input_amount;
     uint64_tuple_t input_amount;

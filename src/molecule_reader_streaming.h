@@ -166,14 +166,15 @@ struct state_stack the_stack;
 
 // Byte parser
 struct byte_state { };
+struct byte_state_u { };
 struct byte_callbacks { void (*end)(uint8_t); };
 
 //MOLECULE_API_DECORATOR void MolReader_byte_init_state(struct byte_state* __attribute__((unused)) g, struct mol_chunk *chunk, struct byte_callbacks *cb) {
 //}
 
-#define MolReader_byte_init_state(stack_end, a, b) (void) stack_end; (void)(a); (void)(b)// No init for byte
+#define MolReader_byte_init_state(a, b) (void)(a); (void)(b)// No init for byte
 
-MOLECULE_API_DECORATOR mol_rv MolReader_byte_parse(void* __attribute__((unused)) stack_top, struct byte_state* __attribute__((unused)) g, struct mol_chunk *chunk, const struct byte_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR mol_rv MolReader_byte_parse(struct byte_state* __attribute__((unused)) g, struct mol_chunk *chunk, const struct byte_callbacks *cb, mol_num_t size) {
     if(size!=1) return REJECT;
     if(chunk->length>chunk->consumed) {
         if(cb && cb->end) MOL_PIC(cb->end)(chunk->ptr[chunk->consumed]);
@@ -223,11 +224,11 @@ void* alignment_fix(void* in) {
     return (void*)((((uint32_t)(in+3))/4)*4);
 }
 
-#define STATE_PUSH(state, item) (struct item ## _state*) (alignment_fix(state+1)); if(((void*)((alignment_fix(state+1)) + sizeof(struct item ## _state)))>stack_end) { mol_printf("Stack blown; fixme, end: %x new: %x\n", stack_end, alignment_fix(state+1)); mol_emerg_reject; }
+#define STATE_PUSH(state, item) &(state->u.item);
 
 #define MOL_CALL_SUBPARSER(field, type, size) { \
-	struct type ## _state *substate = STATE_PUSH(s, type) \
-	mol_rv rv = MolReader_ ## type ## _parse(stack_end, substate, chunk, (cb?MOL_PIC_STRUCT(struct type ## _callbacks, cb->field):NULL), size); \
+	struct type ## _state *substate = STATE_PUSH(s, field) \
+	mol_rv rv = MolReader_ ## type ## _parse(substate, chunk, (cb?MOL_PIC_STRUCT(struct type ## _callbacks, cb->field):NULL), size); \
 	if(rv != COMPLETE) { \
 		if(rv == REJECT) mol_printf("Subparser for " #field " rejected; rejecting.");\
 		if(cb && cb->chunk) MOL_PIC(cb->chunk)(chunk->ptr + start_idx, chunk->consumed - start_idx); \
@@ -236,8 +237,8 @@ void* alignment_fix(void* in) {
 }
 
 #define MOL_INIT_SUBPARSER(field, type) { \
-	struct type ## _state *nextstate = STATE_PUSH(s, type) \
-	MolReader_ ## type ## _init_state(stack_end, nextstate, (cb?MOL_PIC_STRUCT(struct type ## _callbacks, cb->field):NULL)); \
+	struct type ## _state *nextstate = STATE_PUSH(s, field) \
+	MolReader_ ## type ## _init_state(nextstate, (cb?MOL_PIC_STRUCT(struct type ## _callbacks, cb->field):NULL)); \
 }
 
 MOLECULE_API_DECORATOR void mol_num_init_state(struct num_state* g, const struct bytes_callbacks __attribute__((unused)) *cb) {

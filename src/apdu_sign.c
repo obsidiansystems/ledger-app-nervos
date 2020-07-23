@@ -846,7 +846,7 @@ void begin_witness(mol_num_t index) {
         G.u.tx.witness_multisig_lock_arg_consumed = 0;
         explicit_bzero(&G.hash_state, sizeof(G.hash_state));
         blake2b_incremental_hash(G.u.tx.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
-        MolReader_WitnessArgs_init_state(G.u.tx.witness_stack+sizeof(G.u.tx.witness_stack), (struct WitnessArgs_state*)G.u.tx.witness_stack, &WitnessArgs_rewrite_callbacks);
+        MolReader_WitnessArgs_init_state((struct WitnessArgs_state*)G.u.tx.witness_stack, &WitnessArgs_rewrite_callbacks);
     }
 }
 
@@ -861,7 +861,7 @@ void process_witness(uint8_t *buff, mol_num_t buff_size) {
   if(G.u.tx.is_first_witness) { // First witness handling
 
     struct mol_chunk chunk = { buff, buff_size, 0 };
-    mol_rv rv = MolReader_WitnessArgs_parse(G.u.tx.witness_stack+sizeof(G.u.tx.witness_stack), (struct WitnessArgs_state*)G.u.tx.witness_stack, &chunk, &WitnessArgs_rewrite_callbacks, MOL_NUM_MAX);
+    mol_rv rv = MolReader_WitnessArgs_parse((struct WitnessArgs_state*)G.u.tx.witness_stack, &chunk, &WitnessArgs_rewrite_callbacks, MOL_NUM_MAX);
 
     if(rv == COMPLETE) {
         G.u.tx.first_witness_done=1;
@@ -934,13 +934,13 @@ static size_t handle_apdu(uint8_t const instruction) {
             clear_data();
 
             PRINTF("Initializing parser\n");
-            MolReader_AnnotatedTransaction_init_state(G.transaction_stack+sizeof(G.transaction_stack), (struct AnnotatedTransaction_state*)G.transaction_stack, &annotatedTransaction_callbacks);
+            MolReader_AnnotatedTransaction_init_state((struct AnnotatedTransaction_state*) &G.transaction_stack, &annotatedTransaction_callbacks);
             PRINTF("Initialized parser\n");
             // NO BREAK
         case P1_NEXT:
             if(G.maybe_transaction.hard_reject) THROW(EXC_PARSE_ERROR);
             PRINTF("Calling parser\n");
-            rv = MolReader_AnnotatedTransaction_parse(G.transaction_stack+sizeof(G.transaction_stack), (struct AnnotatedTransaction_state*)G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);
+            rv = MolReader_AnnotatedTransaction_parse((struct AnnotatedTransaction_state*) &G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);
 
             if(last) {
                 if(rv != COMPLETE || G.maybe_transaction.hard_reject) {
@@ -969,6 +969,9 @@ static size_t handle_apdu(uint8_t const instruction) {
         return finalize_successful_send(0);
     }
 }
+
+_Static_assert(sizeof G.transaction_stack == sizeof(struct AnnotatedTransaction_state), "Size of transaction_stack is not equal to sizeof(struct AnnotatedTransaction_state)");
+_Static_assert(sizeof G.u.tx.witness_stack == sizeof(struct WitnessArgs_state), "Size of witness_stack is not equal to sizeof(struct WitnessArgs_state)");
 
 size_t handle_apdu_sign(uint8_t instruction) {
     return handle_apdu(instruction);

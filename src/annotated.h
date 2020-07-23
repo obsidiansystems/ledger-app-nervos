@@ -31,6 +31,11 @@ struct AnnotatedCellInput_state {
     mol_num_t total_size;
     mol_num_t input_offset;
     mol_num_t source_offset;
+    union {
+        struct CellInput_state input;
+        struct RawTransaction_state source;
+        struct num_state num;
+    } u;
 };
 struct AnnotatedCellInput_callbacks {
     void (*start)();
@@ -46,6 +51,7 @@ struct AnnotatedCellInputVec_state {
     mol_num_t field_idx;
     mol_num_t total_size;
     mol_num_t first_offset;
+    union { struct AnnotatedCellInput_state item; struct num_state num;} u;
 };
 struct AnnotatedCellInputVec_callbacks {
     void (*start)();
@@ -68,6 +74,15 @@ struct AnnotatedRawTransaction_state {
     mol_num_t inputs_offset;
     mol_num_t outputs_offset;
     mol_num_t outputs_data_offset;
+    union {
+        struct Uint32_state version;
+        struct CellDepVec_state cell_deps;
+        struct Byte32Vec_state header_deps;
+        struct AnnotatedCellInputVec_state inputs;
+        struct CellOutputVec_state outputs;
+        struct BytesVec_state outputs_data;
+        struct num_state num;
+    } u;
 };
 struct AnnotatedRawTransaction_callbacks {
     void (*start)();
@@ -82,7 +97,11 @@ struct AnnotatedRawTransaction_callbacks {
     const struct BytesVec_callbacks *outputs_data;
 };
 
-struct Bip32_state { mol_num_t state_num; mol_num_t length; };
+struct Bip32_state {
+    mol_num_t state_num;
+    mol_num_t length;
+    union { struct Uint32_state item; struct num_state num;} u;
+};
 struct Bip32_callbacks {
     void (*start)();
     void (*chunk)(uint8_t*, mol_num_t);
@@ -92,7 +111,7 @@ struct Bip32_callbacks {
     const struct Uint32_callbacks *item;
 };
 
-MOLECULE_API_DECORATOR  void            MolReader_Bip32_init_state                      (void* stack_end, struct Bip32_state *s, const struct Bip32_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_Bip32_init_state                      (struct Bip32_state *s, const struct Bip32_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     MOL_INIT_NUM();
@@ -106,6 +125,14 @@ struct AnnotatedTransaction_state {
     mol_num_t inputCount_offset;
     mol_num_t raw_offset;
     mol_num_t witnesses_offset;
+    union {
+        struct Bip32_state signPath;
+        struct Bip32_state changePath;
+        struct Uint32_state inputCount;
+        struct AnnotatedRawTransaction_state raw;
+        struct BytesVec_state witnesses;
+        struct num_state num;
+    } u;
 };
 struct AnnotatedTransaction_callbacks {
     void (*start)();
@@ -119,30 +146,35 @@ struct AnnotatedTransaction_callbacks {
     const struct BytesVec_callbacks *witnesses;
 };
 
+struct AnnotatedCellInput_state;
 struct AnnotatedCellInput_callbacks;
 typedef const struct AnnotatedCellInput_callbacks AnnotatedCellInput_cb;
-MOLECULE_API_DECORATOR  void            MolReader_AnnotatedCellInput_init_state         (void* stack_end, struct AnnotatedCellInput_state *s, const struct AnnotatedCellInput_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInput_parse              (void* stack_end, struct AnnotatedCellInput_state *s, struct mol_chunk *chunk, const struct AnnotatedCellInput_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_AnnotatedCellInput_init_state         (struct AnnotatedCellInput_state *s, const struct AnnotatedCellInput_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInput_parse              (struct AnnotatedCellInput_state *s, struct mol_chunk *chunk, const struct AnnotatedCellInput_callbacks *cb, mol_num_t size);
 
+struct AnnotatedCellInputVec_state;
 struct AnnotatedCellInputVec_callbacks;
 typedef const struct AnnotatedCellInputVec_callbacks AnnotatedCellInputVec_cb;
-MOLECULE_API_DECORATOR  void            MolReader_AnnotatedCellInputVec_init_state      (void* stack_end, struct AnnotatedCellInputVec_state *s, const struct AnnotatedCellInputVec_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInputVec_parse           (void* stack_end, struct AnnotatedCellInputVec_state *s, struct mol_chunk *chunk, const struct AnnotatedCellInputVec_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_AnnotatedCellInputVec_init_state      (struct AnnotatedCellInputVec_state *s, const struct AnnotatedCellInputVec_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInputVec_parse           (struct AnnotatedCellInputVec_state *s, struct mol_chunk *chunk, const struct AnnotatedCellInputVec_callbacks *cb, mol_num_t size);
 
+struct AnnotatedRawTransaction_state;
 struct AnnotatedRawTransaction_callbacks;
 typedef const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_cb;
-MOLECULE_API_DECORATOR  void            MolReader_AnnotatedRawTransaction_init_state    (void* stack_end, struct AnnotatedRawTransaction_state *s, const struct AnnotatedRawTransaction_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedRawTransaction_parse         (void* stack_end, struct AnnotatedRawTransaction_state *s, struct mol_chunk *chunk, const struct AnnotatedRawTransaction_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_AnnotatedRawTransaction_init_state    (struct AnnotatedRawTransaction_state *s, const struct AnnotatedRawTransaction_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedRawTransaction_parse         (struct AnnotatedRawTransaction_state *s, struct mol_chunk *chunk, const struct AnnotatedRawTransaction_callbacks *cb, mol_num_t size);
 
+struct Bip32_state;
 struct Bip32_callbacks;
 typedef const struct Bip32_callbacks Bip32_cb;
-MOLECULE_API_DECORATOR  void            MolReader_Bip32_init_state                      (void* stack_end, struct Bip32_state *s, const struct Bip32_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Bip32_parse                           (void* stack_end, struct Bip32_state *s, struct mol_chunk *chunk, const struct Bip32_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_Bip32_init_state                      (struct Bip32_state *s, const struct Bip32_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Bip32_parse                           (struct Bip32_state *s, struct mol_chunk *chunk, const struct Bip32_callbacks *cb, mol_num_t size);
 
+struct AnnotatedTransaction_state;
 struct AnnotatedTransaction_callbacks;
 typedef const struct AnnotatedTransaction_callbacks AnnotatedTransaction_cb;
-MOLECULE_API_DECORATOR  void            MolReader_AnnotatedTransaction_init_state       (void* stack_end, struct AnnotatedTransaction_state *s, const struct AnnotatedTransaction_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedTransaction_parse            (void* stack_end, struct AnnotatedTransaction_state *s, struct mol_chunk *chunk, const struct AnnotatedTransaction_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_AnnotatedTransaction_init_state       (struct AnnotatedTransaction_state *s, const struct AnnotatedTransaction_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedTransaction_parse            (struct AnnotatedTransaction_state *s, struct mol_chunk *chunk, const struct AnnotatedTransaction_callbacks *cb, mol_num_t size);
 
 
 #undef ____
@@ -151,14 +183,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedTransaction_parse    
  * Reader Functions
  */
 
-MOLECULE_API_DECORATOR  void            MolReader_AnnotatedCellInput_init_state         (void* stack_end, struct AnnotatedCellInput_state *s, const struct AnnotatedCellInput_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_AnnotatedCellInput_init_state         (struct AnnotatedCellInput_state *s, const struct AnnotatedCellInput_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInput_parse              (void* stack_end, struct AnnotatedCellInput_state *s, struct mol_chunk *chunk, const struct AnnotatedCellInput_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInput_parse              (struct AnnotatedCellInput_state *s, struct mol_chunk *chunk, const struct AnnotatedCellInput_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Table
     switch(s->state_num) {
@@ -201,14 +233,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInput_parse      
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  void            MolReader_AnnotatedCellInputVec_init_state      (void* stack_end, struct AnnotatedCellInputVec_state *s, const struct AnnotatedCellInputVec_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_AnnotatedCellInputVec_init_state      (struct AnnotatedCellInputVec_state *s, const struct AnnotatedCellInputVec_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInputVec_parse           (void* stack_end, struct AnnotatedCellInputVec_state *s, struct mol_chunk *chunk, const struct AnnotatedCellInputVec_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInputVec_parse           (struct AnnotatedCellInputVec_state *s, struct mol_chunk *chunk, const struct AnnotatedCellInputVec_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // DynVec
     (void)(size); // FIXME: check sizes.
@@ -253,14 +285,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInputVec_parse   
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  void            MolReader_AnnotatedRawTransaction_init_state    (void* stack_end, struct AnnotatedRawTransaction_state *s, const struct AnnotatedRawTransaction_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_AnnotatedRawTransaction_init_state    (struct AnnotatedRawTransaction_state *s, const struct AnnotatedRawTransaction_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedRawTransaction_parse         (void* stack_end, struct AnnotatedRawTransaction_state *s, struct mol_chunk *chunk, const struct AnnotatedRawTransaction_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedRawTransaction_parse         (struct AnnotatedRawTransaction_state *s, struct mol_chunk *chunk, const struct AnnotatedRawTransaction_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Table
     switch(s->state_num) {
@@ -343,7 +375,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedRawTransaction_parse 
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Bip32_parse                           (void* stack_end, struct Bip32_state *s, struct mol_chunk *chunk, const struct Bip32_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Bip32_parse                           (struct Bip32_state *s, struct mol_chunk *chunk, const struct Bip32_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     if(s->state_num == 0) {
         MOL_CALL_NUM(s->length);
@@ -361,14 +393,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Bip32_parse                   
     }
     DONE();
 }
-MOLECULE_API_DECORATOR  void            MolReader_AnnotatedTransaction_init_state       (void* stack_end, struct AnnotatedTransaction_state *s, const struct AnnotatedTransaction_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_AnnotatedTransaction_init_state       (struct AnnotatedTransaction_state *s, const struct AnnotatedTransaction_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedTransaction_parse            (void* stack_end, struct AnnotatedTransaction_state *s, struct mol_chunk *chunk, const struct AnnotatedTransaction_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedTransaction_parse            (struct AnnotatedTransaction_state *s, struct mol_chunk *chunk, const struct AnnotatedTransaction_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Table
     switch(s->state_num) {
