@@ -56,7 +56,7 @@ struct Bytes_callbacks {
     void (*body_chunk)(uint8_t*, mol_num_t);
 };
 
-MOLECULE_API_DECORATOR  void            MolReader_Bytes_init_state                      (void* stack_end, struct Bytes_state *s, const struct Bytes_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_Bytes_init_state                      (struct Bytes_state *s, const struct Bytes_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     MOL_INIT_NUM();
@@ -103,7 +103,7 @@ struct Byte32Vec_callbacks {
     const struct Byte32_callbacks *item;
 };
 
-MOLECULE_API_DECORATOR  void            MolReader_Byte32Vec_init_state                  (void* stack_end, struct Byte32Vec_state *s, const struct Byte32Vec_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_Byte32Vec_init_state                  (struct Byte32Vec_state *s, const struct Byte32Vec_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     MOL_INIT_NUM();
@@ -188,7 +188,7 @@ struct CellInputVec_callbacks {
     const struct CellInput_callbacks *item;
 };
 
-MOLECULE_API_DECORATOR  void            MolReader_CellInputVec_init_state               (void* stack_end, struct CellInputVec_state *s, const struct CellInputVec_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_CellInputVec_init_state               (struct CellInputVec_state *s, const struct CellInputVec_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     MOL_INIT_NUM();
@@ -265,7 +265,7 @@ struct CellDepVec_callbacks {
     const struct CellDep_callbacks *item;
 };
 
-MOLECULE_API_DECORATOR  void            MolReader_CellDepVec_init_state                 (void* stack_end, struct CellDepVec_state *s, const struct CellDepVec_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_CellDepVec_init_state                 (struct CellDepVec_state *s, const struct CellDepVec_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     MOL_INIT_NUM();
@@ -351,128 +351,128 @@ struct WitnessArgs_callbacks {
 struct Uint32_state;
 struct Uint32_callbacks;
 typedef const struct Uint32_callbacks Uint32_cb;
-MOLECULE_API_DECORATOR  void            MolReader_Uint32_init_state                     (void* stack_end, struct Uint32_state *s, const struct Uint32_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Uint32_parse                          (void* stack_end, struct Uint32_state *s, struct mol_chunk *chunk, const struct Uint32_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_Uint32_init_state                     (struct Uint32_state *s, const struct Uint32_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Uint32_parse                          (struct Uint32_state *s, struct mol_chunk *chunk, const struct Uint32_callbacks *cb, mol_num_t size);
 
 struct Uint64_state;
 struct Uint64_callbacks;
 typedef const struct Uint64_callbacks Uint64_cb;
-MOLECULE_API_DECORATOR  void            MolReader_Uint64_init_state                     (void* stack_end, struct Uint64_state *s, const struct Uint64_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Uint64_parse                          (void* stack_end, struct Uint64_state *s, struct mol_chunk *chunk, const struct Uint64_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_Uint64_init_state                     (struct Uint64_state *s, const struct Uint64_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Uint64_parse                          (struct Uint64_state *s, struct mol_chunk *chunk, const struct Uint64_callbacks *cb, mol_num_t size);
 
 struct Uint128_state;
 struct Uint128_callbacks;
 typedef const struct Uint128_callbacks Uint128_cb;
-MOLECULE_API_DECORATOR  void            MolReader_Uint128_init_state                    (void* stack_end, struct Uint128_state *s, const struct Uint128_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Uint128_parse                         (void* stack_end, struct Uint128_state *s, struct mol_chunk *chunk, const struct Uint128_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_Uint128_init_state                    (struct Uint128_state *s, const struct Uint128_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Uint128_parse                         (struct Uint128_state *s, struct mol_chunk *chunk, const struct Uint128_callbacks *cb, mol_num_t size);
 
 struct Byte32_state;
 struct Byte32_callbacks;
 typedef const struct Byte32_callbacks Byte32_cb;
-MOLECULE_API_DECORATOR  void            MolReader_Byte32_init_state                     (void* stack_end, struct Byte32_state *s, const struct Byte32_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Byte32_parse                          (void* stack_end, struct Byte32_state *s, struct mol_chunk *chunk, const struct Byte32_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_Byte32_init_state                     (struct Byte32_state *s, const struct Byte32_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Byte32_parse                          (struct Byte32_state *s, struct mol_chunk *chunk, const struct Byte32_callbacks *cb, mol_num_t size);
 
 struct Uint256_state;
 struct Uint256_callbacks;
 typedef const struct Uint256_callbacks Uint256_cb;
-MOLECULE_API_DECORATOR  void            MolReader_Uint256_init_state                    (void* stack_end, struct Uint256_state *s, const struct Uint256_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Uint256_parse                         (void* stack_end, struct Uint256_state *s, struct mol_chunk *chunk, const struct Uint256_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_Uint256_init_state                    (struct Uint256_state *s, const struct Uint256_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Uint256_parse                         (struct Uint256_state *s, struct mol_chunk *chunk, const struct Uint256_callbacks *cb, mol_num_t size);
 
 struct Bytes_state;
 struct Bytes_callbacks;
 typedef const struct Bytes_callbacks Bytes_cb;
-MOLECULE_API_DECORATOR  void            MolReader_Bytes_init_state                      (void* stack_end, struct Bytes_state *s, const struct Bytes_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Bytes_parse                           (void* stack_end, struct Bytes_state *s, struct mol_chunk *chunk, const struct Bytes_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_Bytes_init_state                      (struct Bytes_state *s, const struct Bytes_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Bytes_parse                           (struct Bytes_state *s, struct mol_chunk *chunk, const struct Bytes_callbacks *cb, mol_num_t size);
 
 struct BytesOpt_state;
 struct BytesOpt_callbacks;
 typedef const struct BytesOpt_callbacks BytesOpt_cb;
-MOLECULE_API_DECORATOR  void            MolReader_BytesOpt_init_state                   (void* stack_end, struct BytesOpt_state *s, const struct BytesOpt_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesOpt_parse                        (void* stack_end, struct BytesOpt_state *s, struct mol_chunk *chunk, const struct BytesOpt_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_BytesOpt_init_state                   (struct BytesOpt_state *s, const struct BytesOpt_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesOpt_parse                        (struct BytesOpt_state *s, struct mol_chunk *chunk, const struct BytesOpt_callbacks *cb, mol_num_t size);
 
 struct BytesVec_state;
 struct BytesVec_callbacks;
 typedef const struct BytesVec_callbacks BytesVec_cb;
-MOLECULE_API_DECORATOR  void            MolReader_BytesVec_init_state                   (void* stack_end, struct BytesVec_state *s, const struct BytesVec_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesVec_parse                        (void* stack_end, struct BytesVec_state *s, struct mol_chunk *chunk, const struct BytesVec_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_BytesVec_init_state                   (struct BytesVec_state *s, const struct BytesVec_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesVec_parse                        (struct BytesVec_state *s, struct mol_chunk *chunk, const struct BytesVec_callbacks *cb, mol_num_t size);
 
 struct Byte32Vec_state;
 struct Byte32Vec_callbacks;
 typedef const struct Byte32Vec_callbacks Byte32Vec_cb;
-MOLECULE_API_DECORATOR  void            MolReader_Byte32Vec_init_state                  (void* stack_end, struct Byte32Vec_state *s, const struct Byte32Vec_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Byte32Vec_parse                       (void* stack_end, struct Byte32Vec_state *s, struct mol_chunk *chunk, const struct Byte32Vec_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_Byte32Vec_init_state                  (struct Byte32Vec_state *s, const struct Byte32Vec_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Byte32Vec_parse                       (struct Byte32Vec_state *s, struct mol_chunk *chunk, const struct Byte32Vec_callbacks *cb, mol_num_t size);
 
 struct Script_state;
 struct Script_callbacks;
 typedef const struct Script_callbacks Script_cb;
-MOLECULE_API_DECORATOR  void            MolReader_Script_init_state                     (void* stack_end, struct Script_state *s, const struct Script_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Script_parse                          (void* stack_end, struct Script_state *s, struct mol_chunk *chunk, const struct Script_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_Script_init_state                     (struct Script_state *s, const struct Script_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Script_parse                          (struct Script_state *s, struct mol_chunk *chunk, const struct Script_callbacks *cb, mol_num_t size);
 
 struct ScriptOpt_state;
 struct ScriptOpt_callbacks;
 typedef const struct ScriptOpt_callbacks ScriptOpt_cb;
-MOLECULE_API_DECORATOR  void            MolReader_ScriptOpt_init_state                  (void* stack_end, struct ScriptOpt_state *s, const struct ScriptOpt_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_ScriptOpt_parse                       (void* stack_end, struct ScriptOpt_state *s, struct mol_chunk *chunk, const struct ScriptOpt_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_ScriptOpt_init_state                  (struct ScriptOpt_state *s, const struct ScriptOpt_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_ScriptOpt_parse                       (struct ScriptOpt_state *s, struct mol_chunk *chunk, const struct ScriptOpt_callbacks *cb, mol_num_t size);
 
 struct OutPoint_state;
 struct OutPoint_callbacks;
 typedef const struct OutPoint_callbacks OutPoint_cb;
-MOLECULE_API_DECORATOR  void            MolReader_OutPoint_init_state                   (void* stack_end, struct OutPoint_state *s, const struct OutPoint_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_OutPoint_parse                        (void* stack_end, struct OutPoint_state *s, struct mol_chunk *chunk, const struct OutPoint_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_OutPoint_init_state                   (struct OutPoint_state *s, const struct OutPoint_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_OutPoint_parse                        (struct OutPoint_state *s, struct mol_chunk *chunk, const struct OutPoint_callbacks *cb, mol_num_t size);
 
 struct CellInput_state;
 struct CellInput_callbacks;
 typedef const struct CellInput_callbacks CellInput_cb;
-MOLECULE_API_DECORATOR  void            MolReader_CellInput_init_state                  (void* stack_end, struct CellInput_state *s, const struct CellInput_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInput_parse                       (void* stack_end, struct CellInput_state *s, struct mol_chunk *chunk, const struct CellInput_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_CellInput_init_state                  (struct CellInput_state *s, const struct CellInput_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInput_parse                       (struct CellInput_state *s, struct mol_chunk *chunk, const struct CellInput_callbacks *cb, mol_num_t size);
 
 struct CellInputVec_state;
 struct CellInputVec_callbacks;
 typedef const struct CellInputVec_callbacks CellInputVec_cb;
-MOLECULE_API_DECORATOR  void            MolReader_CellInputVec_init_state               (void* stack_end, struct CellInputVec_state *s, const struct CellInputVec_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInputVec_parse                    (void* stack_end, struct CellInputVec_state *s, struct mol_chunk *chunk, const struct CellInputVec_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_CellInputVec_init_state               (struct CellInputVec_state *s, const struct CellInputVec_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInputVec_parse                    (struct CellInputVec_state *s, struct mol_chunk *chunk, const struct CellInputVec_callbacks *cb, mol_num_t size);
 
 struct CellOutput_state;
 struct CellOutput_callbacks;
 typedef const struct CellOutput_callbacks CellOutput_cb;
-MOLECULE_API_DECORATOR  void            MolReader_CellOutput_init_state                 (void* stack_end, struct CellOutput_state *s, const struct CellOutput_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutput_parse                      (void* stack_end, struct CellOutput_state *s, struct mol_chunk *chunk, const struct CellOutput_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_CellOutput_init_state                 (struct CellOutput_state *s, const struct CellOutput_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutput_parse                      (struct CellOutput_state *s, struct mol_chunk *chunk, const struct CellOutput_callbacks *cb, mol_num_t size);
 
 struct CellOutputVec_state;
 struct CellOutputVec_callbacks;
 typedef const struct CellOutputVec_callbacks CellOutputVec_cb;
-MOLECULE_API_DECORATOR  void            MolReader_CellOutputVec_init_state              (void* stack_end, struct CellOutputVec_state *s, const struct CellOutputVec_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutputVec_parse                   (void* stack_end, struct CellOutputVec_state *s, struct mol_chunk *chunk, const struct CellOutputVec_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_CellOutputVec_init_state              (struct CellOutputVec_state *s, const struct CellOutputVec_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutputVec_parse                   (struct CellOutputVec_state *s, struct mol_chunk *chunk, const struct CellOutputVec_callbacks *cb, mol_num_t size);
 
 struct CellDep_state;
 struct CellDep_callbacks;
 typedef const struct CellDep_callbacks CellDep_cb;
-MOLECULE_API_DECORATOR  void            MolReader_CellDep_init_state                    (void* stack_end, struct CellDep_state *s, const struct CellDep_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDep_parse                         (void* stack_end, struct CellDep_state *s, struct mol_chunk *chunk, const struct CellDep_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_CellDep_init_state                    (struct CellDep_state *s, const struct CellDep_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDep_parse                         (struct CellDep_state *s, struct mol_chunk *chunk, const struct CellDep_callbacks *cb, mol_num_t size);
 
 struct CellDepVec_state;
 struct CellDepVec_callbacks;
 typedef const struct CellDepVec_callbacks CellDepVec_cb;
-MOLECULE_API_DECORATOR  void            MolReader_CellDepVec_init_state                 (void* stack_end, struct CellDepVec_state *s, const struct CellDepVec_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDepVec_parse                      (void* stack_end, struct CellDepVec_state *s, struct mol_chunk *chunk, const struct CellDepVec_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_CellDepVec_init_state                 (struct CellDepVec_state *s, const struct CellDepVec_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDepVec_parse                      (struct CellDepVec_state *s, struct mol_chunk *chunk, const struct CellDepVec_callbacks *cb, mol_num_t size);
 
 struct RawTransaction_state;
 struct RawTransaction_callbacks;
 typedef const struct RawTransaction_callbacks RawTransaction_cb;
-MOLECULE_API_DECORATOR  void            MolReader_RawTransaction_init_state             (void* stack_end, struct RawTransaction_state *s, const struct RawTransaction_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_RawTransaction_parse                  (void* stack_end, struct RawTransaction_state *s, struct mol_chunk *chunk, const struct RawTransaction_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_RawTransaction_init_state             (struct RawTransaction_state *s, const struct RawTransaction_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_RawTransaction_parse                  (struct RawTransaction_state *s, struct mol_chunk *chunk, const struct RawTransaction_callbacks *cb, mol_num_t size);
 
 struct Transaction_state;
 struct Transaction_callbacks;
 typedef const struct Transaction_callbacks Transaction_cb;
-MOLECULE_API_DECORATOR  void            MolReader_Transaction_init_state                (void* stack_end, struct Transaction_state *s, const struct Transaction_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Transaction_parse                     (void* stack_end, struct Transaction_state *s, struct mol_chunk *chunk, const struct Transaction_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_Transaction_init_state                (struct Transaction_state *s, const struct Transaction_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Transaction_parse                     (struct Transaction_state *s, struct mol_chunk *chunk, const struct Transaction_callbacks *cb, mol_num_t size);
 
 struct WitnessArgs_state;
 struct WitnessArgs_callbacks;
 typedef const struct WitnessArgs_callbacks WitnessArgs_cb;
-MOLECULE_API_DECORATOR  void            MolReader_WitnessArgs_init_state                (void* stack_end, struct WitnessArgs_state *s, const struct WitnessArgs_callbacks *cb);
-MOLECULE_API_DECORATOR  mol_rv          MolReader_WitnessArgs_parse                     (void* stack_end, struct WitnessArgs_state *s, struct mol_chunk *chunk, const struct WitnessArgs_callbacks *cb, mol_num_t size);
+MOLECULE_API_DECORATOR  void            MolReader_WitnessArgs_init_state                (struct WitnessArgs_state *s, const struct WitnessArgs_callbacks *cb);
+MOLECULE_API_DECORATOR  mol_rv          MolReader_WitnessArgs_parse                     (struct WitnessArgs_state *s, struct mol_chunk *chunk, const struct WitnessArgs_callbacks *cb, mol_num_t size);
 
 
 #undef ____
@@ -481,17 +481,17 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_WitnessArgs_parse             
  * Reader Functions
  */
 
-#define                                 MolReader_Uint32_init_state(st, g, cbs)         mol_bytes_init_state(&(g->state), &((cbs)->cb))
-#define                                 MolReader_Uint32_parse(st, g, c, cbs, sz)       mol_parse_bytes(&(g->state), c, &((cbs)->cb), 4)
-#define                                 MolReader_Uint64_init_state(st, g, cbs)         mol_bytes_init_state(&(g->state), &((cbs)->cb))
-#define                                 MolReader_Uint64_parse(st, g, c, cbs, sz)       mol_parse_bytes(&(g->state), c, &((cbs)->cb), 8)
-#define                                 MolReader_Uint128_init_state(st, g, cbs)        mol_bytes_init_state(&(g->state), &((cbs)->cb))
-#define                                 MolReader_Uint128_parse(st, g, c, cbs, sz)      mol_parse_bytes(&(g->state), c, &((cbs)->cb), 16)
-#define                                 MolReader_Byte32_init_state(st, g, cbs)         mol_bytes_init_state(&(g->state), &((cbs)->cb))
-#define                                 MolReader_Byte32_parse(st, g, c, cbs, sz)       mol_parse_bytes(&(g->state), c, &((cbs)->cb), 32)
-#define                                 MolReader_Uint256_init_state(st, g, cbs)        mol_bytes_init_state(&(g->state), &((cbs)->cb))
-#define                                 MolReader_Uint256_parse(st, g, c, cbs, sz)      mol_parse_bytes(&(g->state), c, &((cbs)->cb), 32)
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Bytes_parse                           (void* stack_end, struct Bytes_state *s, struct mol_chunk *chunk, const struct Bytes_callbacks *cb, mol_num_t size) {
+#define                                 MolReader_Uint32_init_state(g, cbs)             mol_bytes_init_state(&(g->state), &((cbs)->cb))
+#define                                 MolReader_Uint32_parse(g, c, cbs, sz)           mol_parse_bytes(&(g->state), c, &((cbs)->cb), 4)
+#define                                 MolReader_Uint64_init_state(g, cbs)             mol_bytes_init_state(&(g->state), &((cbs)->cb))
+#define                                 MolReader_Uint64_parse(g, c, cbs, sz)           mol_parse_bytes(&(g->state), c, &((cbs)->cb), 8)
+#define                                 MolReader_Uint128_init_state(g, cbs)            mol_bytes_init_state(&(g->state), &((cbs)->cb))
+#define                                 MolReader_Uint128_parse(g, c, cbs, sz)          mol_parse_bytes(&(g->state), c, &((cbs)->cb), 16)
+#define                                 MolReader_Byte32_init_state(g, cbs)             mol_bytes_init_state(&(g->state), &((cbs)->cb))
+#define                                 MolReader_Byte32_parse(g, c, cbs, sz)           mol_parse_bytes(&(g->state), c, &((cbs)->cb), 32)
+#define                                 MolReader_Uint256_init_state(g, cbs)            mol_bytes_init_state(&(g->state), &((cbs)->cb))
+#define                                 MolReader_Uint256_parse(g, c, cbs, sz)          mol_parse_bytes(&(g->state), c, &((cbs)->cb), 32)
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Bytes_parse                           (struct Bytes_state *s, struct mol_chunk *chunk, const struct Bytes_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     if(s->state_num == 0) {
         MOL_CALL_NUM(s->length);
@@ -508,12 +508,12 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Bytes_parse                   
     if(s->state_num-1 < s->length) return INCOMPLETE;
     DONE();
 }
-MOLECULE_API_DECORATOR  void            MolReader_BytesOpt_init_state                   (void* stack_end, struct BytesOpt_state *s, const struct BytesOpt_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_BytesOpt_init_state                   (struct BytesOpt_state *s, const struct BytesOpt_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     MOL_INIT_SUBPARSER(item, Bytes);
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesOpt_parse                        (void* stack_end, struct BytesOpt_state *s, struct mol_chunk *chunk, const struct BytesOpt_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesOpt_parse                        (struct BytesOpt_state *s, struct mol_chunk *chunk, const struct BytesOpt_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Option
     if(size==0) {
@@ -526,14 +526,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesOpt_parse                
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  void            MolReader_BytesVec_init_state                   (void* stack_end, struct BytesVec_state *s, const struct BytesVec_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_BytesVec_init_state                   (struct BytesVec_state *s, const struct BytesVec_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesVec_parse                        (void* stack_end, struct BytesVec_state *s, struct mol_chunk *chunk, const struct BytesVec_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesVec_parse                        (struct BytesVec_state *s, struct mol_chunk *chunk, const struct BytesVec_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // DynVec
     (void)(size); // FIXME: check sizes.
@@ -578,7 +578,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesVec_parse                
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Byte32Vec_parse                       (void* stack_end, struct Byte32Vec_state *s, struct mol_chunk *chunk, const struct Byte32Vec_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Byte32Vec_parse                       (struct Byte32Vec_state *s, struct mol_chunk *chunk, const struct Byte32Vec_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     if(s->state_num == 0) {
         MOL_CALL_NUM(s->length);
@@ -596,14 +596,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Byte32Vec_parse               
     }
     DONE();
 }
-MOLECULE_API_DECORATOR  void            MolReader_Script_init_state                     (void* stack_end, struct Script_state *s, const struct Script_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_Script_init_state                     (struct Script_state *s, const struct Script_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Script_parse                          (void* stack_end, struct Script_state *s, struct mol_chunk *chunk, const struct Script_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Script_parse                          (struct Script_state *s, struct mol_chunk *chunk, const struct Script_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Table
     switch(s->state_num) {
@@ -656,12 +656,12 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Script_parse                  
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  void            MolReader_ScriptOpt_init_state                  (void* stack_end, struct ScriptOpt_state *s, const struct ScriptOpt_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_ScriptOpt_init_state                  (struct ScriptOpt_state *s, const struct ScriptOpt_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     MOL_INIT_SUBPARSER(item, Script);
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_ScriptOpt_parse                       (void* stack_end, struct ScriptOpt_state *s, struct mol_chunk *chunk, const struct ScriptOpt_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_ScriptOpt_parse                       (struct ScriptOpt_state *s, struct mol_chunk *chunk, const struct ScriptOpt_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Option
     if(size==0) {
@@ -674,13 +674,13 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_ScriptOpt_parse               
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  void            MolReader_OutPoint_init_state                   (void* stack_end, struct OutPoint_state *s, const struct OutPoint_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_OutPoint_init_state                   (struct OutPoint_state *s, const struct OutPoint_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     MOL_INIT_SUBPARSER(tx_hash, Byte32);
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_OutPoint_parse                        (void* stack_end, struct OutPoint_state *s, struct mol_chunk *chunk, const struct OutPoint_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_OutPoint_parse                        (struct OutPoint_state *s, struct mol_chunk *chunk, const struct OutPoint_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Struct
     if(size != 36 && size != MOL_NUM_MAX) return REJECT;
@@ -699,13 +699,13 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_OutPoint_parse                
     return COMPLETE;
 }
 
-MOLECULE_API_DECORATOR  void            MolReader_CellInput_init_state                  (void* stack_end, struct CellInput_state *s, const struct CellInput_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_CellInput_init_state                  (struct CellInput_state *s, const struct CellInput_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     MOL_INIT_SUBPARSER(since, Uint64);
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInput_parse                       (void* stack_end, struct CellInput_state *s, struct mol_chunk *chunk, const struct CellInput_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInput_parse                       (struct CellInput_state *s, struct mol_chunk *chunk, const struct CellInput_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Struct
     if(size != 44 && size != MOL_NUM_MAX) return REJECT;
@@ -724,7 +724,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInput_parse               
     return COMPLETE;
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInputVec_parse                    (void* stack_end, struct CellInputVec_state *s, struct mol_chunk *chunk, const struct CellInputVec_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInputVec_parse                    (struct CellInputVec_state *s, struct mol_chunk *chunk, const struct CellInputVec_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     if(s->state_num == 0) {
         MOL_CALL_NUM(s->length);
@@ -742,14 +742,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInputVec_parse            
     }
     DONE();
 }
-MOLECULE_API_DECORATOR  void            MolReader_CellOutput_init_state                 (void* stack_end, struct CellOutput_state *s, const struct CellOutput_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_CellOutput_init_state                 (struct CellOutput_state *s, const struct CellOutput_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutput_parse                      (void* stack_end, struct CellOutput_state *s, struct mol_chunk *chunk, const struct CellOutput_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutput_parse                      (struct CellOutput_state *s, struct mol_chunk *chunk, const struct CellOutput_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Table
     switch(s->state_num) {
@@ -802,14 +802,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutput_parse              
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  void            MolReader_CellOutputVec_init_state              (void* stack_end, struct CellOutputVec_state *s, const struct CellOutputVec_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_CellOutputVec_init_state              (struct CellOutputVec_state *s, const struct CellOutputVec_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutputVec_parse                   (void* stack_end, struct CellOutputVec_state *s, struct mol_chunk *chunk, const struct CellOutputVec_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutputVec_parse                   (struct CellOutputVec_state *s, struct mol_chunk *chunk, const struct CellOutputVec_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // DynVec
     (void)(size); // FIXME: check sizes.
@@ -854,13 +854,13 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutputVec_parse           
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  void            MolReader_CellDep_init_state                    (void* stack_end, struct CellDep_state *s, const struct CellDep_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_CellDep_init_state                    (struct CellDep_state *s, const struct CellDep_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     MOL_INIT_SUBPARSER(out_point, OutPoint);
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDep_parse                         (void* stack_end, struct CellDep_state *s, struct mol_chunk *chunk, const struct CellDep_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDep_parse                         (struct CellDep_state *s, struct mol_chunk *chunk, const struct CellDep_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Struct
     if(size != 37 && size != MOL_NUM_MAX) return REJECT;
@@ -879,7 +879,7 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDep_parse                 
     return COMPLETE;
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDepVec_parse                      (void* stack_end, struct CellDepVec_state *s, struct mol_chunk *chunk, const struct CellDepVec_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDepVec_parse                      (struct CellDepVec_state *s, struct mol_chunk *chunk, const struct CellDepVec_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     if(s->state_num == 0) {
         MOL_CALL_NUM(s->length);
@@ -897,14 +897,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDepVec_parse              
     }
     DONE();
 }
-MOLECULE_API_DECORATOR  void            MolReader_RawTransaction_init_state             (void* stack_end, struct RawTransaction_state *s, const struct RawTransaction_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_RawTransaction_init_state             (struct RawTransaction_state *s, const struct RawTransaction_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_RawTransaction_parse                  (void* stack_end, struct RawTransaction_state *s, struct mol_chunk *chunk, const struct RawTransaction_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_RawTransaction_parse                  (struct RawTransaction_state *s, struct mol_chunk *chunk, const struct RawTransaction_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Table
     switch(s->state_num) {
@@ -987,14 +987,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_RawTransaction_parse          
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  void            MolReader_Transaction_init_state                (void* stack_end, struct Transaction_state *s, const struct Transaction_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_Transaction_init_state                (struct Transaction_state *s, const struct Transaction_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_Transaction_parse                     (void* stack_end, struct Transaction_state *s, struct mol_chunk *chunk, const struct Transaction_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_Transaction_parse                     (struct Transaction_state *s, struct mol_chunk *chunk, const struct Transaction_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Table
     switch(s->state_num) {
@@ -1037,14 +1037,14 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Transaction_parse             
     if(cb && cb->end) MOL_PIC(cb->end)();
     return COMPLETE;
 }
-MOLECULE_API_DECORATOR  void            MolReader_WitnessArgs_init_state                (void* stack_end, struct WitnessArgs_state *s, const struct WitnessArgs_callbacks *cb) {
+MOLECULE_API_DECORATOR  void            MolReader_WitnessArgs_init_state                (struct WitnessArgs_state *s, const struct WitnessArgs_callbacks *cb) {
     if(cb && cb->start) MOL_PIC(cb->start)();
     s->state_num=0;
     s->field_idx=0;
     MOL_INIT_NUM();
 }
 
-MOLECULE_API_DECORATOR  mol_rv          MolReader_WitnessArgs_parse                     (void* stack_end, struct WitnessArgs_state *s, struct mol_chunk *chunk, const struct WitnessArgs_callbacks *cb, mol_num_t size) {
+MOLECULE_API_DECORATOR  mol_rv          MolReader_WitnessArgs_parse                     (struct WitnessArgs_state *s, struct mol_chunk *chunk, const struct WitnessArgs_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     // Table
     switch(s->state_num) {
