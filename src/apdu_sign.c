@@ -12,6 +12,7 @@
 #define MOL_PIC(x) ((void (*)()) PIC(x))
 #define MOL_PIC_STRUCT(t,x) (x?((t*) PIC(x)):NULL)
 #define mol_printf(...) PRINTF(__VA_ARGS__)
+#define mol_emerg_reject THROW(EXC_MEMORY_ERROR)
 
 #include "cx.h"
 #include "annotated.h"
