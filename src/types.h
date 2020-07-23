@@ -166,7 +166,7 @@ struct output_t {
 #define HAS_DESTINATION_ADDRESS 0x01
 #define HAS_CHANGE_ADDRESS      0x02
 
-#define MAX_OUTPUTS 2
+#define MAX_OUTPUTS 3
 
 struct parsed_transaction {
     uint64_t total_fee;

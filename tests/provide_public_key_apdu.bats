@@ -43,7 +43,7 @@
 #}
 
 @test "Ledger app produces an extended public key upon request" {
-  run apdu_with_clicks "8004000011048000002c800001358000000000000000" "$ACCEPT_CLICKS"
+  run apdu_with_clicks "8004000011048000002c800001358000000000000000" "rRrRrRrRrR$ACCEPT_CLICKS"
   promptsCheck 3 tests/provide_ext_public_key_prompts.txt
   [ "$status" -eq 0 ]
   diff tests/provide_ext_public_key_apdu_0_0.txt <(echo "$output")
