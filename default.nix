@@ -43,7 +43,9 @@ let
       };
     };
 
-  src = pkgs.lib.sources.sourceFilesBySuffices (pkgs.lib.sources.cleanSource ./.) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".der"];
+    src = let glyphsFilter = (p: _: let p' = baseNameOf p; in p' != "glyphs.c" && p' != "glyphs.h");
+      in (pkgs.lib.sources.sourceFilesBySuffices 
+          (pkgs.lib.sources.cleanSourceWith { src = ./.; filter = glyphsFilter; }) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".der"]);
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
 
@@ -86,7 +88,7 @@ let
       };
       ## Note: This has been known to change between sdk upgrades. Make sure to consult
       ## the $COMMON_LOAD_PARAMS in the Makefile.defines of both SDKs
-        nvramDataSize = appDir: deviceName: 
+        nvramDataSize = appDir: deviceName:
           let mapPath = appDir + /debug/app.map;
           in pkgs.runCommand "nvram-data-size" {} ''
             nvram_data=0x${ if deviceName == "s"
