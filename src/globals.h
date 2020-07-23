@@ -42,7 +42,6 @@ struct maybe_transaction {
 #define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
 
 typedef struct {
-    uint8_t tx_hash[32];
     uint32_t index;
     blake2b_hash_state_t hash_state;
 } input_state_t;

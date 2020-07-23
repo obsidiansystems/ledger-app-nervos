@@ -293,11 +293,6 @@ void input_start() {
     explicit_bzero((void*)&G.u.input_state, sizeof(G.u.input_state));
 }
 
-void input_save_tx_hash(uint8_t *hash, mol_num_t hash_length) {
-    (void) hash_length;// hash_length guaranteed by parser
-    memcpy(G.u.input_state.tx_hash, hash, sizeof(G.u.input_state.tx_hash));
-}
-
 void input_save_index(uint8_t *index, mol_num_t index_length) {
     (void) index_length; // guaranteed by parser
     memcpy(&G.u.input_state.index, index, sizeof(G.u.input_state.index));
@@ -307,11 +302,11 @@ void context_blake2b_chunk(uint8_t *chunk, mol_num_t length) {
     blake2b_incremental_hash(chunk, length, &G.u.input_state.hash_state);
 }
 
-void validate_context_txn(void) {
+void finish_context_txn(void) {
     uint8_t tx_hash[32];
     blake2b_finish_hash(tx_hash, 32, &G.u.input_state.hash_state);
-    if(memcmp(tx_hash, G.u.input_state.tx_hash, 32))
-        REJECT_HARD("Context transaction does not match hash");
+    blake2b_chunk(tx_hash, 32);
+    blake2b_chunk(&G.u.input_state.index, sizeof(G.u.input_state.index));
     explicit_bzero(&G.u, sizeof(G.u));
 }
 
@@ -474,9 +469,8 @@ const struct byte_callbacks hash_type_cb = { cell_script_hash_type };
 const AnnotatedCellInput_cb annotatedCellInput_callbacks = {
     .start = input_start,
     .input = &(CellInput_cb) {
-        .chunk = blake2b_chunk,
+	.since = &(Uint64_cb) { { blake2b_chunk } },
         .previous_output = &(OutPoint_cb) {
-            .tx_hash = &(Byte32_cb) { { input_save_tx_hash } },
             .index = &(Uint32_cb) { { input_save_index } }
         }
     },
@@ -503,7 +497,7 @@ const AnnotatedCellInput_cb annotatedCellInput_callbacks = {
             .index = input_context_start_idx,
             .item = &(Bytes_cb) { .size = set_cell_data_size, .body_chunk = check_cell_data_data_chunk, .end = finish_input_cell_data }
         },
-        .end = validate_context_txn,
+        .end = finish_context_txn,
     }
 };
 
