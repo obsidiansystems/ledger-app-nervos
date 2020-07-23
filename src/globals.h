@@ -22,7 +22,7 @@ void init_globals(void);
 
 struct priv_generate_key_pair {
     uint8_t private_key_data[PRIVATE_KEY_DATA_SIZE];
-    extended_key_pair_t res;
+    key_pair_t res;
 };
 
 typedef struct {
