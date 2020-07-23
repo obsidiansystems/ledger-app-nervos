@@ -1,4 +1,4 @@
-{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", nanoXSdk ? null, debug?false, ... }:
+{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", debug?false, ... }:
 let
   fetchThunk = p:
     if builtins.pathExists (p + /git.json)
@@ -28,9 +28,7 @@ let
       };
       x = rec {
         name = "x";
-        sdk = if nanoXSdk == null
-          then throw "No NanoX SDK"
-          else assert builtins.typeOf nanoXSdk == "path"; nanoXSdk;
+        sdk = fetchThunk ./nix/dep/ledger-nanox-sdk;
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 7; };
         target = "TARGET_NANOX";
         targetId = "0x33000004";
