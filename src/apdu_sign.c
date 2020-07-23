@@ -276,9 +276,9 @@ unsafe:
     }
 
 void prep_lock_arg(bip32_path_t *key, standard_lock_arg_t *destination) {
-    extended_public_key_t ext_public_key;
-    generate_public_key(&ext_public_key, key);
-    generate_lock_arg_for_pubkey(&ext_public_key.public_key, destination);
+    cx_ecfp_public_key_t public_key;
+    generate_public_key(&public_key, key);
+    generate_lock_arg_for_pubkey(&public_key, destination);
 }
 
 /* Start of parser callbacks */
@@ -287,32 +287,40 @@ void blake2b_chunk(uint8_t* buf, mol_num_t len) {
     blake2b_incremental_hash(buf, len, &G.hash_state);
 }
 
+void inputs_start() {
+    explicit_bzero((void*)&G.u.inp.last_input_lock_arg, sizeof(G.u.inp.last_input_lock_arg));
+}
+
 void input_start() {
     explicit_bzero(&G.cell_state, sizeof(G.cell_state));
     explicit_bzero((void*) &G.lock_arg_tmp, sizeof(G.lock_arg_tmp));
-    explicit_bzero((void*)&G.u.input_state, sizeof(G.u.input_state));
+    explicit_bzero((void*)&G.u.inp.input_state, sizeof(G.u.inp.input_state));
 }
 
 void input_save_index(uint8_t *index, mol_num_t index_length) {
     (void) index_length; // guaranteed by parser
-    memcpy(&G.u.input_state.index, index, sizeof(G.u.input_state.index));
+    memcpy(&G.u.inp.input_state.index, index, sizeof(G.u.inp.input_state.index));
 }
 
 void context_blake2b_chunk(uint8_t *chunk, mol_num_t length) {
-    blake2b_incremental_hash(chunk, length, &G.u.input_state.hash_state);
+    blake2b_incremental_hash(chunk, length, &G.u.inp.input_state.hash_state);
 }
 
 void finish_context_txn(void) {
     uint8_t tx_hash[32];
-    blake2b_finish_hash(tx_hash, 32, &G.u.input_state.hash_state);
+    blake2b_finish_hash(tx_hash, 32, &G.u.inp.input_state.hash_state);
     blake2b_chunk(tx_hash, 32);
-    blake2b_chunk(&G.u.input_state.index, sizeof(G.u.input_state.index));
+    blake2b_chunk(&G.u.inp.input_state.index, sizeof(G.u.inp.input_state.index));
+    explicit_bzero(&G.u.inp.input_state, sizeof(G.u.inp.input_state));
+}
+
+void finish_inputs(void) {
     explicit_bzero(&G.u, sizeof(G.u));
 }
 
 void input_context_start_idx(mol_num_t idx) {
     // Enable/disable the remaining input callbacks based on whether we're on that output.
-    G.cell_state.active = idx == G.u.input_state.index;
+    G.cell_state.active = idx == G.u.inp.input_state.index;
 }
 
 void cell_capacity(uint8_t* capacity, mol_num_t len) {
@@ -391,7 +399,7 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
 void input_lock_arg_end() {
     if(!G.cell_state.active) return;
 
-    if (memcmp(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg))) {
+    if (memcmp(&G.u.inp.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.u.inp.last_input_lock_arg))) {
         G.distinct_input_sources += 1;
         if (G.cell_state.lock_arg_nonequal == 0) {
             // We are signing this input
@@ -402,7 +410,7 @@ void input_lock_arg_end() {
             G.maybe_transaction.v.input_count.fst = G.distinct_input_sources;
         }
     }
-    memcpy(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg));
+    memcpy(&G.u.inp.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.u.inp.last_input_lock_arg));
 }
 
 void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
@@ -672,8 +680,10 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
     .cell_deps = &(CellDepVec_cb) { .chunk = blake2b_chunk },
     .header_deps = &(Byte32Vec_cb) { .chunk = blake2b_chunk },
     .inputs = &(AnnotatedCellInputVec_cb) {
+        .start = inputs_start,
         .length = blake2b_input_count,
-        .item = &annotatedCellInput_callbacks
+        .item = &annotatedCellInput_callbacks,
+        .end = finish_inputs
     },
     .outputs = &(CellOutputVec_cb) { 
         .chunk = blake2b_chunk,

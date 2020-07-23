@@ -22,7 +22,7 @@ void init_globals(void);
 
 struct priv_generate_key_pair {
     uint8_t private_key_data[PRIVATE_KEY_DATA_SIZE];
-    extended_key_pair_t res;
+    key_pair_t res;
 };
 
 typedef struct {
@@ -61,12 +61,13 @@ typedef struct {
 typedef struct {
     union {
         bip32_path_t temp_key;
-        input_state_t input_state;
-
-        // Things we need exclusively after doing validate_context_txn
         struct {
-            uint32_t witness_multisig_threshold;
-            uint32_t witness_multisig_pubkeys_cnt;
+            input_state_t input_state;
+            standard_lock_arg_t last_input_lock_arg;
+        } inp;
+
+        // Things we need exclusively after doing finish_inputs
+        struct {
             uint32_t witness_multisig_lock_arg_consumed;
             _Alignas(uint32_t) uint8_t witness_stack[64];
             uint32_t current_output_index;
@@ -80,6 +81,10 @@ typedef struct {
             uint64_t change_amount;
             uint64_t plain_output_amount;
             uint64_t dao_output_amount;
+            // threshold and pubkey_cnt are actually uint32_t
+            // but here we save space as we expect them to be < 256
+            uint8_t witness_multisig_threshold;
+            uint8_t witness_multisig_pubkeys_cnt;
             uint8_t output_count;
             uint8_t is_first_witness : 1;
             uint8_t hash_only : 1;
@@ -92,7 +97,6 @@ typedef struct {
 
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
-    standard_lock_arg_t last_input_lock_arg;
     standard_lock_arg_t dao_cell_owner;
 
     struct maybe_transaction maybe_transaction;

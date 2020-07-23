@@ -47,23 +47,23 @@ size_t read_bip32_path(bip32_path_t *const out, uint8_t const *const in, size_t 
     return ix;
 }
 
-extended_key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const *const bip32_path) {
+key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const *const bip32_path, uint8_t *const chain_code /* optional */) {
     check_null(bip32_path);
     struct priv_generate_key_pair *const priv = &global.apdu.priv.generate_key_pair;
 
     cx_curve_t const cx_curve = CX_CURVE_SECP256K1;
 
-    os_perso_derive_node_bip32(cx_curve, bip32_path->components, bip32_path->length, priv->private_key_data, priv->res.chain_code);
+    os_perso_derive_node_bip32(cx_curve, bip32_path->components, bip32_path->length, priv->private_key_data, chain_code);
 
     BEGIN_TRY {
         TRY {
             cx_ecfp_init_private_key(cx_curve, priv->private_key_data, sizeof(priv->private_key_data),
-                                     &priv->res.key_pair.private_key);
-            cx_ecfp_generate_pair(cx_curve, &priv->res.key_pair.public_key, &priv->res.key_pair.private_key, 1);
+                                     &priv->res.private_key);
+            cx_ecfp_generate_pair(cx_curve, &priv->res.public_key, &priv->res.private_key, 1);
 
             if (cx_curve == CX_CURVE_Ed25519) {
-                cx_edward_compress_point(CX_CURVE_Ed25519, priv->res.key_pair.public_key.W, priv->res.key_pair.public_key.W_len);
-                priv->res.key_pair.public_key.W_len = 33;
+                cx_edward_compress_point(CX_CURVE_Ed25519, priv->res.public_key.W, priv->res.public_key.W_len);
+                priv->res.public_key.W_len = 33;
             }
         }
         FINALLY {
@@ -76,9 +76,8 @@ extended_key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const
 }
 
 key_pair_t *generate_key_pair_return_global(bip32_path_t const *const bip32_path) {
-    extended_key_pair_t *const result = generate_extended_key_pair_return_global(bip32_path);
-    explicit_bzero(&result->chain_code, sizeof(result->chain_code));
-    return &(result->key_pair);
+    key_pair_t *const result = generate_extended_key_pair_return_global(bip32_path, NULL);
+    return result;
 }
 
 size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const pair, uint8_t const *const in,

@@ -118,7 +118,7 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
 
     read_bip32_path(&G.key, dataBuffer, cdata_size);
 
-    generate_public_key(&G.ext_public_key, &G.key);
+    generate_extended_public_key(&G.ext_public_key, &G.key);
 
     // write lock arg
     generate_lock_arg_for_pubkey(&G.ext_public_key.public_key, &G.render_address_lock_arg);
