@@ -240,13 +240,27 @@ The Nervos Ledger app is built to work with CKB-CLI. Some of these CKB-CLI subco
 
 ## Installing the Client
 
-To use the CKB command line utility with the Ledger, you must currently use the Obsidian fork of the client. To build and start it, run the following from within this repository:
+To use the CKB command line utility with the Ledger, you must currently use the Obsidian fork of the client. 
+Note that Obsidian's fork of the client has a number of experimental features that do not currently exist upstream and, resultantly,
+should only be used for development and testing purposes.
+
+To build and start it, run the following from within this repository:
 
 ``` sh
 $ nix run -f nix/dep/ckb-cli -c ckb-cli
 ```
 
 All commands that follow prefixed with ‘CKB>’ should be run in the prompt provided by the above command.
+
+### Installing the client manually:
+It is also possible to install ckb-cli without nix. Should you choose to do so, please
+follow the upstream repo's instructions regarding the installation of dependencies
+```
+git clone https://github.com/obsidiansystems/ckb-cli.git
+cd ckb-cli
+git checkout ledger-app
+cargo run
+```
 
 ## Listing Ledger Devices ###
 
@@ -406,6 +420,10 @@ total_count: 1
 ```
 
 ## Message Signing ##
+*Note that the following instructions reflect an anticipation of the future state of ckb-cli and are not all
+compatible with Obsidian's current ledger-app branch. For more instructions on using the ledger's message signing
+features with the ledger-app branch of ckb-cli see [](Experimental-ckb-cli.md) *
+ 
 To sign the hash of a message with their ledger a user may do the following:
 
 ```sh
