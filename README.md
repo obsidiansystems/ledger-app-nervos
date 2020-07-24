@@ -260,6 +260,8 @@ git clone https://github.com/obsidiansystems/ckb-cli.git
 cd ckb-cli
 git checkout ledger-app
 cargo run
+ # To install
+cargo install --path . -f
 ```
 
 ## Listing Ledger Devices ###
@@ -422,7 +424,7 @@ total_count: 1
 ## Message Signing ##
 *Note that the following instructions reflect an anticipation of the future state of ckb-cli and are not all
 compatible with Obsidian's current ledger-app branch. For more instructions on using the ledger's message signing
-features with the ledger-app branch of ckb-cli see [](Experimental-ckb-cli.md) *
+features with the ledger-app branch of ckb-cli see [Experimental-ckb-cli.md](Experimental-ckb-cli.md)*
  
 To sign the hash of a message with their ledger a user may do the following:
 

@@ -63,5 +63,8 @@ VERIFY: true
 message-hash: <binary hex passed in>
 signature: <signature>
 ```
+It is not possible to verify the signature with `util verify signature` (this is why the verification is built in to `ledger-sign-hash`) because `verify-signature` assumes that
+additional magic-bytes were prepended to the message passed in, and that the ledger signature is of the hash of the message passed in (with the magic-bytes), whereas
+`ledger-sign-hash` simply sends the input to the ledger untouched (and the ledger does not hash the input before signing it).
 
 If the length of the hash is greater than 64 bytes, or if the `Allow sign hash` is set to `Off`, the ledger will reject the message.
