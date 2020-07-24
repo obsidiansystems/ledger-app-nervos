@@ -5,23 +5,53 @@ set -Eeuo pipefail
 
 root="$(git rev-parse --show-toplevel)"
 
-target="${1:?Please specify target, either 's' for Nano S or 'x' for Nano X}"
-shift
+# HELP=false
+appDir=""
 
-case "$target" in
-  s) ;; x) ;;
-  *)
-    >&2 echo "Target must either be 's' for Nano S or 'x' for Nano X"
-    exit 1
-esac
+describe() {
+  echo "install the ledger app"
+}
+
+build() {
+  descr=$(git describe --tags --abbrev=8 --always --long --dirty 2>/dev/null)
+  echo >&2 "Git description: $descr"
+  exec nix-build "$root" --no-out-link --argstr gitDescribe "$descr" "$@" ${NIX_BUILD_ARGS:-}
+}
 
 install() {
-  local app=$1
-  shift
   local release_file
-  release_file=$("$root/nix/build.sh" -A "nano.$target.release.app" "$@")
+  release_file=$(build -A "nano.${target}.release.app" "$@")
   bash "$root/release-installer.sh" "$release_file"
 }
 
-install wallet "$@"
+while getopts ":ht:x:" opt; do
+  case ${opt} in
+    h ) describe
+      ;;
+    t ) 
+        if [[ "$OPTARG" == "s" || "$OPTARG" == "x" ]]
+        then
+            target="$OPTARG"
+        else
+          echo "Please select x or s"
+          exit 1
+        fi
+        echo $target
+      ;;
+
+    ## Optional app directory, to download from app.hex file
+    x ) appDir=${OPTARG}
+      ;;
+    \? ) echo "Usage: cmd [-h] [-t] [-x]"
+      ;;
+  esac
+done
+shift "$((OPTIND-1))"
+
+if [[ -e $appDir ]] 
+then
+    bash "$root/release-installer.sh" "${appDir}"
+else
+    install "$@"
+fi
 
