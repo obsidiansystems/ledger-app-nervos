@@ -5,12 +5,19 @@ set -Eeuo pipefail
 
 root="$(git rev-parse --show-toplevel)"
 
-# HELP=false
-appPkg=""
-dontCheck=""
+appPkg=
+dontCheck=
+target=
 
-describe() {
-  echo "install the ledger app"
+usage() {
+  echo "usage: ./install.sh [build-type arg] [options]"
+  echo "build-type:"
+  echo "  -t : Target to build from source. Takes either 's' or 't' as an arg"
+  echo "  -x : Hex file. Takes either a tar.gz or directory containing the app.hex and app.manifest files"
+  echo "options:"
+  echo "  -n : Skip tests. Has no effect when run with -x build arg"
+  exit 0
+   
 }
 
 build() {
@@ -20,12 +27,16 @@ build() {
 }
 
 install() {
-  local release_file
-  release_file=$(build -A "nano.${target}.release.app" "$@")
-  bash "$root/nix/app-installer-impl.sh" "$release_file"
+  if [[ $target == "" ]]
+  then usage
+  else 
+    local release_file
+    release_file=$(build -A "nano.${target}.release.app" "$@")
+    bash "$root/nix/app-installer-impl.sh" "$release_file"
+  fi
 }
 
-while getopts ":ht:x:n" opt; do
+while getopts ":h:t:x:n" opt; do
   case ${opt} in
     t ) 
     ## Required target arg: Specify x or s
@@ -46,9 +57,10 @@ while getopts ":ht:x:n" opt; do
     n ) dontCheck="--arg runTest false"
       ;;
 
-    h ) describe
+    h ) usage
       ;;
-    \? ) echo "Usage: cmd [-h] [-t] [-x]"
+    \? ) usage
+        
       ;;
   esac
 done
