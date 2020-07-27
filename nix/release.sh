@@ -3,8 +3,14 @@
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && git rev-parse --show-toplevel)"
 
-nano_s_tarball=$("$root/nix/build.sh" -A "nano.s.release.all" "$@")
-nano_x_tarball=$("$root/nix/build.sh" -A "nano.x.release.all" "$@")
+build() {
+  descr=$(git describe --tags --abbrev=8 --always --long --dirty 2>/dev/null)
+  echo >&2 "Git description: $descr"
+  exec nix-build "$root" --no-out-link --argstr gitDescribe "$descr" ${dontCheck} "$@" ${NIX_BUILD_ARGS:-}
+}
+
+nano_s_tarball=$(build -A "nano.s.release.all" "$@")
+nano_x_tarball=$(build -A "nano.x.release.all" "$@")
 
 cp -f $nano_s_tarball nano-s-release.tar.gz
 cp -f $nano_x_tarball nano-x-release.tar.gz

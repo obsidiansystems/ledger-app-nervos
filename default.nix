@@ -140,7 +140,7 @@ let
 
           cp -r ${app} ledger-app-nervos-${bolos.name}/app
 
-          install -m a=rx ${./release-installer.sh} ledger-app-nervos-${bolos.name}/install.sh
+          install -m a=rx ${./nix/app-installer-impl.sh} ledger-app-nervos-${bolos.name}/install.sh
 
           tar czf $out ledger-app-nervos-${bolos.name}/*
         '';
