@@ -3,11 +3,34 @@
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && git rev-parse --show-toplevel)"
 
+dontCheck=
+
 build() {
   descr=$(git describe --tags --abbrev=8 --always --long --dirty 2>/dev/null)
   echo >&2 "Git description: $descr"
   exec nix-build "$root" --no-out-link --argstr gitDescribe "$descr" ${dontCheck} "$@" ${NIX_BUILD_ARGS:-}
 }
+
+usage() {
+  echo "release installer: creates tarballs and checksums from src"
+  echo "usage: ./release.sh [options]"
+  echo "options:"
+  echo "  -n : do not run tests before build"
+  exit 0
+}
+
+while getopts ":hn" opt; do
+  case ${opt} in
+    ## no-test: Don't run tests prior to installation
+    n ) dontCheck="--arg runTest false"
+      ;;
+    h ) usage
+      ;;
+    \? ) usage
+      ;;
+  esac
+done
+shift "$((OPTIND-1))"
 
 nano_s_tarball=$(build -A "nano.s.release.all" "$@")
 nano_x_tarball=$(build -A "nano.x.release.all" "$@")
