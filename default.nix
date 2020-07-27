@@ -1,4 +1,4 @@
-{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", nanoXSdk ? null, debug?false, ... }:
+{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", nanoXSdk ? null, debug?false, runTest?true, ... }:
 let
   fetchThunk = p:
     if builtins.pathExists (p + /git.json)
@@ -96,7 +96,7 @@ let
           size $out/bin/app.elf
         '';
 
-        doCheck = bolos.test;
+        doCheck = if runTest then bolos.test else false;
         checkTarget = "test";
       };
       ## Note: This has been known to change between sdk upgrades. Make sure to consult

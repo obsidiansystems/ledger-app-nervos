@@ -7,6 +7,7 @@ root="$(git rev-parse --show-toplevel)"
 
 # HELP=false
 appDir=""
+dontCheck=""
 
 describe() {
   echo "install the ledger app"
@@ -15,7 +16,7 @@ describe() {
 build() {
   descr=$(git describe --tags --abbrev=8 --always --long --dirty 2>/dev/null)
   echo >&2 "Git description: $descr"
-  exec nix-build "$root" --no-out-link --argstr gitDescribe "$descr" "$@" ${NIX_BUILD_ARGS:-}
+  exec nix-build "$root" --no-out-link --argstr gitDescribe "$descr" ${dontCheck} "$@" ${NIX_BUILD_ARGS:-}
 }
 
 install() {
@@ -24,7 +25,7 @@ install() {
   bash "$root/release-installer.sh" "$release_file"
 }
 
-while getopts ":ht:x:" opt; do
+while getopts ":ht:x:n" opt; do
   case ${opt} in
     h ) describe
       ;;
@@ -42,6 +43,11 @@ while getopts ":ht:x:" opt; do
     ## Optional app directory, to download from app.hex file
     x ) appDir=${OPTARG}
       ;;
+
+    ## no-test: Don't run tests prior to installation
+    n ) dontCheck="--arg runTest false"
+      ;;
+
     \? ) echo "Usage: cmd [-h] [-t] [-x]"
       ;;
   esac
