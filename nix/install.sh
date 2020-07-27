@@ -6,7 +6,7 @@ set -Eeuo pipefail
 root="$(git rev-parse --show-toplevel)"
 
 # HELP=false
-appDir=""
+appPkg=""
 dontCheck=""
 
 describe() {
@@ -22,14 +22,13 @@ build() {
 install() {
   local release_file
   release_file=$(build -A "nano.${target}.release.app" "$@")
-  bash "$root/release-installer.sh" "$release_file"
+  bash "$root/nix/app-installer-impl.sh" "$release_file"
 }
 
 while getopts ":ht:x:n" opt; do
   case ${opt} in
-    h ) describe
-      ;;
     t ) 
+    ## Required target arg: Specify x or s
         if [[ "$OPTARG" == "s" || "$OPTARG" == "x" ]]
         then
             target="$OPTARG"
@@ -39,25 +38,37 @@ while getopts ":ht:x:n" opt; do
         fi
         echo $target
       ;;
-
     ## Optional app directory, to download from app.hex file
-    x ) appDir=${OPTARG}
+    x ) appPkg=${OPTARG}
       ;;
 
     ## no-test: Don't run tests prior to installation
     n ) dontCheck="--arg runTest false"
       ;;
 
+    h ) describe
+      ;;
     \? ) echo "Usage: cmd [-h] [-t] [-x]"
       ;;
   esac
 done
 shift "$((OPTIND-1))"
 
-if [[ -e $appDir ]] 
+if [[ $appPkg == *.tar.gz ]]
 then
-    bash "$root/release-installer.sh" "${appDir}"
+  appDir=$(tmp_dir=$(mktemp -d) && tar -zxf "$appPkg" -C "$tmp_dir" && echo "$tmp_dir")
+  # this hack assumes that there is only one elem in $appDir
+  ledgerDir="${appDir}/$(ls ${appDir})"
+  bash "${ledgerDir}/install.sh" ${ledgerDir}/app
+elif [[ -d $appPkg && -e $appPkg/app.hex && -e $appPkg/app.manifest ]]
+then
+  bash "$root/nix/app-installer-impl.sh" "${appDir}"
+elif [[ -e $appPkg ]]
+then
+  echo "-x must contain a *.tar.gz file or an app/ directory containing an app.hex and app.manifest"
+  exit 0
 else
+  ## INSTALL FROM SOURCE
     install "$@"
 fi
 
