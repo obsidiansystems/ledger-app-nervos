@@ -3,12 +3,13 @@
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && git rev-parse --show-toplevel)"
 
-dontCheck=
+dontTest=
+checkTag=true
 
 build() {
   descr=$(git describe --tags --abbrev=8 --always --long --dirty 2>/dev/null)
   echo >&2 "Git description: $descr"
-  exec nix-build "$root" --no-out-link --argstr gitDescribe "$descr" ${dontCheck} "$@" ${NIX_BUILD_ARGS:-}
+  exec nix-build "$root" --no-out-link --argstr gitDescribe "$descr" ${dontTest} "$@" ${NIX_BUILD_ARGS:-}
 }
 
 usage() {
@@ -16,13 +17,31 @@ usage() {
   echo "usage: ./release.sh [options]"
   echo "options:"
   echo "  -n : do not run tests before build"
+  echo "  -t : do not check that a git tag exists on HEAD that matches the current version number in the makefile before continuing"
   exit 0
 }
 
-while getopts ":hn" opt; do
+checkTagAgainstAppVersion() {
+  local APP_VM=$(cat Makefile | sed -n -e 's/^.*APPVERSION_M=//p' | head -n 1)
+  local APP_VN=$(cat Makefile | sed -n -e 's/^.*APPVERSION_N=//p' | head -n 1)
+  local APP_VP=$(cat Makefile | sed -n -e 's/^.*APPVERSION_P=//p' | head -n 1)
+  local tag=$(git tag --points-at HEAD)
+  local expectedTag="v$APP_VM.$APP_VN.$APP_VP"
+  if [[ tag != expectedTag ]]
+  then
+    echo "To proceed, HEAD must contain a tag matching the current application version: $expectedTag"
+    echo "To disable this check, pass '-s'"
+    exit 1
+  fi
+}
+
+while getopts ":hnt" opt; do
   case ${opt} in
     ## no-test: Don't run tests prior to installation
-    n ) dontCheck="--arg runTest false"
+    n ) dontTest="--arg runTest false"
+      ;;
+    ## Check that the tag on HEAD matches the app version in the Makefile
+    t ) checkTag=false
       ;;
     h ) usage
       ;;
@@ -31,6 +50,11 @@ while getopts ":hn" opt; do
   esac
 done
 shift "$((OPTIND-1))"
+
+if [[ $checkTag == true ]]
+then
+  checkTagAgainstAppVersion
+fi
 
 nano_s_tarball=$(build -A "nano.s.release.all" "$@")
 nano_x_tarball=$(build -A "nano.x.release.all" "$@")
