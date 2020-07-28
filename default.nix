@@ -1,4 +1,4 @@
-{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", nanoXSdk ? null, debug?false, ... }:
+{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", nanoXSdk ? null, debug?false, runTest?true, ... }:
 let
   fetchThunk = p:
     if builtins.pathExists (p + /git.json)
@@ -11,11 +11,22 @@ let
 
   usbtool = import ./nix/dep/usbtool.nix { };
 
+  patchSDKBinBash = sdk: pkgs.stdenv.mkDerivation {
+    # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
+    name =  sdk.name + "_patched_bin_bash";
+    src = sdk.out;
+    dontBuild = true;
+    installPhase = ''
+      mkdir -p $out
+      cp -a $src/. $out
+      substituteInPlace $out/Makefile.rules_generic --replace /bin/bash /bin/sh
+    '';
+  };
   targets =
     {
       s = rec {
         name = "s";
-        sdk = fetchThunk ./nix/dep/nanos-secure-sdk;
+        sdk = patchSDKBinBash (fetchThunk ./nix/dep/nanos-secure-sdk);
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 4; };
         target = "TARGET_NANOS";
         targetId = "0x31100004";
@@ -30,7 +41,9 @@ let
         name = "x";
         sdk = if nanoXSdk == null
           then throw "No NanoX SDK"
-          else assert builtins.typeOf nanoXSdk == "path"; nanoXSdk;
+          else assert builtins.typeOf nanoXSdk == "path"; 
+            # Use the attrset to mock up the derivation that fetch thunk returns
+            patchSDKBinBash { name = "nanox-secure-sdk"; out = nanoXSdk; };
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 7; };
         target = "TARGET_NANOX";
         targetId = "0x33000004";
@@ -43,7 +56,7 @@ let
       };
     };
 
-    src = let glyphsFilter = (p: _: let p' = baseNameOf p; in p' != "glyphs.c" && p' != "glyphs.h");
+  src = let glyphsFilter = (p: _: let p' = baseNameOf p; in p' != "glyphs.c" && p' != "glyphs.h");
       in (pkgs.lib.sources.sourceFilesBySuffices 
           (pkgs.lib.sources.cleanSourceWith { src = ./.; filter = glyphsFilter; }) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".der"]);
 
@@ -83,7 +96,7 @@ let
           size $out/bin/app.elf
         '';
 
-        doCheck = bolos.test;
+        doCheck = if runTest then bolos.test else false;
         checkTarget = "test";
       };
       ## Note: This has been known to change between sdk upgrades. Make sure to consult
@@ -127,7 +140,7 @@ let
 
           cp -r ${app} ledger-app-nervos-${bolos.name}/app
 
-          install -m a=rx ${./release-installer.sh} ledger-app-nervos-${bolos.name}/install.sh
+          install -m a=rx ${./nix/app-installer-impl.sh} ledger-app-nervos-${bolos.name}/install.sh
 
           tar czf $out ledger-app-nervos-${bolos.name}/*
         '';
