@@ -7,7 +7,7 @@ fail() { unset ___empty; : "${___empty:?$1}"; }
 target="${1:?Please specify target, either 's' for Nano S or 'x' for Nano X}"
 shift
 
-[ -z "${1:-}" ] && fail "No command given; try running $0 make"
+[ -z "${1:-}" ] && fail "No command given; try running $0 $target make"
 
 root="$(git rev-parse --show-toplevel)"
 
