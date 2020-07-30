@@ -48,8 +48,8 @@ size_t handle_apdu_account_import(uint8_t _U_ instruction) {
     // Use hardened value
     uint32_t const account_index = 0x80000000 + account_index_raw;
 
-    // m/44'/309'/<account_index>'
-    bip32_path_t root_path = {3, {0x8000002C, 0x80000135, account_index}};
+    // m/44'/9000'/<account_index>'
+    bip32_path_t root_path = {3, {0x8000002C, 0x80002328, account_index}};
     G.key = root_path;
     generate_extended_public_key(&G.ext_public_key, &G.key);
 

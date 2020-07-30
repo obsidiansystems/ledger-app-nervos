@@ -275,8 +275,7 @@ CKB> account list
   ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
 ```
 
-The `ledger_id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. the `ledger_id` will be
-used for ```<ledger-id>``` argument in the `account import` command as described below.
+The `ledger_id` shown is the public key hash for the path m/44'/9000', which is the root Avax path. the `ledger_id` will be used for ```<ledger-id>``` argument in the `account import` command as described below.
 
 If you have already imported the Ledger account, then `account list` command will instead give the account details.
 They will be shown even if the device is not connected.
@@ -296,7 +295,7 @@ CKB> account list
 
 Use the `account import --ledger <ledger_id>` command to import the account to the `ckb-cli`.
 You will receive a confirmation prompt on the device which should say `Import Account`.
-Confirm this to import the account. This operation will provide the extended public key of path `m/44'/309'/0'` to the `ckb-cli`.
+Confirm this to import the account. This operation will provide the extended public key of path `m/44'/9000'/0'` to the `ckb-cli`.
 
 ``` sh
 CKB> account import --ledger 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
@@ -333,7 +332,7 @@ The `account extended-address` command should be used to
 Here's an example command that provide the first receiving address for the lock-arg `0x327a95bd57966e686ffe590c331cd37002e1c631`:
 
 ``` sh
-CKB> account extended-address --path "m/44'/309'/0'/0/1" --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
+CKB> account extended-address --path "m/44'/9000'/0'/0/1" --lock-arg 0x327a95bd57966e686ffe590c331cd37002e1c631
 ```
 
 This should show up on the ledger as 2 prompts:

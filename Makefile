@@ -5,7 +5,7 @@ include $(BOLOS_SDK)/Makefile.defines
 
 APPNAME = "Avax"
 
-APP_LOAD_PARAMS= --appFlags 0 --curve secp256k1 --path "44'/309'" $(COMMON_LOAD_PARAMS)
+APP_LOAD_PARAMS= --appFlags 0 --curve secp256k1 --path "44'/9000'" $(COMMON_LOAD_PARAMS)
 
 GIT_DESCRIBE ?= $(shell git describe --tags --abbrev=8 --always --long --dirty 2>/dev/null)
 
