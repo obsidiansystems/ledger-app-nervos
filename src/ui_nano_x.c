@@ -112,7 +112,7 @@ UX_STEP_NOCB(
     ux_idle_flow_1_step,
     bn,
     {
-      "Nervos",
+      "Avax",
       VERSION
     });
 UX_STEP_CB(

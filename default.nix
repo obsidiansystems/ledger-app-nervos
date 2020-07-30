@@ -34,14 +34,14 @@ let
         iconHex = pkgs.runCommand "nano-s-icon-hex" {
           nativeBuildInputs = [ (pkgs.python.withPackages (ps: [ps.pillow])) ];
         } ''
-          python ${sdk + /icon.py} '${icons/nano-s-nervos.gif}' hexbitmaponly > "$out"
+          python ${sdk + /icon.py} '${icons/nano-s.gif}' hexbitmaponly > "$out"
         '';
       };
       x = rec {
         name = "x";
         sdk = if nanoXSdk == null
           then throw "No NanoX SDK"
-          else assert builtins.typeOf nanoXSdk == "path"; 
+          else assert builtins.typeOf nanoXSdk == "path";
             # Use the attrset to mock up the derivation that fetch thunk returns
             patchSDKBinBash { name = "nanox-secure-sdk"; out = nanoXSdk; };
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 7; };
@@ -51,13 +51,13 @@ let
         iconHex = pkgs.runCommand "${name}-icon-hex" {
           nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ps.pillow])) ];
         } ''
-          python '${sdk + /icon3.py}' --hexbitmaponly '${icons/nano-x-nervos.gif}' > "$out"
+          python '${sdk + /icon3.py}' --hexbitmaponly '${icons/nano-x.gif}' > "$out"
         '';
       };
     };
 
   src = let glyphsFilter = (p: _: let p' = baseNameOf p; in p' != "glyphs.c" && p' != "glyphs.h");
-      in (pkgs.lib.sources.sourceFilesBySuffices 
+      in (pkgs.lib.sources.sourceFilesBySuffices
           (pkgs.lib.sources.cleanSourceWith { src = ./.; filter = glyphsFilter; }) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".der"]);
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
@@ -65,7 +65,7 @@ let
   build = bolos:
     let
       app = pkgs.stdenv.mkDerivation {
-        name = "ledger-app-nervos-nano-${bolos.name}";
+        name = "ledger-app-avax-nano-${bolos.name}";
         inherit src;
         postConfigure = ''
           PATH="$BOLOS_ENV/clang-arm-fropi/bin:$PATH"
@@ -134,15 +134,15 @@ let
       inherit app;
 
       release = rec {
-        app = mkRelease "nervos" "Nervos" ledgerApp;
-        all = pkgs.runCommand "ledger-app-nervos-${bolos.name}.tar.gz" {} ''
-          mkdir ledger-app-nervos-${bolos.name}
+        app = mkRelease "avax" "Avax" ledgerApp;
+        all = pkgs.runCommand "ledger-app-avax-${bolos.name}.tar.gz" {} ''
+          mkdir ledger-app-avax-${bolos.name}
 
-          cp -r ${app} ledger-app-nervos-${bolos.name}/app
+          cp -r ${app} ledger-app-avax-${bolos.name}/app
 
-          install -m a=rx ${./nix/app-installer-impl.sh} ledger-app-nervos-${bolos.name}/install.sh
+          install -m a=rx ${./nix/app-installer-impl.sh} ledger-app-avax-${bolos.name}/install.sh
 
-          tar czf $out ledger-app-nervos-${bolos.name}/*
+          tar czf $out ledger-app-avax-${bolos.name}/*
         '';
       };
     };
@@ -207,7 +207,7 @@ let
        installPhase = ''
         {
           echo "<html><title>Analyzer Report</title><body><h1>Clang Static Analyzer Results</h1>"
-          printf "<p>App: <code>"nervos"</code></p>"
+          printf "<p>App: <code>"avax"</code></p>"
           printf "<h2>File-results:</h2>"
           for html in "$out"/report*.html ; do
             echo "<p>"

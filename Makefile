@@ -3,7 +3,7 @@ $(error Environment variable BOLOS_SDK is not set)
 endif
 include $(BOLOS_SDK)/Makefile.defines
 
-APPNAME = "Nervos"
+APPNAME = "Avax"
 
 APP_LOAD_PARAMS= --appFlags 0 --curve secp256k1 --path "44'/309'" $(COMMON_LOAD_PARAMS)
 
@@ -32,9 +32,9 @@ else
 endif
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
-ICONNAME=icons/nano-x-nervos.gif
+ICONNAME=icons/nano-x.gif
 else
-ICONNAME=icons/nano-s-nervos.gif
+ICONNAME=icons/nano-s.gif
 endif
 
 ################
