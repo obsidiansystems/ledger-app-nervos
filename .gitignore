@@ -7,3 +7,6 @@ src/glyphs.h
 src/glyphs.c
 result*
 speculos.log
+
+compile_commands.json
+vscode.code-workspace
