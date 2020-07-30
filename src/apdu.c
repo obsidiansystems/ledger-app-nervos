@@ -91,8 +91,8 @@ void measure_stack_max() {
   volatile int top;
   for(p=&app_stack_canary+1; p<((&top)-10); p++)
     if(*p != 0x2a2a2a2a) {
-	    PRINTF("Free space between globals and maximum stack: %d\n", 4*(p-&app_stack_canary));
-	    return;
+        PRINTF("Free space between globals and maximum stack: %d\n", 4*(p-&app_stack_canary));
+        return;
     }
 }
 #endif
@@ -132,23 +132,23 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
 
                 apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
 
-		PRINTF("SIZOF1: %d SIZEOF2: %d\n", sizeof(G_ux), sizeof(G_ux_params));
-		PRINTF("Calling handler\n");
+                PRINTF("SIZOF1: %d SIZEOF2: %d\n", sizeof(G_ux), sizeof(G_ux_params));
+                PRINTF("Calling handler\n");
                 size_t const tx = cb(instruction);
-		PRINTF("Normal return\n");
+                PRINTF("Normal return\n");
 
                 if(0xdeadbeef != app_stack_canary) {
                     THROW(EXC_STACK_ERROR);
                 }
 #ifdef STACK_MEASURE
-		measure_stack_max();
+                measure_stack_max();
 #endif
 
                 rx = io_exchange(CHANNEL_APDU, tx);
             }
             CATCH(ASYNC_EXCEPTION) {
 #ifdef STACK_MEASURE
-		measure_stack_max();
+                measure_stack_max();
 #endif
                 rx = io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, 0);
             }
@@ -180,7 +180,7 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     G_io_apdu_buffer[tx++] = sw;
                     rx = io_exchange(CHANNEL_APDU, tx);
                     break;
-					}
+                }
                 }
             }
             FINALLY {}

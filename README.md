@@ -1,6 +1,6 @@
 # Overview
 
-This repository contains the Nervos BOLOS application for the Ledger Nano S and Ledger Nano X and tools for testing the application. While this app is currently under development, we do not recommend using it with mainnet CKB. 
+This repository contains the Ava BOLOS application for the Ledger Nano S and Ledger Nano X and tools for testing the application. While this app is currently under development.
 
 These applications has been developed against our forks of [CKB-CLI](https://github.com/obsidiansystems/ckb-cli) and [CKB](https://github.com/obsidiansystems/ckb). Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS. Application and wallet developers who would like to support Ledger can do so with [LedgerJS](https://github.com/obsidiansystems/ledgerjs/tree/nervos).
 
@@ -14,7 +14,7 @@ This applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano
 
 Installation requirements differ based on installation method:
 
-### Installing with Ledger Live ### 
+### Installing with Ledger Live ###
 [Ledger Live](https://www.ledger.com/ledger-live) is the easiest way to install applications on your Ledger device. Please refer to [Ledger Live's system requirements](https://support.ledger.com/hc/en-us/articles/360006395553-Download-and-install-Ledger-Live) for this installation method. This application is still in active development and not yet available in Ledger Live.
 
 ### Installing Release Files ###
@@ -33,7 +33,7 @@ Installation requirements differ based on installation method:
 - **Python3**: Use `python3 --version` to check whether you have python3 installed or to confirm an installation was successful.
      - Linux Installation: `sudo apt-get install python3-pip # Ubuntu example`
      - Mac Installation: Python 3 can be installed on mac with homebrew: `brew install python`
-- **virtualenv**: Use `virtualenv --version` to check whether you have virtualenv installed or to confirm an installation was successful. 
+- **virtualenv**: Use `virtualenv --version` to check whether you have virtualenv installed or to confirm an installation was successful.
      - Linux Installation: To install using python3: `pip3 install virtualenv` (this may require `sudo`).
      - Mac Installation: To install using python3: `pip3 install virtualenv` (this may require `sudo`).
 
@@ -42,7 +42,7 @@ Installation requirements differ based on installation method:
 #### Supported Operating Systems ####
 
 - **Linux**: Supported. Debian distributions such as Ubuntu (18.04+) and NixOS (vXXX+). Other linux distributions may work, but have not been tested.
-- **Mac**: Supported on Mojave (10.14), but not supported on Catalina due to [issues with Nix installation](https://nixos.org/nix/manual/#sect-macos-installation). 
+- **Mac**: Supported on Mojave (10.14), but not supported on Catalina due to [issues with Nix installation](https://nixos.org/nix/manual/#sect-macos-installation).
 - **Windows**: Not currently supported.
 
 #### Package/Tool Dependency ####
@@ -219,13 +219,13 @@ You have to accept a few prompts on the Ledger. Then you must select and load th
 
 ### Confirming the Installed Version
 
-To confirm the version of the application installed on your hardware wallet, first make sure the Ledger device is: 
+To confirm the version of the application installed on your hardware wallet, first make sure the Ledger device is:
 
 - connected
 - unlocked
 - has the “Nervos” app open (shows “Use wallet to view accounts”)
 
-Then run the following: 
+Then run the following:
 
 ``` sh
 ./check-installed-version.sh
@@ -240,7 +240,7 @@ The Nervos Ledger app is built to work with CKB-CLI. Some of these CKB-CLI subco
 
 ## Installing the Client
 
-To use the CKB command line utility with the Ledger, you must currently use the Obsidian fork of the client. 
+To use the CKB command line utility with the Ledger, you must currently use the Obsidian fork of the client.
 Note that Obsidian's fork of the client has a number of experimental features that do not currently exist upstream and, resultantly,
 should only be used for development and testing purposes.
 
@@ -315,7 +315,7 @@ Now that the account has been imported, it is remembered by the client and is vi
 
 ### Get BIP44 Address Public Keys ###
 
-Use the `account bip44-addresses` command to obtain the first 20 receiving and 10 change addresses for your account. 
+Use the `account bip44-addresses` command to obtain the first 20 receiving and 10 change addresses for your account.
 
 ``` sh
 CKB> account bip44-addresses --lock-arg <lock-arg>
@@ -348,7 +348,7 @@ This should show up on the ledger as 2 prompts:
 *Note: If you've changed the app's configuration to show testnet addresses, the `Address` prompt will instead show the testnet address that begins with `ckt`. This setting persists between power cycles.*
 
 After accepting the prompt on the Ledger the output on `ckb-cli` will show information about the address:
- 
+
 ``` text
 address:
   mainnet: ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh
@@ -381,7 +381,7 @@ More complicated transactions, such as those with multiple outputs or inputs fro
 - [Handling Complex Transaction](https://github.com/nervosnetwork/ckb-cli/wiki/Handle-Complex-Transaction)
 - [How to use Multisigs with CKB-CLI](https://medium.com/@obsidian.systems/how-to-use-multisigs-with-ckb-cli-5fbd7f4f56e4)
 
-When doing more complex transactions, please note: 
+When doing more complex transactions, please note:
 - Different transaction variants may have different on-device prompts so the user can verify all the aspects of what they are signing. (*TODO: show all variants of transaction prompts*)
 - There are restrictions you may encounter due to device constraints. For instance, The Nano S can only sign a transaction with a maximum of 3 non-change outputs. The Nano X can sign a maximum of 5 non-change outputs in a single transaction.
 
@@ -425,7 +425,7 @@ total_count: 1
 *Note that the following instructions reflect an anticipation of the future state of ckb-cli and are not all
 compatible with Obsidian's current ledger-app branch. For more instructions on using the ledger's message signing
 features with the ledger-app branch of ckb-cli see [Experimental-ckb-cli.md](Experimental-ckb-cli.md)*
- 
+
 To sign the hash of a message with their ledger a user may do the following:
 
 ```sh
@@ -456,7 +456,7 @@ verify-ok: true
 A user can also choose to sign the hash of a message with an extended address, or with a recoverable signature ( these options are mutually inclusive):
 
 ```bash
-CKB> util sign-data --utf8-string "hello world i love nervos" \ 
+CKB> util sign-data --utf8-string "hello world i love nervos" \
 --from-account <my-ledger-account> --extended-address <address> --recoverable
 
 message-hash: <blake2b hash of: magic_bytes + message>
@@ -467,14 +467,14 @@ signature: <signature>
 A user may also switch out the `--utf8-string` option with a `--binary-hex` option, and the ledger will display
 the message as hex, instead of ascii characters
 ```
-CKB> util sign-data --binary-hex '0x61' --from-account <my-ledger-account> 
+CKB> util sign-data --binary-hex '0x61' --from-account <my-ledger-account>
 ```
 
 ### Signing a Hash ###
 The ledger also allows for the signing of a pre-hashed message. Due to the potential security risks of this option, a user must "opt-in" to this
 setting by going into the `Configuration` section of the app, and setting `Allow sign hash` to `On`.
 ```
-CKB> util sign-message --message <message hash> --from-account <my-ledger-account> 
+CKB> util sign-message --message <message hash> --from-account <my-ledger-account>
 ```
 The ledger will display the following:
 
@@ -597,11 +597,11 @@ Prompts on the Ledger device are as follows:
 
 Compensation is the amount of CKB you have earned for having CKB deposited in the NervosDAO. It does not include the the original deposited amount. For more information about compensation, we recommend reading the [Nervos DAO RFC](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0023-dao-deposit-withdraw/0023-dao-deposit-withdraw.md).
 
-If you attempt to withdraw from the Nervos DAO prematurely, you'll see an error such as 
+If you attempt to withdraw from the Nervos DAO prematurely, you'll see an error such as
 ```
 JSON-RPC 2.0 Error: Server error (Transaction: Immature)
 ```
-or 
+or
 ```
 JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c71b5dc71fcbf1638bb72c8fb16f8fffdfd5172456a56167fea0a3)))
 ```
