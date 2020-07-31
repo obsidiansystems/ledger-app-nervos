@@ -77,7 +77,7 @@ void render_pkh(char *const out, size_t const out_size,
     }
 }
 
-__attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callback_t cxl_cb) {
+__attribute__((noreturn)) static void prompt_path() {
     static size_t const TYPE_INDEX = 0;
     static size_t const ADDRESS_INDEX = 1;
 
@@ -88,10 +88,10 @@ __attribute__((noreturn)) static void prompt_path(ui_callback_t ok_cb, ui_callba
     };
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Public Key");
     register_ui_callback(ADDRESS_INDEX, lock_arg_to_sighash_address, &G.render_address_lock_arg);
-    ui_prompt(pubkey_labels, ok_cb, cxl_cb);
+    ui_prompt(pubkey_labels, pubkey_ok, delay_reject);
 }
 
-__attribute__((noreturn)) static void prompt_ext_path(ui_callback_t ok_cb, ui_callback_t cxl_cb) {
+__attribute__((noreturn)) static void prompt_ext_path() {
     static size_t const TYPE_INDEX = 0;
     static size_t const DRV_PATH_INDEX = 1;
     static size_t const ADDRESS_INDEX = 2;
@@ -105,7 +105,7 @@ __attribute__((noreturn)) static void prompt_ext_path(ui_callback_t ok_cb, ui_ca
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Extended Public Key");
     register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G);
     register_ui_callback(ADDRESS_INDEX, lock_arg_to_sighash_address, &G.render_address_lock_arg);
-    ui_prompt(pubkey_labels, ok_cb, cxl_cb);
+    ui_prompt(pubkey_labels, ext_pubkey_ok, delay_reject);
 }
 
 size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
@@ -124,10 +124,8 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
     generate_lock_arg_for_pubkey(&G.ext_public_key.public_key, &G.render_address_lock_arg);
 
     if (instruction == INS_PROMPT_EXT_PUBLIC_KEY) {
-      ui_callback_t cb = ext_pubkey_ok;
-      prompt_ext_path(cb, delay_reject);
+      prompt_ext_path();
     } else {
-      ui_callback_t cb = pubkey_ok;
-      prompt_path(cb, delay_reject);
+      prompt_path();
     }
 }
