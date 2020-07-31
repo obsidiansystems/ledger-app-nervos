@@ -111,3 +111,15 @@ hardRejectionMessageCheck() {
   if [ "$DEBUG" != "1" ]; then return 0; fi;
   test "$(egrep "^Can't sign: " speculos.log | tail -n1)" = "Can't sign: $1"
 }
+
+APP_VM=$(cat Makefile | sed -n -e 's/^.*APPVERSION_M=//p' | head -n 1)
+APP_VN=$(cat Makefile | sed -n -e 's/^.*APPVERSION_N=//p' | head -n 1)
+APP_VP=$(cat Makefile | sed -n -e 's/^.*APPVERSION_P=//p' | head -n 1)
+
+formatVersion() {
+  printf "%02x" $1
+}
+
+getCurrentVersion() {
+  printf "%02x%02x%02x" $APP_VM $APP_VN $APP_VP 
+}

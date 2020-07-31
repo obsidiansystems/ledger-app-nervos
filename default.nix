@@ -1,4 +1,4 @@
-{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", debug?false, ... }:
+{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", debug?false, runTest?true, ... }:
 let
   fetchThunk = p:
     if builtins.pathExists (p + /git.json)
@@ -11,11 +11,22 @@ let
 
   usbtool = import ./nix/dep/usbtool.nix { };
 
+  patchSDKBinBash = sdk: pkgs.stdenv.mkDerivation {
+    # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
+    name =  sdk.name + "_patched_bin_bash";
+    src = sdk.out;
+    dontBuild = true;
+    installPhase = ''
+      mkdir -p $out
+      cp -a $src/. $out
+      substituteInPlace $out/Makefile.rules_generic --replace /bin/bash /bin/sh
+    '';
+  };
   targets =
     {
       s = rec {
         name = "s";
-        sdk = fetchThunk ./nix/dep/nanos-secure-sdk;
+        sdk = patchSDKBinBash (fetchThunk ./nix/dep/nanos-secure-sdk);
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 4; };
         target = "TARGET_NANOS";
         targetId = "0x31100004";
@@ -41,7 +52,9 @@ let
       };
     };
 
-  src = pkgs.lib.sources.sourceFilesBySuffices (pkgs.lib.sources.cleanSource ./.) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".der"];
+  src = let glyphsFilter = (p: _: let p' = baseNameOf p; in p' != "glyphs.c" && p' != "glyphs.h");
+      in (pkgs.lib.sources.sourceFilesBySuffices 
+          (pkgs.lib.sources.cleanSourceWith { src = ./.; filter = glyphsFilter; }) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".der"]);
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
 
@@ -79,14 +92,24 @@ let
           size $out/bin/app.elf
         '';
 
-        doCheck = bolos.test;
+        doCheck = if runTest then bolos.test else false;
         checkTarget = "test";
       };
-      nvramDataSize = appDir: pkgs.runCommand "nvram-data-size" {} ''
-        envram_data="$(grep _envram_data '${appDir + /debug/app.map}' | tr -s ' ' | cut -f2 -d' ')"
-        nvram_data="$(grep _nvram_data '${appDir + /debug/app.map}' | tr -s ' ' | cut -f2 -d' ')"
-        echo "$(($envram_data - $nvram_data))" > "$out"
-      '';
+      ## Note: This has been known to change between sdk upgrades. Make sure to consult
+      ## the $COMMON_LOAD_PARAMS in the Makefile.defines of both SDKs
+        nvramDataSize = appDir: deviceName:
+          let mapPath = appDir + /debug/app.map;
+          in pkgs.runCommand "nvram-data-size" {} ''
+            nvram_data=0x${ if deviceName == "s"
+              then "$(grep _nvram_data "+ mapPath + " | tr -s ' ' | cut -f2 -d' ' | cut -f2 -d'x')"
+              else "$(grep _nvram_data "+ mapPath + " | cut -f1 -d' ')"
+            }
+            envram_data=0x${ if deviceName == "s"
+              then "$(grep _envram_data "+ mapPath + " | tr -s ' ' | cut -f2 -d' '| cut -f2 -d'x')"
+              else "$(grep _envram_data "+ mapPath + " | cut -f1 -d' ')"
+            }
+            echo "$(($envram_data - $nvram_data))" > "$out"
+          '';
       mkRelease = short_name: name: appDir: pkgs.runCommand "${short_name}-nano-${bolos.name}-release-dir" {} ''
         mkdir -p "$out"
 
@@ -94,7 +117,7 @@ let
 
         cat > "$out/app.manifest" <<EOF
         name='${name}'
-        nvram_size=256 # $(cat '${nvramDataSize appDir}')
+        nvram_size=$(cat '${nvramDataSize appDir bolos.name}')
         target='nano_${bolos.name}'
         target_id=${bolos.targetId}
         version=$(echo '${gitDescribe}' | cut -f1 -d- | cut -f2 -dv)
@@ -113,7 +136,7 @@ let
 
           cp -r ${app} ledger-app-nervos-${bolos.name}/app
 
-          install -m a=rx ${./release-installer.sh} ledger-app-nervos-${bolos.name}/install.sh
+          install -m a=rx ${./nix/app-installer-impl.sh} ledger-app-nervos-${bolos.name}/install.sh
 
           tar czf $out ledger-app-nervos-${bolos.name}/*
         '';
