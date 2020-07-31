@@ -539,7 +539,6 @@ void output_start(mol_num_t index) {
     explicit_bzero((void*) &G.cell_state, sizeof(G.cell_state));
     explicit_bzero((void*) &G.lock_arg_tmp, sizeof(G.lock_arg_tmp));
     G.cell_state.active = true;
-    G.u.tx.is_self_transfer = false;
     G.lock_arg_cmp=G.change_lock_arg;
     G.cell_state.is_change = true;
 }
