@@ -9,42 +9,17 @@
 #define NO_CONTRACT_STRING      "None"
 #define NO_CONTRACT_NAME_STRING "Custom Delegate: please verify the address"
 
-#define TEZOS_HASH_CHECKSUM_SIZE 4
+#define CB58_HASH_CHECKSUM_SIZE 4
 
 void pkh_to_string(char *const buff, size_t const buff_size, uint8_t const hash[KEY_HASH_SIZE]);
 
 // These functions output terminating null bytes, and return the ending offset.
 static size_t frac_ckb_to_string(char *dest, uint64_t number);
-/*
-void public_key_hash_to_string(
-    char *const buff,
-    size_t const buff_size,
-    public_key_hash_t const *const contract
-) {
-    // If hash_ptr exists, show it to us now. Otherwise, we unpack the
-    // packed hash.
-    if (contract->hash_ptr != NULL) {
-        if (buff_size < HASH_SIZE_B58) THROW(EXC_WRONG_LENGTH);
-        memcpy(buff, contract->hash_ptr, HASH_SIZE_B58);
-    } else if (contract->originated == 0 && contract->signature_type == SIGNATURE_TYPE_UNSET) {
-        if (buff_size < sizeof(NO_CONTRACT_STRING)) THROW(EXC_WRONG_LENGTH);
-        strcpy(buff, NO_CONTRACT_STRING);
-    } else {
-        signature_type_t const signature_type =
-            contract->originated != 0
-                ? SIGNATURE_TYPE_UNSET
-                : contract->signature_type;
-        pkh_to_string(buff, buff_size, signature_type, contract->hash);
-    }
-}
-*/
 
-
-void compute_hash_checksum(uint8_t out[TEZOS_HASH_CHECKSUM_SIZE], void const *const data, size_t size) {
+void compute_hash_checksum(uint8_t out[CB58_HASH_CHECKSUM_SIZE], void const *const data, size_t size) {
     uint8_t checksum[CX_SHA256_SIZE];
     cx_hash_sha256(data, size, checksum, sizeof(checksum));
-    cx_hash_sha256(checksum, sizeof(checksum), checksum, sizeof(checksum));
-    memcpy(out, checksum, TEZOS_HASH_CHECKSUM_SIZE);
+    memcpy(out, checksum, CB58_HASH_CHECKSUM_SIZE);
 }
 
 

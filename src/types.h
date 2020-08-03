@@ -132,11 +132,6 @@ typedef struct {
     uint8_t lock_period[8];
 } lock_arg_t;
 
-typedef struct public_key_hash {
-    uint8_t hash[KEY_HASH_SIZE];
-    char *hash_ptr; // caching.
-} public_key_hash_t;
-
 #define ADDRESS_FORMAT_TYPE_SHORT 0x01
 #define ADDRESS_FORMAT_TYPE_FULL_DATA 0x02
 #define ADDRESS_FORMAT_TYPE_FULL_TYPE 0x04
@@ -144,6 +139,7 @@ typedef struct public_key_hash {
 #define ADDRESS_CODE_HASH_TYPE_SIGHASH 0x00
 #define ADDRESS_CODE_HASH_TYPE_MULTISIG 0x01
 
+// TODO: remove this type
 typedef union {
     struct {
         uint8_t address_format_type;
