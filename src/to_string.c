@@ -3,6 +3,7 @@
 #include "apdu.h"
 #include "keys.h"
 #include "globals.h"
+#include "base58.h"
 
 #include <string.h>
 
@@ -11,17 +12,32 @@
 
 #define CB58_HASH_CHECKSUM_SIZE 4
 
-void pkh_to_string(char *const buff, size_t const buff_size, uint8_t const hash[KEY_HASH_SIZE]);
-
 // These functions output terminating null bytes, and return the ending offset.
 static size_t frac_ckb_to_string(char *dest, uint64_t number);
 
-void compute_hash_checksum(uint8_t out[CB58_HASH_CHECKSUM_SIZE], void const *const data, size_t size) {
+static void compute_hash_checksum(uint8_t out[CB58_HASH_CHECKSUM_SIZE], void const *const data, size_t size) {
     uint8_t checksum[CX_SHA256_SIZE];
     cx_hash_sha256(data, size, checksum, sizeof(checksum));
     memcpy(out, checksum, CB58_HASH_CHECKSUM_SIZE);
 }
 
+void pkh_to_string(char *out, size_t out_size,
+                   const public_key_hash_t *const payload) {
+  const size_t binary_cb58_size = sizeof(public_key_hash_t) + CB58_HASH_CHECKSUM_SIZE;
+  uint8_t binary_cb58_buf[binary_cb58_size];
+  memcpy(binary_cb58_buf, payload, sizeof(public_key_hash_t));
+  compute_hash_checksum(binary_cb58_buf + sizeof(public_key_hash_t), payload, sizeof(public_key_hash_t));
+  if (out_size < 2) {
+    THROW(EXC_MEMORY_ERROR);
+  }
+  out[0] = 'X';
+  out[1] = '-';
+  out += 2;
+  out_size -= 2;
+  if (!b58enc(out, &out_size, binary_cb58_buf, binary_cb58_size)) {
+    THROW(EXC_MEMORY_ERROR);
+  }
+}
 
 #define STRCPY_OR_THROW(buff, size, x, exc)                                                                            \
     ({                                                                                                                 \
@@ -176,7 +192,7 @@ void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_
     render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
 
     memcpy(&render_address_payload.s.hash, lock_arg->hash, sizeof(render_address_payload.s.hash));
-    render_pkh(dest, buff_size, &render_address_payload);
+    pkh_to_string(dest, buff_size, &render_address_payload);
 }
 
 void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
@@ -200,7 +216,7 @@ void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock
                sizeof(render_address_payload.s.hash));
     }
 
-    render_pkh(dest, buff_size, &render_address_payload);
+    pkh_to_string(dest, buff_size, &render_address_payload);
 }
 
 // (x, h) -> "x of y"

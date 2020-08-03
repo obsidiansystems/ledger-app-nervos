@@ -11,6 +11,7 @@
 
 void pubkey_to_pkh_string(char *const out, size_t const out_size, cx_ecfp_public_key_t const *const public_key);
 void bip32_path_to_pkh_string(char *const out, size_t const out_size, bip32_path_t const *const key);
+void pkh_to_string(char *out, size_t out_size, const public_key_hash_t *const payload);
 
 /* void lock_arg_to_string(char *const buff, size_t const buff_size, uint8_t const *const contract); */
 void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_arg_t const *const lockarg);

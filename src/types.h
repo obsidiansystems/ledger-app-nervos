@@ -124,7 +124,10 @@ enum operation_tag {
     OPERATION_TAG_DAO_WITHDRAW
 };
 
-typedef uint8_t standard_lock_arg_t[20];
+typedef uint8_t public_key_hash_t[CX_RIPEMD160_SIZE];
+
+// TODO: remove this type
+typedef public_key_hash_t standard_lock_arg_t;
 
 // if lock_period == 0, then it is non-timelock lock_arg
 typedef struct {

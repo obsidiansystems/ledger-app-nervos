@@ -52,31 +52,6 @@ static void bip32_path_to_string(char *const out, size_t const out_size, apdu_pu
     }
 }
 
-void render_pkh(char *const out, size_t const out_size,
-                render_address_payload_t const *const payload) {
-    const size_t base32_max = 256;
-    uint8_t base32_buf[base32_max];
-    size_t base32_len = 0;
-    size_t payload_len = 0;
-    if (payload->s.address_format_type == ADDRESS_FORMAT_TYPE_SHORT) {
-        payload_len = sizeof(payload->s);
-    } else {
-        payload_len = sizeof(payload->f);
-    }
-
-    if (!convert_bits(base32_buf, base32_max, &base32_len,
-                      5,
-                      (const uint8_t *)payload, payload_len,
-                      8,
-                      1)) {
-        THROW(EXC_MEMORY_ERROR);
-    }
-    static const char hrbs[][4] = {"ckb", "ckt"};
-    if (!bech32_encode(out, out_size, hrbs[N_data.address_type&ADDRESS_TYPE_MASK], base32_buf, base32_len)) {
-        THROW(EXC_MEMORY_ERROR);
-    }
-}
-
 __attribute__((noreturn)) static void prompt_path() {
     static size_t const TYPE_INDEX = 0;
     static size_t const ADDRESS_INDEX = 1;
@@ -120,8 +95,7 @@ size_t handle_apdu_get_public_key(uint8_t _U_ instruction) {
 
     generate_extended_public_key(&G.ext_public_key, &G.key);
 
-    // write lock arg
-    generate_lock_arg_for_pubkey(&G.ext_public_key.public_key, &G.render_address_lock_arg);
+    generate_pkh_for_pubkey(&G.ext_public_key.public_key, &G.render_address_lock_arg);
 
     if (instruction == INS_PROMPT_EXT_PUBLIC_KEY) {
       prompt_ext_path();
