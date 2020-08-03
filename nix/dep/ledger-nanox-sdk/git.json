@@ -1,0 +1,8 @@
+{
+  "url": "ssh://git@gitlab.com/obsidian.systems/ledger-nanox-sdk",
+  "rev": "e302084c6582692e83be3b3126a4d792954d071d",
+  "sha256": "0bp6l13hyj6jw6mim7szw0i9k2cc0v5paa5kajmdyxpgar4vsx49",
+  "private": true,
+  "fetchSubmodules": false,
+  "branch": "master"
+}
