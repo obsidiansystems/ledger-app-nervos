@@ -51,7 +51,7 @@ size_t handle_apdu_account_import(uint8_t _U_ instruction) {
     // m/44'/309'/<account_index>'
     bip32_path_t root_path = {3, {0x8000002C, 0x80000135, account_index}};
     G.key = root_path;
-    generate_public_key(&G.ext_public_key, &G.key);
+    generate_extended_public_key(&G.ext_public_key, &G.key);
 
     ui_callback_t cb = account_import_ok;
     prompt_account_import(cb, delay_reject);

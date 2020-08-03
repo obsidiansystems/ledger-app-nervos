@@ -12,6 +12,7 @@
 #define MOL_PIC(x) ((void (*)()) PIC(x))
 #define MOL_PIC_STRUCT(t,x) (x?((t*) PIC(x)):NULL)
 #define mol_printf(...) PRINTF(__VA_ARGS__)
+#define mol_emerg_reject THROW(EXC_MEMORY_ERROR)
 
 #include "cx.h"
 #include "annotated.h"
@@ -276,9 +277,9 @@ unsafe:
     }
 
 void prep_lock_arg(bip32_path_t *key, standard_lock_arg_t *destination) {
-    extended_public_key_t ext_public_key;
-    generate_public_key(&ext_public_key, key);
-    generate_lock_arg_for_pubkey(&ext_public_key.public_key, destination);
+    cx_ecfp_public_key_t public_key;
+    generate_public_key(&public_key, key);
+    generate_lock_arg_for_pubkey(&public_key, destination);
 }
 
 /* Start of parser callbacks */
@@ -287,32 +288,40 @@ void blake2b_chunk(uint8_t* buf, mol_num_t len) {
     blake2b_incremental_hash(buf, len, &G.hash_state);
 }
 
+void inputs_start() {
+    explicit_bzero((void*)&G.u.inp.last_input_lock_arg, sizeof(G.u.inp.last_input_lock_arg));
+}
+
 void input_start() {
     explicit_bzero(&G.cell_state, sizeof(G.cell_state));
     explicit_bzero((void*) &G.lock_arg_tmp, sizeof(G.lock_arg_tmp));
-    explicit_bzero((void*)&G.u.input_state, sizeof(G.u.input_state));
+    explicit_bzero((void*)&G.u.inp.input_state, sizeof(G.u.inp.input_state));
 }
 
 void input_save_index(uint8_t *index, mol_num_t index_length) {
     (void) index_length; // guaranteed by parser
-    memcpy(&G.u.input_state.index, index, sizeof(G.u.input_state.index));
+    memcpy(&G.u.inp.input_state.index, index, sizeof(G.u.inp.input_state.index));
 }
 
 void context_blake2b_chunk(uint8_t *chunk, mol_num_t length) {
-    blake2b_incremental_hash(chunk, length, &G.u.input_state.hash_state);
+    blake2b_incremental_hash(chunk, length, &G.u.inp.input_state.hash_state);
 }
 
 void finish_context_txn(void) {
     uint8_t tx_hash[32];
-    blake2b_finish_hash(tx_hash, 32, &G.u.input_state.hash_state);
+    blake2b_finish_hash(tx_hash, 32, &G.u.inp.input_state.hash_state);
     blake2b_chunk(tx_hash, 32);
-    blake2b_chunk(&G.u.input_state.index, sizeof(G.u.input_state.index));
+    blake2b_chunk(&G.u.inp.input_state.index, sizeof(G.u.inp.input_state.index));
+    explicit_bzero(&G.u.inp.input_state, sizeof(G.u.inp.input_state));
+}
+
+void finish_inputs(void) {
     explicit_bzero(&G.u, sizeof(G.u));
 }
 
 void input_context_start_idx(mol_num_t idx) {
     // Enable/disable the remaining input callbacks based on whether we're on that output.
-    G.cell_state.active = idx == G.u.input_state.index;
+    G.cell_state.active = idx == G.u.inp.input_state.index;
 }
 
 void cell_capacity(uint8_t* capacity, mol_num_t len) {
@@ -391,7 +400,7 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
 void input_lock_arg_end() {
     if(!G.cell_state.active) return;
 
-    if (memcmp(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg))) {
+    if (memcmp(&G.u.inp.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.u.inp.last_input_lock_arg))) {
         G.distinct_input_sources += 1;
         if (G.cell_state.lock_arg_nonequal == 0) {
             // We are signing this input
@@ -402,7 +411,7 @@ void input_lock_arg_end() {
             G.maybe_transaction.v.input_count.fst = G.distinct_input_sources;
         }
     }
-    memcpy(&G.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.last_input_lock_arg));
+    memcpy(&G.u.inp.last_input_lock_arg, &G.lock_arg_tmp.hash, sizeof(G.u.inp.last_input_lock_arg));
 }
 
 void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
@@ -672,8 +681,10 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
     .cell_deps = &(CellDepVec_cb) { .chunk = blake2b_chunk },
     .header_deps = &(Byte32Vec_cb) { .chunk = blake2b_chunk },
     .inputs = &(AnnotatedCellInputVec_cb) {
+        .start = inputs_start,
         .length = blake2b_input_count,
-        .item = &annotatedCellInput_callbacks
+        .item = &annotatedCellInput_callbacks,
+        .end = finish_inputs
     },
     .outputs = &(CellOutputVec_cb) { 
         .chunk = blake2b_chunk,
@@ -835,7 +846,7 @@ void begin_witness(mol_num_t index) {
         G.u.tx.witness_multisig_lock_arg_consumed = 0;
         explicit_bzero(&G.hash_state, sizeof(G.hash_state));
         blake2b_incremental_hash(G.u.tx.transaction_hash, SIGN_HASH_SIZE, &G.hash_state);
-        MolReader_WitnessArgs_init_state(G.u.tx.witness_stack+sizeof(G.u.tx.witness_stack), (struct WitnessArgs_state*)G.u.tx.witness_stack, &WitnessArgs_rewrite_callbacks);
+        MolReader_WitnessArgs_init_state((struct WitnessArgs_state*)G.u.tx.witness_stack, &WitnessArgs_rewrite_callbacks);
     }
 }
 
@@ -850,7 +861,7 @@ void process_witness(uint8_t *buff, mol_num_t buff_size) {
   if(G.u.tx.is_first_witness) { // First witness handling
 
     struct mol_chunk chunk = { buff, buff_size, 0 };
-    mol_rv rv = MolReader_WitnessArgs_parse(G.u.tx.witness_stack+sizeof(G.u.tx.witness_stack), (struct WitnessArgs_state*)G.u.tx.witness_stack, &chunk, &WitnessArgs_rewrite_callbacks, MOL_NUM_MAX);
+    mol_rv rv = MolReader_WitnessArgs_parse((struct WitnessArgs_state*)G.u.tx.witness_stack, &chunk, &WitnessArgs_rewrite_callbacks, MOL_NUM_MAX);
 
     if(rv == COMPLETE) {
         G.u.tx.first_witness_done=1;
@@ -923,13 +934,13 @@ static size_t handle_apdu(uint8_t const instruction) {
             clear_data();
 
             PRINTF("Initializing parser\n");
-            MolReader_AnnotatedTransaction_init_state(G.transaction_stack+sizeof(G.transaction_stack), (struct AnnotatedTransaction_state*)G.transaction_stack, &annotatedTransaction_callbacks);
+            MolReader_AnnotatedTransaction_init_state((struct AnnotatedTransaction_state*) &G.transaction_stack, &annotatedTransaction_callbacks);
             PRINTF("Initialized parser\n");
             // NO BREAK
         case P1_NEXT:
             if(G.maybe_transaction.hard_reject) THROW(EXC_PARSE_ERROR);
             PRINTF("Calling parser\n");
-            rv = MolReader_AnnotatedTransaction_parse(G.transaction_stack+sizeof(G.transaction_stack), (struct AnnotatedTransaction_state*)G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);
+            rv = MolReader_AnnotatedTransaction_parse((struct AnnotatedTransaction_state*) &G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);
 
             if(last) {
                 if(rv != COMPLETE || G.maybe_transaction.hard_reject) {
@@ -958,6 +969,9 @@ static size_t handle_apdu(uint8_t const instruction) {
         return finalize_successful_send(0);
     }
 }
+
+_Static_assert(sizeof G.transaction_stack == sizeof(struct AnnotatedTransaction_state), "Size of transaction_stack is not equal to sizeof(struct AnnotatedTransaction_state)");
+_Static_assert(sizeof G.u.tx.witness_stack == sizeof(struct WitnessArgs_state), "Size of witness_stack is not equal to sizeof(struct WitnessArgs_state)");
 
 size_t handle_apdu_sign(uint8_t instruction) {
     return handle_apdu(instruction);

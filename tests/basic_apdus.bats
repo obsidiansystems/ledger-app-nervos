@@ -4,8 +4,13 @@
 @test "Ledger app version returns 0.3.0" {
   run apdu_fixed "8000000000"
   [ "$status" -eq 0 ]
-  diff tests/version_apdu_stdout.txt <(echo "$output")
+  diff <(sed "s/VERSION/$(getCurrentVersion)/; \
+              s/APP_VM/$(formatVersion $APP_VM)/; \
+              s/APP_VN/$(formatVersion $APP_VN)/; \
+              s/APP_VP/$(formatVersion $APP_VP)/" \
+        tests/version_apdu_stdout.txt) <(echo "$output")
 }
+  # diff tests/version_apdu_stdout.txt <(echo "$output")
 
 @test "Ledger app git hash returns current hash" {
   run apdu_fixed "8009000000"
