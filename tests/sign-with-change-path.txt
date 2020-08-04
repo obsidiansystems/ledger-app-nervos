@@ -1,9 +1,9 @@
 Prompt 0:
 Confirm
-Transaction
+Self-Transfer
 Prompt 1:
 Amount
-1000
+2011.73959913
 Prompt 2:
 Fee
 0.01
