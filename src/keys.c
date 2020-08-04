@@ -127,6 +127,13 @@ void generate_pkh_for_pubkey(const cx_ecfp_public_key_t *const key, public_key_h
       cx_ripemd160_t ripemd160;
     } hash_state;
 
+    // AVA uses bitcoin's Elliptic Curve point compression when generating addresses
+    // Full uncompressed keys are encoded with the tag 0x04, followed by two 32-byte numbers,  X and Y
+    // Given X, there's only two possibilities for Y, so the public key can encoded in 32 bytes + one bit.
+    // Bitcoin tags the public key as follows:
+    //     0x04  uncompressed public keys, (i.e. an point on the curve with the full X and Y coordinates)
+    //     0x02  compressed public key, with LSB bit of Y = 0
+    //     0x03  compressed public key, with LSB bit of Y = 1
     uint8_t tag_byte=(key->W[64]&1) ? 0x03 : 0x02;
 
     cx_sha256_init(&hash_state.sha256);
