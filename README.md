@@ -264,6 +264,10 @@ cargo run
 cargo install --path . -f
 ```
 
+### Installing the plugin
+
+After installing the `ckb-cli`, install the Ledger plugin for ckb-cli by following the instructions on https://github.com/obsidiansystems/ckb-plugin-ledger/
+
 ## Listing Ledger Devices ###
 
 Use the `account list` command to see connected Ledger devices. Be sure to have the Nervos application open on the device, otherwise it will not be detected:
