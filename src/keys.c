@@ -122,9 +122,16 @@ size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const p
 void generate_pkh_for_pubkey(const cx_ecfp_public_key_t *const key, public_key_hash_t *const dest) {
     uint8_t temp_sha256_hash[CX_SHA256_SIZE];
 
-    cx_ripemd160_t ripemd160_state;
+    union {
+      cx_sha256_t sha256;
+      cx_ripemd160_t ripemd160;
+    } hash_state;
 
-    cx_hash_sha256(key->W+1, 32, temp_sha256_hash, CX_SHA256_SIZE);
-    cx_ripemd160_init(&ripemd160_state);
-    cx_hash((cx_hash_t *)&ripemd160_state, CX_LAST, temp_sha256_hash, CX_SHA256_SIZE, (uint8_t *) dest, sizeof(public_key_hash_t));
+    uint8_t tag_byte=(key->W[64]&1) ? 0x03 : 0x02;
+
+    cx_sha256_init(&hash_state.sha256);
+    cx_hash((cx_hash_t *)&hash_state.sha256, 0, &tag_byte, 1, NULL, 0);
+    cx_hash((cx_hash_t *)&hash_state.sha256, CX_LAST, key->W+1, 32, temp_sha256_hash, CX_SHA256_SIZE);
+    cx_ripemd160_init(&hash_state.ripemd160);
+    cx_hash((cx_hash_t *)&hash_state.ripemd160, CX_LAST, temp_sha256_hash, CX_SHA256_SIZE, (uint8_t *)dest, sizeof(public_key_hash_t));
 }

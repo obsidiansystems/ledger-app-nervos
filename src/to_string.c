@@ -192,7 +192,7 @@ void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_
     render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
 
     memcpy(&render_address_payload.s.hash, lock_arg->hash, sizeof(render_address_payload.s.hash));
-    pkh_to_string(dest, buff_size, &render_address_payload);
+    pkh_to_string(dest, buff_size, &render_address_payload.s.hash);
 }
 
 void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
