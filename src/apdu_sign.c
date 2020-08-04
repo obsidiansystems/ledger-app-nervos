@@ -539,7 +539,6 @@ void output_start(mol_num_t index) {
     explicit_bzero((void*) &G.cell_state, sizeof(G.cell_state));
     explicit_bzero((void*) &G.lock_arg_tmp, sizeof(G.lock_arg_tmp));
     G.cell_state.active = true;
-    G.u.tx.is_self_transfer = false;
     G.lock_arg_cmp=G.change_lock_arg;
     G.cell_state.is_change = true;
 }
@@ -556,13 +555,13 @@ void output_end(void) {
   // Have we now processed at least 1 change cell?
   G.u.tx.processed_change_cell |= G.cell_state.is_change;
 
-    if(G.cell_state.is_dao) {
-        memcpy(&G.dao_cell_owner, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
-        G.u.tx.dao_output_amount += G.cell_state.capacity;
-        G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
-	if(!G.cell_state.is_change && G.cell_state.lock_arg_nonequal)
-		REJECT("Not allowing DAO outputs to be sent to a non-self address");
-    } else {
+  if(G.cell_state.is_dao) {
+      memcpy(&G.dao_cell_owner, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
+      G.u.tx.dao_output_amount += G.cell_state.capacity;
+      G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
+      if(!G.cell_state.is_change && G.cell_state.lock_arg_nonequal)
+        REJECT("Not allowing DAO outputs to be sent to a non-self address");
+  } else {
         if(G.cell_state.is_multisig) {
             G.u.tx.sending_to_multisig_output = true;
         }
@@ -575,8 +574,13 @@ void output_end(void) {
           }
           G.u.tx.plain_output_amount += G.cell_state.capacity;
           uint8_t *dest_to_show = dest_is_src ? G.lock_arg_tmp.hash : G.change_lock_arg;
+
+          // Doesn't cover the case where dst is src, but different change address, which sets maybe-txn, even
           if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.u.tx.outputs[0].destination.hash, dest_to_show, 20)) {
-              REJECT("Can't handle transactions with multiple non-change destination addresses");
+            // If here either, the destination is the signer, but the change address is different, or we need to reject it because of multiple output cells
+            if(dest_is_src || is_second_change) {
+              REJECT("Can't handle self-transactions with multiple non-change destination addresses");
+            }
           } else {
               G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
               memcpy(G.u.tx.outputs[0].destination.hash, dest_to_show, 20);
