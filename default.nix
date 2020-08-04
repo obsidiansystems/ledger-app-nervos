@@ -1,20 +1,18 @@
 { pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", debug?false, runTest?true, ... }:
 let
   fetchThunk = p:
-    if builtins.pathExists (p + /git.json)
-      then pkgs.fetchgit { inherit (builtins.fromJSON (builtins.readFile (p + /git.json))) url rev sha256; }
-    else if builtins.pathExists (p + /github.json)
-      then pkgs.fetchFromGitHub { inherit (builtins.fromJSON (builtins.readFile (p + /github.json))) owner repo rev sha256; }
+    if builtins.pathExists (p + /thunk.nix)
+      then (import (p + /thunk.nix))
     else p;
 
   blake2_simd = import ./nix/dep/b2sum.nix { };
 
   usbtool = import ./nix/dep/usbtool.nix { };
 
-  patchSDKBinBash = sdk: pkgs.stdenv.mkDerivation {
+  patchSDKBinBash = name: sdk: pkgs.stdenv.mkDerivation {
     # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
-    name =  sdk.name + "_patched_bin_bash";
-    src = sdk.out;
+    name =  name + "_patched_bin_bash";
+    src = sdk;
     dontBuild = true;
     installPhase = ''
       mkdir -p $out
@@ -26,7 +24,7 @@ let
     {
       s = rec {
         name = "s";
-        sdk = patchSDKBinBash (fetchThunk ./nix/dep/nanos-secure-sdk);
+        sdk = patchSDKBinBash "nanos-secure-sdk" (fetchThunk ./nix/dep/nanos-secure-sdk);
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 4; };
         target = "TARGET_NANOS";
         targetId = "0x31100004";
@@ -39,7 +37,7 @@ let
       };
       x = rec {
         name = "x";
-        sdk = patchSDKBinBash (fetchThunk ./nix/dep/ledger-nanox-sdk);
+        sdk = patchSDKBinBash "ledger-nanox-sdk" (fetchThunk ./nix/dep/ledger-nanox-sdk);
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 7; };
         target = "TARGET_NANOX";
         targetId = "0x33000004";
