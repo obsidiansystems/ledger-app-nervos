@@ -18,7 +18,7 @@ static size_t frac_ckb_to_string(char *dest, uint64_t number);
 static void compute_hash_checksum(uint8_t out[CB58_HASH_CHECKSUM_SIZE], void const *const data, size_t size) {
     uint8_t checksum[CX_SHA256_SIZE];
     cx_hash_sha256(data, size, checksum, sizeof(checksum));
-    memcpy(out, checksum, CB58_HASH_CHECKSUM_SIZE);
+    memcpy(out, checksum+CX_SHA256_SIZE-CB58_HASH_CHECKSUM_SIZE, CB58_HASH_CHECKSUM_SIZE);
 }
 
 void pkh_to_string(char *out, size_t out_size,
