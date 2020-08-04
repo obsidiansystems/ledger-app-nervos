@@ -4,13 +4,12 @@
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && git rev-parse --show-toplevel)"
 
 dontTest=
-nanoXSDK=
 checkTag=true
 
 build() {
   descr=$(git describe --tags --abbrev=8 --always --long --dirty 2>/dev/null)
   echo >&2 "Git description: $descr"
-  exec nix-build "$root" --no-out-link --argstr gitDescribe "$descr" ${dontTest} ${nanoXSDK} "$@" ${NIX_BUILD_ARGS:-}
+  exec nix-build "$root" --no-out-link --argstr gitDescribe "$descr" ${dontTest} "$@" ${NIX_BUILD_ARGS:-}
 }
 
 usage() {
@@ -19,7 +18,6 @@ usage() {
   echo "options:"
   echo "  -n : do not run tests before build"
   echo "  -t : do not check that a git tag exists on HEAD that matches the current version number in the makefile before continuing"
-  echo "  -x : path to optional nano X SDK. Cannot contain a trailing slash. Will fetch from github if not specified"
   exit 0
 }
 
@@ -32,21 +30,18 @@ checkTagAgainstAppVersion() {
   if [[ tag != expectedTag ]]
   then
     echo "To proceed, HEAD must contain a tag matching the current application version: $expectedTag"
-    echo "To disable this check, pass '-t'"
+    echo "To disable this check, pass '-s'"
     exit 1
   fi
 }
 
-while getopts ":hntx:" opt; do
+while getopts ":hnt" opt; do
   case ${opt} in
     ## no-test: Don't run tests prior to installation
     n ) dontTest="--arg runTest false"
       ;;
     ## Check that the tag on HEAD matches the app version in the Makefile
     t ) checkTag=false
-      ;;
-    ## Optional path to nanoXSDK. If not specified, use the default one
-    x ) nanoXSDK="--arg nanoXSdk $OPTARG"
       ;;
     h ) usage
       ;;
