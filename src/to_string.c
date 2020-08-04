@@ -216,7 +216,7 @@ void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock
                sizeof(render_address_payload.s.hash));
     }
 
-    pkh_to_string(dest, buff_size, &render_address_payload);
+    pkh_to_string(dest, buff_size, &render_address_payload.s.hash);
 }
 
 // (x, h) -> "x of y"
