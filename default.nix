@@ -1,5 +1,6 @@
 { pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", debug?false, runTest?true, ... }:
 let
+  # TODO: Replace this with hackGet for added safety checking once hackGet is separated from reflex-platform
   fetchThunk = p:
     if builtins.pathExists (p + /thunk.nix)
       then (import (p + /thunk.nix))
