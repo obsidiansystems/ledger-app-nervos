@@ -32,49 +32,43 @@ size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const 
     return finalize_successful_send(tx);
 }
 
-size_t handle_apdu_error(uint8_t __attribute__((unused)) instruction) {
+size_t handle_apdu_error(void) {
     THROW(EXC_INVALID_INS);
 }
 
-size_t handle_apdu_version(uint8_t __attribute__((unused)) instruction) {
+size_t handle_apdu_version(void) {
     memcpy(G_io_apdu_buffer, &version, sizeof(version_t));
     size_t tx = sizeof(version_t);
     return finalize_successful_send(tx);
 }
 
-size_t handle_apdu_git(uint8_t __attribute__((unused)) instruction) {
+size_t handle_apdu_git(void) {
+    PRINTF("Handling apdu_git");
     static const char commit[] = COMMIT;
     memcpy(G_io_apdu_buffer, commit, sizeof(commit));
     size_t tx = sizeof(commit);
     return finalize_successful_send(tx);
 }
 
-size_t handle_apdu_get_wallet_id(uint8_t __attribute__((unused)) instruction) {
-    // blake2b hash of "nervos-ledger-id"
-    static const uint8_t _U_ token[] = {0xc1, 0x30, 0xae, 0x5b, 0xf2, 0xfb, 0x61, 0xe3, 0x9e, 0x41, 0x9d, 0xc5, 0x8a,
-                                        0x45, 0x4f, 0x4a, 0xb4, 0xb6, 0xe4, 0xb6, 0xdb, 0x0b, 0x4b, 0x34, 0x60, 0xc3,
-                                        0xed, 0x12, 0x8e, 0xd5, 0x5f, 0xd2, 0x3d, 0x0a, 0x37, 0xc3, 0x75, 0x0b, 0xb2,
-                                        0xb4, 0xd8, 0x0a, 0x74, 0x11, 0xe3, 0x68, 0x3b, 0x91, 0x80, 0x62, 0xab, 0x98,
-                                        0xfd, 0x4d, 0x2c, 0x6d, 0x05, 0x95, 0xbb, 0x03, 0x30, 0x81, 0x78, 0xb6};
-    // uint32_t id_path[] = {0x8000002C, 0x80000135};
-    bip32_path_t id_path = {2, {0x8000002C, 0x80000135}};
+size_t handle_apdu_get_wallet_id(void) {
+    bip32_path_t id_path = {2, {ROOT_PATH_0, ROOT_PATH_1}};
 
-    int rv = 0;
+    size_t rv = 0;
     cx_blake2b_t hashState;
     cx_blake2b_init(&hashState, 512);
 
     WITH_KEY_PAIR(id_path, key_pair, size_t, ({
-                      PRINTF("\nPublic Key: %.*h\n", key_pair->public_key.W_len, key_pair->public_key.W);
-                      // unsigned int _U_ info;
-                      // This isn't working properly deterministically, so stubbing it to unblock development.
-                      // cx_ecdsa_sign(&key, CX_LAST | CX_RND_RFC6979, CX_BLAKE2B, token, sizeof(token), signedToken,
-                      // 100, &info);
-                      // Stubbed until we have the sign step working.
-                      // rv = cx_hash((cx_hash_t*) &hashState, CX_LAST, signedToken, sizeof(signedToken),
-                      // G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
-                      rv = cx_hash((cx_hash_t *)&hashState, CX_LAST, (uint8_t *)key_pair->public_key.W,
-                                   key_pair->public_key.W_len, G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
-                  }));
+        PRINTF("\nPublic Key: %.*h\n", key_pair->public_key.W_len, key_pair->public_key.W);
+        // unsigned int _U_ info;
+        // This isn't working properly deterministically, so stubbing it to unblock development.
+        // cx_ecdsa_sign(&key, CX_LAST | CX_RND_RFC6979, CX_BLAKE2B, token, sizeof(token), signedToken,
+        // 100, &info);
+        // Stubbed until we have the sign step working.
+        // rv = cx_hash((cx_hash_t*) &hashState, CX_LAST, signedToken, sizeof(signedToken),
+        // G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
+        rv += cx_hash((cx_hash_t *)&hashState, CX_LAST, (uint8_t *)key_pair->public_key.W,
+                      key_pair->public_key.W_len, G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
+    }));
     return finalize_successful_send(rv);
 }
 
@@ -130,11 +124,13 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
 
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
 
-                apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
+                PRINTF("Handling instruction %d when number of handlers is %d\n", instruction, handlers_size);
+                apdu_handler const cb = instruction >= handlers_size
+                    ? handle_apdu_error
+                    : (apdu_handler)PIC(handlers[instruction]);
 
-                PRINTF("SIZOF1: %d SIZEOF2: %d\n", sizeof(G_ux), sizeof(G_ux_params));
                 PRINTF("Calling handler\n");
-                size_t const tx = cb(instruction);
+                size_t const tx = cb();
                 PRINTF("Normal return\n");
 
                 if(0xdeadbeef != app_stack_canary) {

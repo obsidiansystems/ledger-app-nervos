@@ -22,18 +22,6 @@
 #define OFFSET_LC    4 // length of CDATA
 #define OFFSET_CDATA 5 // payload
 
-// Instruction codes
-#define INS_VERSION                   0x00
-#define INS_GET_WALLET_ID             0x01
-#define INS_PROMPT_PUBLIC_KEY         0x02
-#define INS_SIGN                      0x03
-#define INS_PROMPT_EXT_PUBLIC_KEY     0x04
-#define INS_ACCOUNT_IMPORT            0x05
-#define INS_SIGN_MESSAGE              0x06
-#define INS_SIGN_MESSAGE_HASH         0x07
-#define INS_GIT                       0x09
-#define INS_SIGN_WITH_HASH            0x0F
-
 __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, size_t const handlers_size);
 
 static inline size_t finalize_successful_send(size_t tx) {
@@ -64,8 +52,9 @@ static inline void require_hid(void) {
 size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey);
 size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const *const pubkey);
 
-size_t handle_apdu_error(uint8_t instruction);
-size_t handle_apdu_version(uint8_t instruction);
-size_t handle_apdu_git(uint8_t instruction);
-size_t handle_apdu_get_wallet_id(uint8_t instruction);
-size_t handle_apdu_account_import(uint8_t instruction);
+size_t handle_apdu_version(void);
+size_t handle_apdu_git(void);
+size_t handle_apdu_get_wallet_id(void);
+size_t handle_apdu_sign_hash(void);
+
+size_t handle_apdu_error(void);

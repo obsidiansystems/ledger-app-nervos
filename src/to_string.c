@@ -12,9 +12,6 @@
 
 #define CB58_HASH_CHECKSUM_SIZE 4
 
-// These functions output terminating null bytes, and return the ending offset.
-static size_t frac_ckb_to_string(char *dest, uint64_t number);
-
 static void compute_hash_checksum(uint8_t out[CB58_HASH_CHECKSUM_SIZE], void const *const data, size_t size) {
     uint8_t checksum[CX_SHA256_SIZE];
     cx_hash_sha256(data, size, checksum, sizeof(checksum));
@@ -80,29 +77,6 @@ void number_to_string_indirect32(char *const dest, size_t const buff_size, uint3
     number_to_string(dest, *number);
 }
 
-void frac_ckb_to_string_indirect(char *const dest, size_t const buff_size, uint64_t const *const number) {
-    check_null(dest);
-    check_null(number);
-    if (buff_size < MAX_INT_DIGITS + 1)
-        THROW(EXC_WRONG_LENGTH); // + terminating null + decimal point
-    frac_ckb_to_string(dest, *number);
-}
-
-// (x, y) -> "x of y"
-void frac_ckb_tuple_to_string_indirect(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple) {
-    check_null(dest);
-    check_null(tuple);
-    char const of_str[] = " of ";
-    if (buff_size < (2 * MAX_INT_DIGITS) + strlen(of_str) + 1)
-        THROW(EXC_WRONG_LENGTH);
-    size_t out_len = 0;
-    out_len += frac_ckb_to_string(dest + out_len, tuple->fst);
-    strcpy(dest + out_len, of_str);
-    out_len += strlen(of_str);
-    frac_ckb_to_string(dest + out_len, tuple->snd);
-}
-
-
 size_t number_to_string(char *const dest, uint64_t number) {
     check_null(dest);
     char tmp[MAX_INT_DIGITS];
@@ -115,43 +89,7 @@ size_t number_to_string(char *const dest, uint64_t number) {
     return length;
 }
 
-// frac_ckb are in hundred-millionths
-#define CKB_SCALE      100000000
 #define DECIMAL_DIGITS 8
-
-size_t frac_ckb_to_string(char *const dest, uint64_t number) {
-    check_null(dest);
-    uint64_t whole_tez = number / CKB_SCALE;
-    uint64_t fractional = number % CKB_SCALE;
-    size_t off = number_to_string(dest, whole_tez);
-    if (fractional == 0) {
-        return off;
-    }
-    dest[off++] = '.';
-
-    char tmp[MAX_INT_DIGITS];
-    convert_number(tmp, number, true);
-
-    // Eliminate trailing 0s
-    char *start = tmp + MAX_INT_DIGITS - DECIMAL_DIGITS;
-    char *end;
-    for (end = tmp + MAX_INT_DIGITS - 1; end >= start; end--) {
-        if (*end != '0') {
-            end++;
-            break;
-        }
-    }
-
-    size_t length = end - start;
-    memcpy(dest + off, start, length);
-    off += length;
-    dest[off] = '\0';
-    return off;
-}
-
-/* void lock_arg_to_string(char *const dest, size_t const buff_size, uint8_t const *const lockarg) { */
-/*     bin_to_hex(dest, buff_size, lockarg, 20); */
-/* } */
 
 void copy_string(char *const dest, size_t const buff_size, char const *const src) {
     check_null(dest);
@@ -184,49 +122,4 @@ void buffer_to_hex(char *const out, size_t const out_size, buffer_t const *const
     check_null(in);
     buffer_t const *const src = (buffer_t const *)PIC(in);
     bin_to_hex(out, out_size, src->bytes, src->length);
-}
-
-void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
-    render_address_payload_t render_address_payload;
-    render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
-    render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
-
-    memcpy(&render_address_payload.s.hash, lock_arg->hash, sizeof(render_address_payload.s.hash));
-    pkh_to_string(dest, buff_size, &render_address_payload.s.hash);
-}
-
-void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
-    render_address_payload_t render_address_payload;
-    bool has_timelock = false;
-    for (int i = 0; i < 8; i++) {
-        if (lock_arg->lock_period[i] != 0) {
-            has_timelock = true;
-            break;
-        }
-    }
-    if (has_timelock) {
-        render_address_payload.f.address_format_type = ADDRESS_FORMAT_TYPE_FULL_TYPE;
-        memcpy(&render_address_payload.f.code_hash, multisigLockScript,
-               sizeof(render_address_payload.f.code_hash));
-        memcpy(&render_address_payload.f.lock_arg, lock_arg, sizeof(render_address_payload.f.lock_arg));
-    } else {
-        render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
-        render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_MULTISIG;
-        memcpy(&render_address_payload.s.hash, lock_arg->hash,
-               sizeof(render_address_payload.s.hash));
-    }
-
-    pkh_to_string(dest, buff_size, &render_address_payload.s.hash);
-}
-
-// (x, h) -> "x of y"
-void uint64_tuple_to_string(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple) {
-    check_null(dest);
-    check_null(tuple);
-    size_t out_len = 0;
-    out_len += number_to_string(dest + out_len, tuple->fst);
-    char const of_str[] = " of ";
-    strcpy(dest + out_len, of_str);
-    out_len += strlen(of_str);
-    number_to_string(dest + out_len, tuple->snd);
 }
