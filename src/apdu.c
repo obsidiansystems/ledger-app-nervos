@@ -59,10 +59,10 @@ size_t handle_apdu_get_wallet_id(uint8_t __attribute__((unused)) instruction) {
     uint8_t wallet_id[CX_SHA256_SIZE];
 
     bip32_path_t id_path = {2, {0x8000002C, 0x80002328}};
-    const char hmac_key[] = "wallet-id";
+    const unsigned char hmac_key[] = "wallet-id";
 
     cx_hmac_sha256_t hmac_state;
-    cx_hmac_sha256_init(&hmac_state, (unsigned char*)&hmac_key, sizeof(hmac_key)-1);
+    cx_hmac_sha256_init(&hmac_state, hmac_key, sizeof(hmac_key)-1);
 
 
     WITH_KEY_PAIR(id_path, key_pair, size_t, ({
