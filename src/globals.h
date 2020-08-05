@@ -13,7 +13,7 @@ void init_globals(void);
 #define MAX_APDU_SIZE 230 // Maximum number of bytes in a single APDU
 
 // Our buffer must accommodate any remainder from hashing and the next message at once.
-#define NERVOS_BUFSIZE (BLAKE2B_BLOCKBYTES + MAX_APDU_SIZE)
+#define INTERMEDIATE_BUFF_SIZE (BLAKE2B_BLOCKBYTES + MAX_APDU_SIZE)
 
 #define PRIVATE_KEY_DATA_SIZE 32
 
@@ -29,126 +29,32 @@ typedef struct {
     uint8_t initialized;
 } blake2b_hash_state_t;
 
-struct maybe_transaction {
-    uint8_t is_valid : 1;
-    uint8_t unsafe : 1;
-    uint8_t hard_reject : 1;
-    struct parsed_transaction v;
-};
-
 #define OUTPUT_FLAGS_KNOWN_LOCK     0x01
 #define OUTPUT_FLAGS_IS_DAO         0x02
 #define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
 
 typedef struct {
-    uint32_t index;
-    blake2b_hash_state_t hash_state;
-} input_state_t;
+    bip32_path_t bip32_path;
+    // uint8_t message_data[INTERMEDIATE_BUFF_SIZE];
+    // uint32_t message_data_length;
+    // buffer_t message_data_as_buffer;
+    //blake2b_hash_state_t hash_state;
 
-typedef struct {
-    uint64_t capacity;
-    uint8_t lock_arg_index : 5;
-    uint8_t data_size : 4;
-    uint8_t active : 1;
-    uint8_t is_dao : 1;
-    uint8_t is_change : 1;
-    uint8_t is_multisig : 1;
-    uint8_t dao_data_is_nonzero : 1;
-    uint8_t lock_arg_nonequal : 1;
-} cell_state_t;
-
-typedef struct {
-    union {
-        bip32_path_t temp_key;
-        struct {
-            input_state_t input_state;
-            standard_lock_arg_t last_input_lock_arg;
-        } inp;
-
-        // Things we need exclusively after doing finish_inputs
-        struct {
-            uint32_t witness_multisig_lock_arg_consumed;
-            _Alignas(uint32_t) uint8_t witness_stack[40];
-            uint32_t current_output_index;
-
-            uint8_t transaction_hash[SIGN_HASH_SIZE];
-            uint8_t final_hash[SIGN_HASH_SIZE];
-
-            struct output_t outputs[MAX_OUTPUTS];
-
-            uint64_t dao_bitmask;
-            uint64_t change_amount;
-            uint64_t plain_output_amount;
-            uint64_t dao_output_amount;
-            // threshold and pubkey_cnt are actually uint32_t
-            // but here we save space as we expect them to be < 256
-            uint8_t witness_multisig_threshold;
-            uint8_t witness_multisig_pubkeys_cnt;
-            uint8_t output_count;
-            uint8_t is_first_witness : 1;
-            uint8_t hash_only : 1;
-            uint8_t first_witness_done : 1;
-            uint8_t is_self_transfer : 1;
-            uint8_t processed_change_cell : 1; // Has at least one change-address been processed?
-            uint8_t sending_to_multisig_output : 1;
-        } tx;
-    } u;
-
-    standard_lock_arg_t current_lock_arg;
-    standard_lock_arg_t change_lock_arg;
-    standard_lock_arg_t dao_cell_owner;
-
-    struct maybe_transaction maybe_transaction;
-
-    blake2b_hash_state_t hash_state;
-
-    uint32_t input_count;
-    uint32_t distinct_input_sources; // distinct input lock_args
-
-    cell_state_t cell_state;
-
-    _Alignas(uint32_t) uint8_t transaction_stack[240];
-    // struct AnnotatedTransaction_state transaction_stack; - not just replacing because the "headers" are badly formed.
-
-    uint64_t dao_input_amount;
-    uint64_tuple_t input_amount;
-
-    uint8_t *lock_arg_cmp;
-    lock_arg_t lock_arg_tmp;
-
-    uint32_t key_path_components[3];
-    uint8_t key_length;
-
-    uint8_t signing_multisig_input;
+    uint8_t final_hash[SIGN_HASH_SIZE];
+    buffer_t final_hash_as_buffer;
 } apdu_sign_state_t;
 
 typedef struct {
-    buffer_t display_as_buffer;
-    bip32_path_t key;
-    blake2b_hash_state_t hash_state;
-    uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
-    uint8_t display_as_hex;
-    uint8_t display[64];
-    uint8_t final_hash[SIGN_HASH_SIZE];
-} apdu_sign_message_state_t;
-
-typedef struct {
-    bip32_path_t key;
-    buffer_t display_as_buffer;
-    uint8_t hash_to_sign[64];  // Max message hash size we accept = 64 bytes
-    uint8_t hash_to_sign_size;
-} apdu_sign_message_hash_state_t;
-
-typedef struct {
-    bip32_path_t key;
+    bip32_path_t bip32_path;
     extended_public_key_t ext_public_key;
     cx_blake2b_t hash_state;
-    standard_lock_arg_t render_address_lock_arg;
+    public_key_hash_t pkh;
 } apdu_pubkey_state_t;
+
+#define NUM_APDUS 6
 
 typedef struct {
     void *stack_root;
-    apdu_handler handlers[INS_MAX + 1];
 
     struct {
         ui_callback_t ok_callback;
@@ -177,8 +83,6 @@ typedef struct {
         union {
             apdu_pubkey_state_t pubkey;
             apdu_sign_state_t sign;
-            apdu_sign_message_state_t sign_msg;
-            apdu_sign_message_hash_state_t sign_msg_hash;
         } u;
 
         struct {
@@ -189,9 +93,6 @@ typedef struct {
 } globals_t;
 
 extern globals_t global;
-
-extern const uint8_t defaultLockScript[];
-extern const uint8_t multisigLockScript[];
 
 extern const uint8_t blake2b_personalization[17];
 

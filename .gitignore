@@ -9,4 +9,7 @@ result*
 speculos.log
 
 compile_commands.json
+.vscode/
 vscode.code-workspace
+
+*.core

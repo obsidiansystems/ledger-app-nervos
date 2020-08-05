@@ -32,17 +32,18 @@ size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const 
     return finalize_successful_send(tx);
 }
 
-size_t handle_apdu_error(uint8_t __attribute__((unused)) instruction) {
+size_t handle_apdu_error(void) {
     THROW(EXC_INVALID_INS);
 }
 
-size_t handle_apdu_version(uint8_t __attribute__((unused)) instruction) {
+size_t handle_apdu_version(void) {
     memcpy(G_io_apdu_buffer, &version, sizeof(version_t));
     size_t tx = sizeof(version_t);
     return finalize_successful_send(tx);
 }
 
-size_t handle_apdu_git(uint8_t __attribute__((unused)) instruction) {
+size_t handle_apdu_git(void) {
+    PRINTF("Handling apdu_git");
     static const char commit[] = COMMIT;
     memcpy(G_io_apdu_buffer, commit, sizeof(commit));
     size_t tx = sizeof(commit);
@@ -51,25 +52,23 @@ size_t handle_apdu_git(uint8_t __attribute__((unused)) instruction) {
 
 #define WALLET_ID_LENGTH 6
 
-size_t handle_apdu_get_wallet_id(uint8_t __attribute__((unused)) instruction) {
+size_t handle_apdu_get_wallet_id(void) {
     // We are hashing the full uncompressed public key of m/44'/9000' as the wallet id
     // The hash function is hmac-sha256 with a well-known key, in order to "personalize" the hash
     // function for this specific purpose.  We truncate the hmac to ensure that the public key
     // is not recoverable from the wallet id, even if sha256 is someday broken.
     uint8_t wallet_id[CX_SHA256_SIZE];
 
-    bip32_path_t id_path = {2, {0x8000002C, 0x80002328}};
+    bip32_path_t id_path = {2, {ROOT_PATH_0, ROOT_PATH_1}};
     const unsigned char hmac_key[] = "wallet-id";
 
     cx_hmac_sha256_t hmac_state;
     cx_hmac_sha256_init(&hmac_state, hmac_key, sizeof(hmac_key)-1);
-
-
     WITH_KEY_PAIR(id_path, key_pair, size_t, ({
-                      PRINTF("\nPublic Key: %.*h\n", key_pair->public_key.W_len, key_pair->public_key.W);
-                      cx_hmac((cx_hmac_t *)&hmac_state, CX_LAST, (uint8_t *)key_pair->public_key.W,
-                              key_pair->public_key.W_len, wallet_id, sizeof(wallet_id));
-                  }));
+        PRINTF("\nPublic Key: %.*h\n", key_pair->public_key.W_len, key_pair->public_key.W);
+        cx_hmac((cx_hmac_t *)&hmac_state, CX_LAST, (uint8_t *)key_pair->public_key.W,
+                key_pair->public_key.W_len, wallet_id, sizeof(wallet_id));
+    }));
 
     memcpy(G_io_apdu_buffer, wallet_id, WALLET_ID_LENGTH);
 
@@ -128,11 +127,13 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
 
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
 
-                apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
+                PRINTF("Handling instruction %d when number of handlers is %d\n", instruction, handlers_size);
+                apdu_handler const cb = instruction >= handlers_size
+                    ? handle_apdu_error
+                    : (apdu_handler)PIC(handlers[instruction]);
 
-                PRINTF("SIZOF1: %d SIZEOF2: %d\n", sizeof(G_ux), sizeof(G_ux_params));
                 PRINTF("Calling handler\n");
-                size_t const tx = cb(instruction);
+                size_t const tx = cb();
                 PRINTF("Normal return\n");
 
                 if(0xdeadbeef != app_stack_canary) {

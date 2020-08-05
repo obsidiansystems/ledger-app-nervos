@@ -252,7 +252,7 @@ void ui_prompt(const char *const *labels, ui_callback_t ok_c, ui_callback_t cxl_
     G.switch_screen=switch_screen;
     // We fill the destination buffers at the end instead of the beginning so we can
     // use the same array for any number of screens.
-    size_t const offset = MAX_SCREEN_COUNT - screen_count;
+    // size_t const offset = MAX_SCREEN_COUNT - screen_count;
 
     G.switch_screen=switch_screen;
     G.prompt.offset=MAX_SCREEN_COUNT-screen_count;

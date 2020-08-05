@@ -13,12 +13,13 @@
 #undef false
 #define false ((bool)0)
 
-#define _U_ __attribute__((unused))
-
 // Return number of bytes to transmit (tx)
-typedef size_t (*apdu_handler)(uint8_t instruction);
+typedef size_t (*apdu_handler)(void);
 
 #define MAX_INT_DIGITS 20
+
+#define ROOT_PATH_0 0x8000002C
+#define ROOT_PATH_1 0x80002328
 
 typedef struct {
     size_t length;
@@ -41,7 +42,7 @@ typedef bool (*ui_callback_t)(void); // return true to go back to idle screen
 
 // Uses K&R style declaration to avoid being stuck on const void *, to avoid having to cast the
 // function pointers.
-typedef void (*string_generation_callback)(/* char *buffer, size_t buffer_size, const void *data */);
+typedef void (*string_generation_callback)(/* char *out, size_t out_size, void const *const in */);
 
 // Keys
 typedef struct {
@@ -126,15 +127,6 @@ enum operation_tag {
 
 typedef uint8_t public_key_hash_t[CX_RIPEMD160_SIZE];
 
-// TODO: remove this type
-typedef public_key_hash_t standard_lock_arg_t;
-
-// if lock_period == 0, then it is non-timelock lock_arg
-typedef struct {
-    standard_lock_arg_t hash;
-    uint8_t lock_period[8];
-} lock_arg_t;
-
 #define ADDRESS_FORMAT_TYPE_SHORT 0x01
 #define ADDRESS_FORMAT_TYPE_FULL_DATA 0x02
 #define ADDRESS_FORMAT_TYPE_FULL_TYPE 0x04
@@ -142,51 +134,10 @@ typedef struct {
 #define ADDRESS_CODE_HASH_TYPE_SIGHASH 0x00
 #define ADDRESS_CODE_HASH_TYPE_MULTISIG 0x01
 
-// TODO: remove this type
-typedef union {
-    struct {
-        uint8_t address_format_type;
-        uint8_t code_hash_index;
-        standard_lock_arg_t hash;
-    } s; // short
-
-    struct {
-        uint8_t address_format_type;
-        uint8_t code_hash[32];
-        lock_arg_t lock_arg;
-    } f; // full
-} render_address_payload_t;
-
-struct output_t {
-	uint64_t capacity;
-	lock_arg_t destination;
-};
-
 #define HAS_DESTINATION_ADDRESS 0x01
 #define HAS_CHANGE_ADDRESS      0x02
 
 #define MAX_OUTPUTS 3
-
-struct parsed_transaction {
-    uint64_t total_fee;
-    // (input amount (total amount we are signing (change is not deducted), total of outputs (- change))
-    uint64_tuple_t amount; // 0 where inappropriate
-    uint64_t dao_amount;
-    uint64_t dao_output_amount;
-    uint64_tuple_t input_count;
-    enum operation_tag tag;
-    uint8_t flags;   // Interpretation depends on operation type
-    uint8_t group_input_count;
-};
-
-// Maximum number of APDU instructions
-#define INS_MAX 0x09
-
-#define APDU_INS(x)                                                                                                    \
-    ({                                                                                                                 \
-        _Static_assert(x <= INS_MAX, "APDU instruction is out of bounds");                                             \
-        x;                                                                                                             \
-    })
 
 #define STRCPY(buff, x)                                                                                                \
     ({                                                                                                                 \
