@@ -275,12 +275,12 @@ Use the `account list` command to see connected Ledger devices. Be sure to have 
 ``` sh
 CKB> account list
 - "#": 0
-  account_source: ledger hardware wallet
-  ledger_id: 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
+  account-id: 0x9c6e60f3e812ef5c859bbc900f427bffe63294c5490f93e4e50beb688c0798bf
+  source: "[plugin]: ledger_plugin"
 ```
 
-The `ledger_id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. the `ledger_id` will be
-used for ```<ledger-id>``` argument in the `account import` command as described below.
+The `account-id` shown is the public key hash for the path m/44'/309', which is the root Nervos path. the `account-id` will be
+used for ```<account-id>``` argument in the `account import-from-plugin` command as described below.
 
 If you have already imported the Ledger account, then `account list` command will instead give the account details.
 They will be shown even if the device is not connected.
@@ -288,29 +288,27 @@ They will be shown even if the device is not connected.
 ``` sh
 CKB> account list
 - "#": 0
-  account_source: ledger hardware wallet
   address:
-    mainnet: ckb1qyqry754h4tevmngdll9jrpnrnfhqqhpcccskdl3en
-    testnet: ckt1qyqry754h4tevmngdll9jrpnrnfhqqhpcccstgpw40
-  lock_arg: 0x327a95bd57966e686ffe590c331cd37002e1c631
-  lock_hash: 0xc27b9ad3414cf5b1720713663d5f754e8968793f2da90b6428feb565bf94de4e
+    mainnet: ckb1qyqg64fqws0sdgrz2s7da2dzrlpq6plw9xcqhuexcr
+    testnet: ckt1qyqg64fqws0sdgrz2s7da2dzrlpq6plw9xcq2e8e5l
+  has_ckb_root: false
+  lock_arg: 0x8d5520741f06a062543cdea9a21fc20d07ee29b0
+  lock_hash: 0xe8e5dbae54d1ae5257ea55c1fbc210ef5521e0707b0d59bfb17e9f344ef96b7f
+  source: "[plugin]: ledger_plugin"
 ```
 
 ## Account Import ###
 
-Use the `account import --ledger <ledger_id>` command to import the account to the `ckb-cli`.
+Use the `account import-from-plugin --account-id <account-id>` command to import the account to the `ckb-cli`.
 You will receive a confirmation prompt on the device which should say `Import Account`.
 Confirm this to import the account. This operation will provide the extended public key of path `m/44'/309'/0'` to the `ckb-cli`.
 
 ``` sh
-CKB> account import --ledger 0x69c46b6dd072a2693378ef4f5f35dcd82f826dc1fdcc891255db5870f54b06e6
-- "#": 0
-  account_source: ledger hardware wallet
-  address:
-    mainnet: ckb1qyqry754h4tevmngdll9jrpnrnfhqqhpcccskdl3en
-    testnet: ckt1qyqry754h4tevmngdll9jrpnrnfhqqhpcccstgpw40
-  lock_arg: 0x327a95bd57966e686ffe590c331cd37002e1c631
-  lock_hash: 0xc27b9ad3414cf5b1720713663d5f754e8968793f2da90b6428feb565bf94de4e
+CKB> account import-from-plugin --account-id 0x9c6e60f3e812ef5c859bbc900f427bffe63294c5490f93e4e50beb688c0798bf
+address:
+  mainnet: ckb1qyqg64fqws0sdgrz2s7da2dzrlpq6plw9xcqhuexcr
+  testnet: ckt1qyqg64fqws0sdgrz2s7da2dzrlpq6plw9xcq2e8e5l
+lock_arg: 0x8d5520741f06a062543cdea9a21fc20d07ee29b0
 ```
 
 Now that the account has been imported, it is remembered by the client and is visible when you run `account list`.
