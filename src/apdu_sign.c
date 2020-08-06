@@ -42,13 +42,17 @@ static bool sign_reject(void) {
 
 static size_t sign_complete(void) {
     static uint32_t const TYPE_INDEX = 0;
-    static uint32_t const HASH_INDEX = 1;
+    static uint32_t const ADDRESS_INDEX = 1;
+    static uint32_t const HASH_INDEX = 2;
     static char const *const transaction_prompts[] = {
         PROMPT("Sign"),
+        PROMPT("From"),
         PROMPT("Hash"),
         NULL
     };
     REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Bytes");
+
+    register_ui_callback(ADDRESS_INDEX, bip32_path_to_pkh_string, &G.bip32_path);
     G.final_hash_as_buffer.bytes = &G.final_hash[0];
     G.final_hash_as_buffer.length = sizeof(G.final_hash);
     G.final_hash_as_buffer.size = sizeof(G.final_hash);

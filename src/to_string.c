@@ -18,6 +18,14 @@ static void compute_hash_checksum(uint8_t out[CB58_HASH_CHECKSUM_SIZE], void con
     memcpy(out, checksum+CX_SHA256_SIZE-CB58_HASH_CHECKSUM_SIZE, CB58_HASH_CHECKSUM_SIZE);
 }
 
+void bip32_path_to_pkh_string(char *const out, size_t const out_size, bip32_path_t const *const bip32_path) {
+    cx_ecfp_public_key_t pubkey;
+    generate_public_key(&pubkey, bip32_path);
+    public_key_hash_t pkh;
+    generate_pkh_for_pubkey(&pubkey, &pkh);
+    pkh_to_string(out, out_size, &pkh);
+}
+
 void pkh_to_string(char *out, size_t out_size,
                    const public_key_hash_t *const payload) {
   const size_t binary_cb58_size = sizeof(public_key_hash_t) + CB58_HASH_CHECKSUM_SIZE;
