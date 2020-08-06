@@ -97,7 +97,7 @@ __attribute__((noreturn)) size_t handle_apdu_get_public_key_impl(bool const prom
     if (prompt_ext) {
         prompt_ext_path();
     } else {
-      prompt_path();
+        prompt_path();
     }
 }
 
