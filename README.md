@@ -450,7 +450,7 @@ Prompts on the Ledger device are as follows:
 One can verfiy the signature as follows:
 
 ```bash
-CKB> util verify-signature --utf8-string "hello world i love nervos" --from-account <my-ledger-account> --signature <signature from above>
+CKB> util verify-signature --message <message hash; labeled message above>  --from-account <my-ledger-account> --signature <signature from above>
 pubkey: <pubkey of my ledger's account root>
 recoverable: <signature type>
 verify-ok: true
@@ -458,8 +458,7 @@ verify-ok: true
 A user can also choose to sign the hash of a message with an extended address, or with a recoverable signature ( these options are mutually inclusive):
 
 ```bash
-CKB> util sign-data --utf8-string "hello world i love nervos" \ 
---from-account <my-ledger-account> --extended-address <address> --recoverable
+CKB> util sign-data --utf8-string "hello world i love nervos" --from-account <my-ledger-account> --extended-address <address> --recoverable
 
 message-hash: <blake2b hash of: magic_bytes + message>
 recoverable: true
