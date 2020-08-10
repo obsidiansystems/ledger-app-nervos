@@ -12,10 +12,38 @@
 
 #define CB58_HASH_CHECKSUM_SIZE 4
 
+#define BIP32_HARDENED_PATH_BIT 0x80000000
+
 static void compute_hash_checksum(uint8_t out[CB58_HASH_CHECKSUM_SIZE], void const *const data, size_t size) {
     uint8_t checksum[CX_SHA256_SIZE];
     cx_hash_sha256(data, size, checksum, sizeof(checksum));
     memcpy(out, checksum+CX_SHA256_SIZE-CB58_HASH_CHECKSUM_SIZE, CB58_HASH_CHECKSUM_SIZE);
+}
+
+static inline void bound_check_buffer(size_t counter, size_t size) {
+    if (counter >= size) {
+        THROW(EXC_MEMORY_ERROR);
+    }
+}
+
+void bip32_path_to_string(char *const out, size_t const out_size, bip32_path_t const *const path) {
+    size_t out_current_offset = 0;
+    for (int i = 0; i < MAX_BIP32_PATH && i < path->length; i++) {
+        bool is_hardened = path->components[i] & BIP32_HARDENED_PATH_BIT;
+        uint32_t component = path->components[i] & ~BIP32_HARDENED_PATH_BIT;
+        number_to_string_indirect32(out + out_current_offset, out_size - out_current_offset, &component);
+        out_current_offset = strlen(out);
+        if (is_hardened) {
+            bound_check_buffer(out_current_offset, out_size);
+            out[out_current_offset++] = '\'';
+        }
+        if (i < path->length - 1) {
+            bound_check_buffer(out_current_offset, out_size);
+            out[out_current_offset++] = '/';
+        }
+        bound_check_buffer(out_current_offset, out_size);
+        out[out_current_offset] = '\0';
+    }
 }
 
 void bip32_path_to_pkh_string(char *const out, size_t const out_size, bip32_path_t const *const bip32_path) {

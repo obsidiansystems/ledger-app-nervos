@@ -21,6 +21,8 @@ struct bip32_path_wire {
 // throws
 size_t read_bip32_path(bip32_path_t *const out, uint8_t const *const in, size_t const in_size);
 
+void concat_bip32_path(bip32_path_t *const out, bip32_path_t const *const in);
+
 // Non-reentrant
 key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const *const bip32_path, uint8_t *const chain_code);
 

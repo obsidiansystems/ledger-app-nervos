@@ -29,6 +29,7 @@ bolos_ux_params_t G_ux_params;
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
 void clear_apdu_globals(void) {
+    global.current_app_mode = APP_MODE_DEFAULT;
     memset(&global.apdu, 0, sizeof(global.apdu));
 }
 
@@ -57,7 +58,7 @@ static const char testnet_prompt[] = "testnet";
 void switch_network() {
     nvram_data data;
     memcpy(&data, &N_data, sizeof(nvram_data));
-    const bool isMain = data.address_type == ADDRESS_MAINNET; 
+    const bool isMain = data.address_type == ADDRESS_MAINNET;
     data.address_type = isMain ? ADDRESS_TESTNET : ADDRESS_MAINNET;
     if(isMain)
       strcpy(data.network_prompt, testnet_prompt);
@@ -69,7 +70,7 @@ void switch_network() {
 void switch_sign_hash() {
     nvram_data data;
     memcpy(&data, &N_data, sizeof(nvram_data));
-    const bool isOn = data.sign_hash_type == SIGN_HASH_ON; 
+    const bool isOn = data.sign_hash_type == SIGN_HASH_ON;
     data.sign_hash_type = isOn ? SIGN_HASH_OFF : SIGN_HASH_ON;
     if(isOn)
       strcpy(data.sign_hash_prompt, sign_hash_prompt_off);

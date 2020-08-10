@@ -34,14 +34,10 @@ typedef struct {
 #define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
 
 typedef struct {
-    bip32_path_t bip32_path;
-    // uint8_t message_data[INTERMEDIATE_BUFF_SIZE];
-    // uint32_t message_data_length;
-    // buffer_t message_data_as_buffer;
-    //blake2b_hash_state_t hash_state;
-
+    bip32_path_t bip32_path_prefix;
     uint8_t final_hash[SIGN_HASH_SIZE];
     buffer_t final_hash_as_buffer;
+    uint8_t num_signatures_left;
 } apdu_sign_state_t;
 
 typedef struct {
@@ -51,7 +47,10 @@ typedef struct {
     public_key_hash_t pkh;
 } apdu_pubkey_state_t;
 
-#define NUM_APDUS 6
+typedef enum {
+    APP_MODE_DEFAULT = 0,
+    APP_MODE_SIGNING_KNOWN_HASH = 1,
+} app_mode_t;
 
 typedef struct {
     void *stack_root;
@@ -75,7 +74,7 @@ typedef struct {
 
             // This will and must always be static memory full of constants
             const char *const *prompts;
-	    size_t offset;
+            size_t offset;
         } prompt;
     } ui;
 
@@ -89,6 +88,9 @@ typedef struct {
             struct priv_generate_key_pair generate_key_pair;
         } priv;
     } apdu;
+
+    uint8_t latest_apdu_instruction; // For detecting when a sequence of requests to the same APDU ends
+    app_mode_t current_app_mode;
     nvram_data new_data;
 } globals_t;
 

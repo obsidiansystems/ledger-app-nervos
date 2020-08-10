@@ -21,14 +21,19 @@
 
 #define G global.apdu.u.sign
 
-static size_t perform_signature(void);
-
 static inline void clear_data(void) {
+    global.current_app_mode = APP_MODE_DEFAULT;
     memset(&G, 0, sizeof(G));
 }
 
 static bool sign_ok(void) {
-    delayed_send(perform_signature());
+    global.current_app_mode = APP_MODE_SIGNING_KNOWN_HASH;
+
+    size_t tx = 0;
+    memcpy(&G_io_apdu_buffer[tx], G.final_hash, sizeof(G.final_hash));
+    tx += sizeof(G.final_hash);
+
+    delayed_send(tx);
     return true;
 }
 
@@ -38,17 +43,20 @@ static bool sign_reject(void) {
     return true; // Return to idle
 }
 
-#define MAX_NUMBER_CHARS (MAX_INT_DIGITS + 2) // include decimal point and terminating null
-
 static size_t sign_complete(void) {
     static uint32_t const TYPE_INDEX = 0;
-    static uint32_t const HASH_INDEX = 1;
+    static uint32_t const DRV_PREFIX_INDEX = 1;
+    static uint32_t const HASH_INDEX = 2;
+
     static char const *const transaction_prompts[] = {
         PROMPT("Sign"),
+        PROMPT("Derivation Prefix"),
         PROMPT("Hash"),
         NULL
     };
-    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Bytes");
+    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Hash");
+
+    register_ui_callback(DRV_PREFIX_INDEX, bip32_path_to_string, &G.bip32_path_prefix);
 
     G.final_hash_as_buffer.bytes = &G.final_hash[0];
     G.final_hash_as_buffer.length = sizeof(G.final_hash);
@@ -58,18 +66,58 @@ static size_t sign_complete(void) {
     ui_prompt(transaction_prompts, sign_ok, sign_reject);
 }
 
-static size_t sign_hash_impl(uint8_t const *const in, uint8_t const in_size, bool const isLastMessage) {
-    PRINTF("Entering %s\n", __FUNCTION__);
-    if (!isLastMessage) {
-        PRINTF("Expected single message\n");
-        THROW(EXC_SECURITY);
+static size_t sign_hash_impl(
+    uint8_t const *const in,
+    uint8_t const in_size,
+    bool const isFirstMessage,
+    bool const isLastMessage
+) {
+    if (isFirstMessage) {
+        size_t ix = 0;
+
+        // 1 byte - num_signatures_left
+        CONSUME_UNALIGNED_BIG_ENDIAN(ix, uint8_t, &G.num_signatures_left);
+
+        // sizeof(G.final_hash) bytes - hash to sign
+        if (ix + sizeof(G.final_hash) > in_size) {
+            THROW(EXC_WRONG_LENGTH);
+        }
+        memmove(G.final_hash, &in[ix], sizeof(G.final_hash));
+        ix += sizeof(G.final_hash);
+
+        // N bytes - BIP-32 path prefix for future signature requests
+        ix += read_bip32_path(&G.bip32_path_prefix, &in[ix], in_size - ix);
+
+        // TODO: Make sure the prefix actually starts with the thing we care about
+        if (G.bip32_path_prefix.length < 3) {
+            THROW(EXC_SECURITY);
+        }
+
+        return sign_complete();
+    } else {
+        if (global.current_app_mode != APP_MODE_SIGNING_KNOWN_HASH || G.num_signatures_left == 0) {
+            THROW(EXC_SECURITY);
+        }
+        G.num_signatures_left = isLastMessage ? 0 : G.num_signatures_left - 1;
+
+        bip32_path_t bip32_path_suffix;
+        memset(&bip32_path_suffix, 0, sizeof(bip32_path_suffix));
+        read_bip32_path(&bip32_path_suffix, in, in_size);
+
+        // TODO: Ensure the suffix path is the right length, etc.
+        bip32_path_t bip32_path;
+        memcpy(&bip32_path, &G.bip32_path_prefix, sizeof(G.bip32_path_prefix));
+        concat_bip32_path(&bip32_path, &bip32_path_suffix);
+
+        size_t tx = WITH_KEY_PAIR(bip32_path, key_pair, size_t, ({
+            sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, G.final_hash, sizeof(G.final_hash));
+        }));
+
+        if (G.num_signatures_left == 0) {
+            clear_data();
+        }
+        return finalize_successful_send(tx);
     }
-    if (in_size != sizeof(G.final_hash)) {
-        PRINTF("Wrong length: Got %d but expected %d\n", in_size, sizeof(G.final_hash));
-        THROW(EXC_WRONG_LENGTH);
-    }
-    memmove(G.final_hash, in, sizeof(G.final_hash));
-    return sign_complete();
 }
 
 #define P1_NEXT       0x01
@@ -87,21 +135,6 @@ size_t handle_apdu_sign_hash(void) {
 
     if (isFirstMessage) {
         clear_data();
-        read_bip32_path(&G.bip32_path, buff, buff_size);
-        return finalize_successful_send(0);
     }
-    return sign_hash_impl(buff, buff_size, isLastMessage);
-}
-
-static size_t perform_signature(void) {
-    size_t tx = 0;
-    memcpy(&G_io_apdu_buffer[tx], G.final_hash, sizeof(G.final_hash));
-    tx += sizeof(G.final_hash);
-
-    tx += WITH_KEY_PAIR(G.bip32_path, key_pair, size_t, ({
-        sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, G.final_hash, sizeof(G.final_hash));
-    }));
-
-    clear_data();
-    return finalize_successful_send(tx);
+    return sign_hash_impl(buff, buff_size, isFirstMessage, isLastMessage);
 }

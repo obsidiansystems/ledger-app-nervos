@@ -130,6 +130,14 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
 
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
 
+                // Don't let state between *different* APDU instructions persist.
+                if (instruction != global.latest_apdu_instruction) {
+                    clear_apdu_globals();
+                }
+                if (instruction < handlers_size) {
+                    global.latest_apdu_instruction = instruction;
+                }
+
                 PRINTF("Handling instruction %d when number of handlers is %d\n", instruction, handlers_size);
                 apdu_handler const cb = instruction >= handlers_size
                     ? handle_apdu_error
