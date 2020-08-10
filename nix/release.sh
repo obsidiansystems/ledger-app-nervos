@@ -30,7 +30,7 @@ checkTagAgainstAppVersion() {
   if [[ tag != expectedTag ]]
   then
     echo "To proceed, HEAD must contain a tag matching the current application version: $expectedTag"
-    echo "To disable this check, pass '-s'"
+    echo "To disable this check, pass '-t'"
     exit 1
   fi
 }
