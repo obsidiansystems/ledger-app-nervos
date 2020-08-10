@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 
+
 size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey) {
     check_null(io_buffer);
     check_null(pubkey);
@@ -37,16 +38,18 @@ size_t handle_apdu_error(void) {
 }
 
 size_t handle_apdu_version(void) {
-    memcpy(G_io_apdu_buffer, &version, sizeof(version_t));
-    size_t tx = sizeof(version_t);
-    return finalize_successful_send(tx);
-}
+    size_t tx = 0;
+    memcpy(&G_io_apdu_buffer[tx], &VERSION_BYTES, sizeof(version_t));
+    tx += sizeof(version_t);
 
-size_t handle_apdu_git(void) {
-    PRINTF("Handling apdu_git");
-    static const char commit[] = COMMIT;
-    memcpy(G_io_apdu_buffer, commit, sizeof(commit));
-    size_t tx = sizeof(commit);
+    static char const commit[] = COMMIT;
+    memcpy(&G_io_apdu_buffer[tx], commit, sizeof(commit));
+    tx += sizeof(commit);
+
+    static char const name[] = "Avax";
+    memcpy(&G_io_apdu_buffer[tx], name, sizeof(name));
+    tx += sizeof(name);
+
     return finalize_successful_send(tx);
 }
 

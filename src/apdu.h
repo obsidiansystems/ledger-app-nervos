@@ -53,7 +53,6 @@ size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *cons
 size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const *const pubkey);
 
 size_t handle_apdu_version(void);
-size_t handle_apdu_git(void);
 size_t handle_apdu_get_wallet_id(void);
 size_t handle_apdu_sign_hash(void);
 

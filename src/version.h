@@ -9,4 +9,4 @@ typedef struct version {
     uint8_t patch;
 } version_t;
 
-const version_t version = {MAJOR, MINOR, PATCH};
+static version_t const VERSION_BYTES = {MAJOR, MINOR, PATCH};
