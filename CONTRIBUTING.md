@@ -9,7 +9,7 @@ This application has been developed against our forks of [CKB-CLI](https://githu
 To install from the source directory, ensure that you have nix installed, run
 
 ```
-$ ./nix/install.sh s
+$ ./nix/install.sh -t s
 ```
 
 and accept the prompts on your ledger device.
@@ -21,13 +21,13 @@ and accept the prompts on your ledger device.
 ### Incremental Build ###
 
 ``` sh
-$ nix-shell -A wallet.s --run 'make SHELL=sh all'
+$ nix-shell -A wallet.s --run 'make all'
 ```
 
 ### Load ###
 
 ``` sh
-$ nix-shell -A wallet.s --run 'make SHELL=sh load'
+$ nix-shell -A wallet.s --run 'make load'
 ```
 
 ## Developing on the Ledger Nano X ##
@@ -35,7 +35,7 @@ $ nix-shell -A wallet.s --run 'make SHELL=sh load'
 ### Incremental Build ###
 
 ``` sh
-$ nix-shell -A wallet.x --run 'make SHELL=sh all'
+$ nix-shell -A wallet.x --run 'make all'
 ```
 
 ### Load ###
@@ -81,3 +81,17 @@ prompt that happens.
 Not everything is coverd by the automated tests, so manual testing is
 also necessary. This enables end-to-end testing of the ckb. Set up the client
 according to the directions in [README.md](README.md).
+
+# Releasing #
+
+To create a new release:
+* Choose a commit you want to release.
+* Make a new commit on top of it, incrementing the version numbers in the Makefile appropriately.
+* Tag the release candidate `vM.N.P-rcX`, where M, N, P, and X stand for appropriate numbers, e.g.: v0.4.1-rc2
+* Make the actual tarballs with `app.hex` files using the provided script:
+
+``` sh
+$ nix/release.sh
+```
+* Once it has passed QA, tag `vM.N.P`, e.g. v0.4.1
+* Use the md5sum/sha256 section of the output of `nix/release.sh` as part of the markdown release notes on GitHub, and post the resulting two tarballs along with the release.

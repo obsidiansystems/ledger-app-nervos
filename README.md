@@ -8,7 +8,7 @@ These applications has been developed against our forks of [CKB-CLI](https://git
 
 System requirements differ based on if you are using or installing the application. If you are using a Linux machine, you will need to [Prepare your Linux Machine for Ledger Device Communication](#preparing-your-linux-machine-for-ledger-device-communication) for both installing and usaging the application.
 
-This applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware XXX. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
+This applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware 1.2.5-1.5. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
 
 ## For Application Installation
 
@@ -21,7 +21,7 @@ Installation requirements differ based on installation method:
 
 #### Supported Operating Systems ####
 
-- **Linux**: Supported. Debian distributions such as Ubuntu (18.04+) and NixOS (vXXX+). Other linux distributions may work, but have not been tested.
+- **Linux**: Supported. Debian distributions such as Ubuntu (18.04+) and NixOS (v19.03+). Other linux distributions may work, but have not been tested.
 - **Mac**: Supported. This has been tested on Catalina 10.15.5. Other versions may work, but have not been tested.
 - **Windows**: Not currently supported.
 
@@ -106,7 +106,15 @@ There are 3 ways you can install this Ledger application:
 
 Please download `nano-s-release.tar.gz` from the latest release on  the [releases](https://github.com/obsidiansystems/ledger-app-nervos/releases) page of this repo, which contains a pre-compiled app or `.hex` file ready to install on the Ledger. The following sections describe how to install it, including acquiring other tools from the Ledger project.
 
-### Installing BOLOS Python Loader
+The next two sections describe how to install tools that you will need to interact with the Ledger. On NixOS, these tools can be loaded into a nix-shell by simply running:
+
+``` sh
+$ nix/env.sh s
+```
+
+Therefore, on NixOS, this command replaces the next two sections.
+
+### Installing BOLOS Python Loader (non-NixOS)
 
 Install `libusb` and `libudev`, with the relevant headers. On Debian-based distros, including Ubuntu, the packages with the headers are suffixed with `-dev`. Other distros will have their own conventions. So, for example, on Ubuntu, you can do this with:
 
@@ -140,7 +148,7 @@ $ source ledger/bin/activate
 
 Your terminal session -- and only that terminal session -- will now be in the virtual env. To have a new terminal session enter the virtualenv, run the above `source` command only in the same directory in the new terminal session.
 
-### ledgerblue: The Python Module for Ledger Nano S/X
+### ledgerblue: The Python Module for Ledger Nano S/X (non-NixOS)
 
 We can now install `ledgerblue`, which is a Python module designed originally for Ledger Blue, but also is needed for the Ledger Nano S/X.
 
@@ -202,14 +210,20 @@ To load a new version of the Nervos application onto the Ledger device in the fu
 
 ## Installing the Ledger Application from Source
 
-You can install the Ledger app from source if you have Nix installed. To load the latest version of the Nervos app:
+You can install the Ledger app from source if you have Nix installed. To load the latest version of the Nervos app on a Ledger Nano S:
 
 ``` sh
 $ git clone https://github.com/obsidiansystems/ledger-app-nervos.git
 $ cd ledger-app-nervos
 $ git checkout master
-$ ./nix/install.sh s
+$ ./nix/install.sh -t s
 ```
+
+The steps for the X are the same, except for the last command:
+``` sh
+$ ./nix/install.sh -t x
+```
+
 Some notes during app installation:
 - 'Starting bats': When building and installing the application from source, the client will run a suite of tests found in the `tests.sh` file. 'bats' stands for "[Bash Automated Testing System](https://github.com/bats-core/bats-core)". These tests may take some time to complete. When they are done, the app installation will proceed.
 - Unsafe Manager: you will see a prompt to either allow or deny 'unsafe manager' when running `./nix/install.sh s`. 'Unsafe Manager' is any manager which is not Ledger Live.
