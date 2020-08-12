@@ -24,11 +24,6 @@ struct priv_generate_key_pair {
     key_pair_t res;
 };
 
-typedef struct {
-    cx_blake2b_t state;
-    uint8_t initialized;
-} blake2b_hash_state_t;
-
 #define OUTPUT_FLAGS_KNOWN_LOCK     0x01
 #define OUTPUT_FLAGS_IS_DAO         0x02
 #define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
@@ -43,8 +38,6 @@ typedef struct {
 typedef struct {
     bip32_path_t bip32_path;
     extended_public_key_t ext_public_key;
-    cx_blake2b_t hash_state;
-    public_key_hash_t pkh;
 } apdu_pubkey_state_t;
 
 typedef enum {

@@ -4,12 +4,10 @@
 #include <stdbool.h>
 
 #include "keys.h"
-// #include "operations.h"
 #include "os_cx.h"
 #include "types.h"
 #include "ui.h"
 
-void pubkey_to_pkh_string(char *const out, size_t const out_size, cx_ecfp_public_key_t const *const public_key);
 void bip32_path_to_string(char *const out, size_t const out_size, bip32_path_t const *const path);
 void bip32_path_to_pkh_string(char *const out, size_t const out_size, bip32_path_t const *const key);
 void pkh_to_string(char *out, size_t out_size, const public_key_hash_t *const payload);
