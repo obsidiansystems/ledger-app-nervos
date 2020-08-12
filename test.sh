@@ -31,12 +31,11 @@ killSpeculos() {
 
 if [ -n "$LEDGER_PROXY_PORT" ] ; then
   speculos --display headless bin/app.elf --button-port 5667 --apdu-port 9999 --deterministic-rng 42 |& $speculos_output_cmd $speculos_output_file &
+  appPid=$!
   trap killSpeculos EXIT
 else
   usbtool -v 0x2c97 log
 fi
-
-appPid=$!
 
 sleep 1
 echo "Starting bats"

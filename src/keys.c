@@ -48,11 +48,13 @@ size_t read_bip32_path(bip32_path_t *const out, uint8_t const *const in, size_t 
 }
 
 void concat_bip32_path(bip32_path_t *const out, bip32_path_t const *const in) {
-    if (out->length + in->length > NUM_ELEMENTS(out->components))
+    size_t const new_length = out->length + in->length;
+    if (new_length > NUM_ELEMENTS(out->components))
         THROW(EXC_MEMORY_ERROR);
     for (size_t i = 0; i < in->length; i++) {
-        out->components[out->length + i - 1] = in->components[i];
+        out->components[out->length + i] = in->components[i];
     }
+    out->length = new_length;
 }
 
 key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const *const bip32_path, uint8_t *const chain_code /* optional */) {

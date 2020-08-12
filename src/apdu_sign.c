@@ -33,7 +33,7 @@ static bool sign_ok(void) {
     memcpy(&G_io_apdu_buffer[tx], G.final_hash, sizeof(G.final_hash));
     tx += sizeof(G.final_hash);
 
-    delayed_send(tx);
+    delayed_send(finalize_successful_send(tx));
     return true;
 }
 
@@ -76,7 +76,7 @@ static size_t sign_hash_impl(
         size_t ix = 0;
 
         // 1 byte - num_signatures_left
-        CONSUME_UNALIGNED_BIG_ENDIAN(ix, uint8_t, &G.num_signatures_left);
+        G.num_signatures_left = CONSUME_UNALIGNED_BIG_ENDIAN(ix, uint8_t, &in[ix]);
 
         // sizeof(G.final_hash) bytes - hash to sign
         if (ix + sizeof(G.final_hash) > in_size) {
@@ -95,6 +95,7 @@ static size_t sign_hash_impl(
 
         return sign_complete();
     } else {
+        PRINTF("Current mode = %d; Num signatures left = %d\n", global.current_app_mode, G.num_signatures_left);
         if (global.current_app_mode != APP_MODE_SIGNING_KNOWN_HASH || G.num_signatures_left == 0) {
             THROW(EXC_SECURITY);
         }
@@ -109,13 +110,21 @@ static size_t sign_hash_impl(
         memcpy(&bip32_path, &G.bip32_path_prefix, sizeof(G.bip32_path_prefix));
         concat_bip32_path(&bip32_path, &bip32_path_suffix);
 
-        size_t tx = WITH_KEY_PAIR(bip32_path, key_pair, size_t, ({
-            sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, G.final_hash, sizeof(G.final_hash));
+#if defined(NERVOS_DEBUG)
+        char pathstr[100];
+        bip32_path_to_string(pathstr, sizeof(pathstr), &bip32_path);
+        PRINTF("Signing with %s\n", pathstr);
+        PRINTF("Signing hash = %.*h\n", sizeof(G.final_hash), G.final_hash);
+#endif
+
+        size_t const tx = WITH_KEY_PAIR(bip32_path, key_pair, size_t, ({
+            sign(G_io_apdu_buffer, MAX_SIGNATURE_SIZE, key_pair, G.final_hash, sizeof(G.final_hash));
         }));
 
         if (G.num_signatures_left == 0) {
             clear_data();
         }
+
         return finalize_successful_send(tx);
     }
 }
@@ -124,7 +133,6 @@ static size_t sign_hash_impl(
 #define P1_LAST       0x80
 
 size_t handle_apdu_sign_hash(void) {
-    uint8_t const *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
     uint8_t const buff_size = READ_UNALIGNED_BIG_ENDIAN(uint8_t, &G_io_apdu_buffer[OFFSET_LC]);
     if (buff_size > MAX_APDU_SIZE)
         THROW(EXC_WRONG_LENGTH_FOR_INS);
@@ -136,5 +144,7 @@ size_t handle_apdu_sign_hash(void) {
     if (isFirstMessage) {
         clear_data();
     }
+
+    uint8_t const *const buff = &G_io_apdu_buffer[OFFSET_CDATA];
     return sign_hash_impl(buff, buff_size, isFirstMessage, isLastMessage);
 }
