@@ -22,12 +22,12 @@
 #define G global.apdu.u.sign
 
 static inline void clear_data(void) {
-    global.current_app_mode = APP_MODE_DEFAULT;
+    PRINTF("Clearing sign APDU state\n");
     memset(&G, 0, sizeof(G));
 }
 
 static bool sign_ok(void) {
-    global.current_app_mode = APP_MODE_SIGNING_KNOWN_HASH;
+    G.num_signatures_left = G.requested_num_signatures;
 
     size_t tx = 0;
     memcpy(&G_io_apdu_buffer[tx], G.final_hash, sizeof(G.final_hash));
@@ -75,8 +75,8 @@ static size_t sign_hash_impl(
     if (isFirstMessage) {
         size_t ix = 0;
 
-        // 1 byte - num_signatures_left
-        G.num_signatures_left = CONSUME_UNALIGNED_BIG_ENDIAN(ix, uint8_t, &in[ix]);
+        // 1 byte - requested_num_signatures
+        G.requested_num_signatures = CONSUME_UNALIGNED_BIG_ENDIAN(ix, uint8_t, &in[ix]);
 
         // sizeof(G.final_hash) bytes - hash to sign
         if (ix + sizeof(G.final_hash) > in_size) {
@@ -93,10 +93,12 @@ static size_t sign_hash_impl(
             THROW(EXC_SECURITY);
         }
 
+        PRINTF("First signing message: requested_num_signatures = %d\n", G.num_signatures_left);
+
         return sign_complete();
     } else {
-        PRINTF("Current mode = %d; Num signatures left = %d\n", global.current_app_mode, G.num_signatures_left);
-        if (global.current_app_mode != APP_MODE_SIGNING_KNOWN_HASH || G.num_signatures_left == 0) {
+        PRINTF("Next signing message: num_signatures_left = %d of requested_num_signatures = %d\n", G.num_signatures_left, G.requested_num_signatures);
+        if (G.num_signatures_left == 0 || G.num_signatures_left > G.requested_num_signatures) {
             THROW(EXC_SECURITY);
         }
         G.num_signatures_left = isLastMessage ? 0 : G.num_signatures_left - 1;
@@ -124,7 +126,6 @@ static size_t sign_hash_impl(
         if (G.num_signatures_left == 0) {
             clear_data();
         }
-
         return finalize_successful_send(tx);
     }
 }

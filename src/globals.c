@@ -20,8 +20,6 @@
 
 globals_t global;
 
-const uint8_t blake2b_personalization[] = "ckb-default-hash";
-
 // These are strange variables that the SDK relies on us to define but uses directly itself.
 ux_state_t G_ux;
 bolos_ux_params_t G_ux_params;
@@ -30,7 +28,6 @@ unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
 void clear_apdu_globals(void) {
     PRINTF("Clearing APDU globals\n");
-    global.current_app_mode = APP_MODE_DEFAULT;
     memset(&global.apdu, 0, sizeof(global.apdu));
 }
 

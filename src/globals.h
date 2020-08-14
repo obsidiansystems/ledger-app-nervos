@@ -24,14 +24,12 @@ struct priv_generate_key_pair {
     key_pair_t res;
 };
 
-#define OUTPUT_FLAGS_KNOWN_LOCK     0x01
-#define OUTPUT_FLAGS_IS_DAO         0x02
-#define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
-
 typedef struct {
+    uint8_t requested_num_signatures;
     bip32_path_t bip32_path_prefix;
     uint8_t final_hash[SIGN_HASH_SIZE];
     buffer_t final_hash_as_buffer;
+
     uint8_t num_signatures_left;
 } apdu_sign_state_t;
 
@@ -39,11 +37,6 @@ typedef struct {
     bip32_path_t bip32_path;
     extended_public_key_t ext_public_key;
 } apdu_pubkey_state_t;
-
-typedef enum {
-    APP_MODE_DEFAULT = 0,
-    APP_MODE_SIGNING_KNOWN_HASH = 1,
-} app_mode_t;
 
 typedef struct {
     void *stack_root;
@@ -83,13 +76,10 @@ typedef struct {
     } apdu;
 
     uint8_t latest_apdu_instruction; // For detecting when a sequence of requests to the same APDU ends
-    app_mode_t current_app_mode;
     nvram_data new_data;
 } globals_t;
 
 extern globals_t global;
-
-extern const uint8_t blake2b_personalization[17];
 
 extern unsigned int volatile app_stack_canary; // From SDK
 
