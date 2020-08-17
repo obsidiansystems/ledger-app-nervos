@@ -215,7 +215,7 @@ __attribute__((noreturn)) void ui_prompt_with_cb(void (*switch_screen_cb)(uint32
     G.cxl_callback = cxl_c;
     ux_flow_init(0, &ux_prompts_flow[G.prompt.offset], NULL);
 
-#ifdef NERVOS_DEBUG
+#ifdef AVA_DEBUG
     ui_prompt_debug(screen_count);
     // In debug mode, the THROW below produces a PRINTF statement in an invalid position and causes the screen to blank,
     // so instead we just directly call the equivalent longjmp for debug only.

@@ -115,7 +115,7 @@ static inline void throw_stack_size() {
 void switch_network();
 void switch_sign_hash();
 
-#ifdef NERVOS_DEBUG
+#ifdef AVA_DEBUG
 // Aid for tracking down app crashes
 #define STRINGIFY(x) #x
 #define TOSTRING(x)  STRINGIFY(x)
