@@ -62,7 +62,7 @@ typedef struct {
     uint8_t chain_code[CHAIN_CODE_DATA_SIZE];
 } extended_key_pair_t;
 
-#define MAX_BIP32_PATH 5
+#define MAX_BIP32_PATH 6
 
 typedef struct {
     uint8_t length;
@@ -126,6 +126,12 @@ enum operation_tag {
 };
 
 typedef uint8_t public_key_hash_t[CX_RIPEMD160_SIZE];
+
+#define ASCII_HRP_MAX_SIZE 24
+#define ASCII_ADDRESS_MAX_SIZE 64
+
+typedef char ascii_adddress_t[ASCII_ADDRESS_MAX_SIZE];
+typedef char ascii_hrp_t[ASCII_HRP_MAX_SIZE];
 
 #define ADDRESS_FORMAT_TYPE_SHORT 0x01
 #define ADDRESS_FORMAT_TYPE_FULL_DATA 0x02

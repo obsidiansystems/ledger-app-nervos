@@ -19,6 +19,7 @@
 #define OFFSET_CLA   0
 #define OFFSET_INS   1 // instruction code
 #define OFFSET_P1    2 // user-defined 1-byte parameter
+#define OFFSET_P2    3 // user-defined 1-byte parameter
 #define OFFSET_LC    4 // length of CDATA
 #define OFFSET_CDATA 5 // payload
 
@@ -49,7 +50,7 @@ static inline void require_hid(void) {
     }
 }
 
-size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey);
+size_t provide_address(uint8_t *const io_buffer, public_key_hash_t const *const pubkey_hash);
 size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const *const pubkey);
 
 size_t handle_apdu_version(void);
