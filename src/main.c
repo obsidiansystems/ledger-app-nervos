@@ -11,15 +11,5 @@ __attribute__((noreturn)) void app_main(void) {
         (apdu_handler)PIC(handle_apdu_sign_hash),           // 0x04
     };
 
-    if(!N_data.initialized) {
-        nvram_data data={
-            true,
-            ADDRESS_MAINNET,
-            "mainnet",
-        SIGN_HASH_OFF,
-            "Off"
-        };
-        nvm_write((void*)&N_data, (void*)&data, sizeof(N_data));
-    }
     main_loop(handlers, NUM_ELEMENTS(handlers));
 }

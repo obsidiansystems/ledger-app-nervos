@@ -8,14 +8,7 @@
 #include "to_string.h"
 #include "protocol.h"
 #include "ui.h"
-
-#define MOL_PIC(x) ((void (*)()) PIC(x))
-#define MOL_PIC_STRUCT(t,x) (x?((t*) PIC(x)):NULL)
-#define mol_printf(...) PRINTF(__VA_ARGS__)
-#define mol_emerg_reject THROW(EXC_MEMORY_ERROR)
-
 #include "cx.h"
-#include "annotated.h"
 
 #include <string.h>
 
@@ -38,17 +31,19 @@ static bool sign_reject(void) {
     return true; // Return to idle
 }
 
-#define MAX_NUMBER_CHARS (MAX_INT_DIGITS + 2) // include decimal point and terminating null
-
 static size_t sign_complete(void) {
     static uint32_t const TYPE_INDEX = 0;
-    static uint32_t const HASH_INDEX = 1;
+    static uint32_t const DRV_PATH_INDEX = 1;
+    static uint32_t const HASH_INDEX = 2;
     static char const *const transaction_prompts[] = {
         PROMPT("Sign"),
+        PROMPT("Derivation Path"),
         PROMPT("Hash"),
         NULL
     };
-    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Bytes");
+    REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Hash");
+
+    register_ui_callback(DRV_PATH_INDEX, bip32_path_to_string, &G.bip32_path);
 
     G.final_hash_as_buffer.bytes = &G.final_hash[0];
     G.final_hash_as_buffer.length = sizeof(G.final_hash);

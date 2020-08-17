@@ -12,9 +12,6 @@ void init_globals(void);
 
 #define MAX_APDU_SIZE 230 // Maximum number of bytes in a single APDU
 
-// Our buffer must accommodate any remainder from hashing and the next message at once.
-#define INTERMEDIATE_BUFF_SIZE (BLAKE2B_BLOCKBYTES + MAX_APDU_SIZE)
-
 #define PRIVATE_KEY_DATA_SIZE 32
 
 #define MAX_SIGNATURE_SIZE 100
@@ -25,21 +22,7 @@ struct priv_generate_key_pair {
 };
 
 typedef struct {
-    cx_blake2b_t state;
-    uint8_t initialized;
-} blake2b_hash_state_t;
-
-#define OUTPUT_FLAGS_KNOWN_LOCK     0x01
-#define OUTPUT_FLAGS_IS_DAO         0x02
-#define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
-
-typedef struct {
     bip32_path_t bip32_path;
-    // uint8_t message_data[INTERMEDIATE_BUFF_SIZE];
-    // uint32_t message_data_length;
-    // buffer_t message_data_as_buffer;
-    //blake2b_hash_state_t hash_state;
-
     uint8_t final_hash[SIGN_HASH_SIZE];
     buffer_t final_hash_as_buffer;
 } apdu_sign_state_t;
@@ -47,11 +30,7 @@ typedef struct {
 typedef struct {
     bip32_path_t bip32_path;
     extended_public_key_t ext_public_key;
-    cx_blake2b_t hash_state;
-    public_key_hash_t pkh;
 } apdu_pubkey_state_t;
-
-#define NUM_APDUS 6
 
 typedef struct {
     void *stack_root;
@@ -75,7 +54,7 @@ typedef struct {
 
             // This will and must always be static memory full of constants
             const char *const *prompts;
-	    size_t offset;
+            size_t offset;
         } prompt;
     } ui;
 
@@ -94,8 +73,6 @@ typedef struct {
 
 extern globals_t global;
 
-extern const uint8_t blake2b_personalization[17];
-
 extern unsigned int volatile app_stack_canary; // From SDK
 
 // Used by macros that we don't control.
@@ -113,9 +90,6 @@ static inline void throw_stack_size() {
     uint32_t tmp2 = (uint32_t)global.stack_root - (uint32_t)&st;
     THROW(0x9000 + tmp2);
 }
-
-void calculate_baking_idle_screens_data(void);
-void update_baking_idle_screens(void);
 
 #ifdef TARGET_NANOX
     extern nvram_data const N_data_real;
@@ -141,7 +115,7 @@ void update_baking_idle_screens(void);
 void switch_network();
 void switch_sign_hash();
 
-#ifdef NERVOS_DEBUG
+#ifdef AVA_DEBUG
 // Aid for tracking down app crashes
 #define STRINGIFY(x) #x
 #define TOSTRING(x)  STRINGIFY(x)
