@@ -1,3 +1,0 @@
-=> b'8001000000'
-<= b'HEXHASH00'9000
-<= Clear bytearray(b'HASH\x00')
