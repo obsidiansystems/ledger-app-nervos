@@ -278,7 +278,6 @@ void exit_app_cb(__attribute__((unused)) unsigned int cb) {
 // Mutually recursive static variables require forward declarations
 static const ux_menu_entry_t main_menu_data[];
 static const ux_menu_entry_t about_menu_data[];
-static const ux_menu_entry_t configuration_menu_data[];
 
 static const ux_menu_entry_t about_menu_data[] = {
     {NULL, NULL, 0, NULL, "Avax", "Version " VERSION, 0, 0},
@@ -288,25 +287,7 @@ static const ux_menu_entry_t about_menu_data[] = {
 static const ux_menu_entry_t main_menu_data[] = {
     {NULL, NULL, 0, NULL, "Use wallet to", "view accounts", 0, 0},
     {about_menu_data, NULL, 0, NULL, "About", NULL, 0, 0},
-    {configuration_menu_data, NULL, 0, NULL, "Configuration", NULL, 0, 0},
     {NULL, exit_app_cb, 0, NULL, "Quit app", NULL, 50, 29}, // TODO: Put icon for "dashboard" in
-    UX_MENU_END};
-
-
-void switch_network_cb(unsigned int cb) {
-    switch_network(cb);
-    UX_MENU_DISPLAY(0, configuration_menu_data, NULL);
-}
-
-void switch_sign_hash_cb(unsigned int cb) {
-    switch_sign_hash(cb);
-    UX_MENU_DISPLAY(1, configuration_menu_data, NULL);
-}
-
-static const ux_menu_entry_t configuration_menu_data[] = {
-    {NULL, switch_network_cb, 0, NULL, "Addresses for", N_data_real.network_prompt, 0, 0},
-    {NULL, switch_sign_hash_cb, 1, NULL, "Allow sign hash", N_data_real.sign_hash_prompt, 0, 0},
-    {main_menu_data, NULL, 2, NULL, "Back", NULL, 61, 40}, // TODO: Put icon for "back" in
     UX_MENU_END};
 
 void main_menu() {
