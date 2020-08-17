@@ -14,10 +14,10 @@ clicks() {
 
 apdu_with_clicks () {
   echo "$1" | apdu &
-  sleep 1;
+  sleep 2;
   while read -n1 click; do
-	  clicks $click
-	  sleep 0.1
+    clicks $click
+    sleep 0.1
   done <<<"$2"
 }
 
@@ -49,9 +49,9 @@ check_signature () {
   rfmt="02 $(printf "%02x" $rlen) ${r_val}"
   sfmt="02 $(printf "%02x" $slen) ${s_val}"
 
-  SIG="30 $(printf "%02x" $(($rlen+$slen+4))) $rfmt $sfmt"
+  SIG="30 $(printf "%02x" $((rlen+slen+4))) $rfmt $sfmt"
 
-  xxd -r -ps <<<"$2" | tee dumpfile0 | blake2b_p | tee hashfile | xxd -p -r | openssl pkeyutl -verify -pubin -inkey <(get_key_in_pem $1) -sigfile <(xxd -r -ps <<<"$SIG")
+  xxd -r -ps <<<"$2" | openssl pkeyutl -verify -pubin -inkey <(get_key_in_pem "$1") -sigfile <(xxd -r -ps <<<"$SIG")
 }
 
 get_key_in_pem() {
@@ -59,42 +59,10 @@ get_key_in_pem() {
   bip_path_len=$((${#bip_path}/2))
   bip_fmt="$(printf "%02x" $bip_path_len)$bip_path"
   derivation="80020000${bip_fmt}"
-  result="$(apdu_with_clicks $derivation "$ACCEPT_CLICKS" |& egrep "b'41.*'9000" | sed "s/^<= b'41//;s/'9000$//")"
+  result="$(apdu_with_clicks "$derivation" "$ACCEPT_CLICKS" |& egrep "b'41.*'9000" | sed "s/^<= b'41//;s/'9000$//")"
   echo "-----BEGIN PUBLIC KEY-----"
   cat tests/public_key_der_prefix.der <(xxd -ps -r <<<"$result") | base64
   echo "-----END PUBLIC KEY-----"
-}
-
-sendTransaction() {
-  bytesToSign=$(($(wc -c <<<"$1")/2))
-  toSend=$1
-  flag=40
-  chunksize=${chunk_size:-230}
-  chunksize_hex=$(($chunksize*2))
-  next_chunk_head=$(($chunksize_hex+1))
-  while [ "$bytesToSign" -gt $chunksize ] ;
-  do
-    bytes=$(printf "%02x" $chunksize)
-    apdu_fixed "8003${flag}00$bytes$(head -c $chunksize_hex <<<"$toSend")"
-    flag=41
-    # [ "$status" -eq 0 ]
-    # grep -q "<= b''9000" <(echo "$output")
-    toSend="$(tail -c+$next_chunk_head <<<"$toSend")";
-    bytesToSign=$(($(wc -c <<<"$toSend")/2))
-    echo $bytesToSign
-  done
-  bytes=$(printf "%02x" $(($(wc -c <<<"$toSend")/2)))
-  echo TO SEND: $toSend
-  if [ -z "$2" ]; then
-    apdu_with_clicks "8003c100$bytes$toSend" "$ACCEPT_CLICKS"
-
-  elif [ "$2" = "--no-hard-check" ]; then
-    apdu_with_clicks "80038100$bytes$toSend" "$ACCEPT_CLICKS"
-  elif [ "$2" = "--expectReject" ]; then
-    apdu_fixed "8003c100$bytes$toSend"
-  else # [ "$2" = "--isCtxd" ]
-    apdu_fixed "8003e100$bytes$toSend"
-  fi
 }
 
 promptsCheck() {
@@ -117,9 +85,9 @@ APP_VN=$(cat Makefile | sed -n -e 's/^.*APPVERSION_N=//p' | head -n 1)
 APP_VP=$(cat Makefile | sed -n -e 's/^.*APPVERSION_P=//p' | head -n 1)
 
 formatVersion() {
-  printf "%02x" $1
+  printf "%02x" "$1"
 }
 
 getCurrentVersion() {
-  printf "%02x%02x%02x" $APP_VM $APP_VN $APP_VP 
+  printf "%02x%02x%02x" "$APP_VM" "$APP_VN" "$APP_VP"
 }
