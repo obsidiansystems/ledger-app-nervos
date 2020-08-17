@@ -54,7 +54,7 @@ typedef struct {
 
             // This will and must always be static memory full of constants
             const char *const *prompts;
-	    size_t offset;
+            size_t offset;
         } prompt;
     } ui;
 

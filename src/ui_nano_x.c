@@ -65,48 +65,7 @@ unsigned char io_event(__attribute__((unused)) unsigned char channel) {
     return 1;
 }
 
-void ui_cfg_screen(void);
 void ui_initial_screen(void);
-
-void switch_network_cb(void) {
-    switch_network();
-    ui_cfg_screen();
-}
-
-void switch_sign_hash_cb(void) {
-    switch_sign_hash();
-    ui_cfg_screen();
-}
-
-UX_STEP_CB(
-    ux_cfg_flow_1_step,
-    bn,
-    switch_network_cb(),
-    {
-      "Addresses for",
-      N_data_real.network_prompt
-    });
-UX_STEP_CB(
-    ux_cfg_flow_2_step,
-    bn,
-    switch_sign_hash_cb(),
-    {
-      "Allow sign hash",
-      N_data_real.sign_hash_prompt
-    });
-UX_STEP_CB(
-    ux_cfg_flow_3_step,
-    bn,
-    ui_initial_screen(),
-    {
-      "Main menu",
-      ""
-    });
-UX_FLOW(ux_cfg_flow,
-		&ux_cfg_flow_1_step,
-		&ux_cfg_flow_2_step,
-		&ux_cfg_flow_3_step
-       );
 
 UX_STEP_NOCB(
     ux_idle_flow_1_step,
@@ -114,14 +73,6 @@ UX_STEP_NOCB(
     {
       "Avax",
       VERSION
-    });
-UX_STEP_CB(
-    ux_idle_flow_cfg_step,
-    bn,
-    ui_cfg_screen(),
-    {
-      "Configuration",
-      ""
     });
 UX_STEP_CB(
     ux_idle_flow_quit_step,
@@ -134,7 +85,6 @@ UX_STEP_CB(
 
 UX_FLOW(ux_idle_flow,
     &ux_idle_flow_1_step,
-    &ux_idle_flow_cfg_step,
     &ux_idle_flow_quit_step
 );
 
@@ -199,16 +149,6 @@ UX_FLOW(ux_prompts_flow,
     &ux_prompt_flow_accept_step
 );
 _Static_assert(NUM_ELEMENTS(ux_prompts_flow) - 3 /*reject + accept + end*/ == MAX_SCREEN_COUNT, "ux_prompts_flow doesn't have the same number of screens as MAX_SCREEN_COUNT");
-
-void ui_cfg_screen(void) {
-
-    // reserve a display stack slot if none yet
-    if(G_ux.stack_count == 0) {
-        ux_stack_push();
-    }
-    ux_flow_init(0, ux_cfg_flow, NULL);
-
-}
 
 void ui_initial_screen(void) {
 
