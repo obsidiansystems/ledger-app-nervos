@@ -85,7 +85,7 @@ endif
 DEBUG ?= 0
 ifneq ($(DEBUG),0)
 
-        DEFINES += NERVOS_DEBUG
+        DEFINES += AVA_DEBUG
         DEFINES += STACK_MEASURE
 
         ifeq ($(TARGET_NAME),TARGET_NANOX)

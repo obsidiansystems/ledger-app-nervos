@@ -241,7 +241,7 @@ __attribute__((noreturn)) void ui_prompt(const char *const *labels, ui_callback_
     G.switch_screen=&switch_screen;
 
     ui_display(ui_multi_screen, NUM_ELEMENTS(ui_multi_screen), ok_c, cxl_c, screen_count);
-#ifdef NERVOS_DEBUG
+#ifdef AVA_DEBUG
     ui_prompt_debug(screen_count);
     // In debug mode, the THROW below produces a PRINTF statement in an invalid position and causes the screen to blank,
     // so instead we just directly call the equivalent longjmp for debug only.
@@ -257,7 +257,7 @@ __attribute__((noreturn)) void ui_prompt_with_cb(void (*switch_screen_cb)(uint32
     G.switch_screen=switch_screen_cb;
 
     ui_display(ui_multi_screen, NUM_ELEMENTS(ui_multi_screen), ok_c, cxl_c, screen_count);
-#ifdef NERVOS_DEBUG
+#ifdef AVA_DEBUG
     ui_prompt_debug(screen_count);
     // In debug mode, the THROW below produces a PRINTF statement in an invalid position and causes the screen to blank,
     // so instead we just directly call the equivalent longjmp for debug only.
