@@ -7,9 +7,6 @@
 
 #include <string.h>
 
-#define NO_CONTRACT_STRING      "None"
-#define NO_CONTRACT_NAME_STRING "Custom Delegate: please verify the address"
-
 #define CB58_HASH_CHECKSUM_SIZE 4
 
 static void compute_hash_checksum(uint8_t out[CB58_HASH_CHECKSUM_SIZE], void const *const data, size_t size) {

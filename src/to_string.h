@@ -4,7 +4,6 @@
 #include <stdbool.h>
 
 #include "keys.h"
-// #include "operations.h"
 #include "os_cx.h"
 #include "types.h"
 #include "ui.h"
