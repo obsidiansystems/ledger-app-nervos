@@ -1,6 +1,6 @@
 # Overview
 
-This repository contains the Ava BOLOS application for the Ledger Nano S and Ledger Nano X and tools for testing the application. While this app is currently under development.
+This repository contains the Ava BOLOS application for the Ledger Nano S and Ledger Nano X and tools for testing the application.
 
 Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS.
 
