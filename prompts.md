@@ -2,6 +2,26 @@
 
 This document summarizes on-device prompts for each command.
 
+# Table of Contents
+
+- [Account Commands](#account-commands)
+     - [Account Import](#account-import)
+     - [Account Extended-address](#account-extended-address)
+- [Transfers](#transfers)
+     - [1 Input Address, 1 Output Address (`wallet transfer`)](#1-input-address-1-output-address-wallet-transfer)
+     - [From Multisig Address](#transfers-from-a-multisig-address)
+     - [1 Input Address, 2-5 Outputs Addresses (`tx sign-inputs`)](#1-input-address-2-5-outputs-addresses-tx-sign-inputs)
+     - [2+ Input Addresses, 1 Output Address (`wallet transfer`)](#2-input-addresses-1-output-address-wallet-transfer)
+     - [2+ Input Addresses, 2-5 Output Addresses (`tx sign-inputs`)](#2-input-addresses-2-5-output-addresses-tx-sign-inputs)
+- [DAO Commands](#dao-commands)
+     - [DAO Deposit](#dao-deposit)
+     - [DAO Prepare](#dao-prepare)
+     - [DAO Withdraw](#dao-withdraw)
+- [Message Signing](#message-signing)
+     - [Raw String](#raw-string)
+     - [Binary Hex](#binary-hex)
+     - [Hashed Data](#hashed-data)
+
 ## Account Commands
 
 #### Account Import
