@@ -398,7 +398,7 @@ More complicated transactions, such as those with multiple outputs or inputs fro
 - [How to use Multisigs with CKB-CLI](https://medium.com/@obsidian.systems/how-to-use-multisigs-with-ckb-cli-5fbd7f4f56e4)
 
 When doing more complex transactions, please note: 
-- Different transaction variants may have different on-device prompts so the user can verify all the aspects of what they are signing. (*TODO: show all variants of transaction prompts*)
+- Different transaction variants may have different on-device prompts so the user can verify all the aspects of what they are signing. To see each set of prompts that can occur during a transfer, see [Prompts.md](prompts.md).
 - There are restrictions you may encounter due to device constraints. For instance, The Nano S can only sign a transaction with a maximum of 3 non-change outputs. The Nano X can sign a maximum of 5 non-change outputs in a single transaction.
 
 ## Checking Chain Data ##
