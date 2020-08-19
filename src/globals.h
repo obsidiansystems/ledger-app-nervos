@@ -12,9 +12,6 @@ void init_globals(void);
 
 #define MAX_APDU_SIZE 230 // Maximum number of bytes in a single APDU
 
-// Our buffer must accommodate any remainder from hashing and the next message at once.
-#define INTERMEDIATE_BUFF_SIZE (BLAKE2B_BLOCKBYTES + MAX_APDU_SIZE)
-
 #define PRIVATE_KEY_DATA_SIZE 32
 
 #define MAX_SIGNATURE_SIZE 100
@@ -99,9 +96,6 @@ static inline void throw_stack_size() {
     THROW(0x9000 + tmp2);
 }
 
-void calculate_baking_idle_screens_data(void);
-void update_baking_idle_screens(void);
-
 #ifdef TARGET_NANOX
     extern nvram_data const N_data_real;
 #   define N_data (*(volatile nvram_data *)PIC(&N_data_real))
@@ -126,7 +120,7 @@ void update_baking_idle_screens(void);
 void switch_network();
 void switch_sign_hash();
 
-#ifdef NERVOS_DEBUG
+#ifdef AVA_DEBUG
 // Aid for tracking down app crashes
 #define STRINGIFY(x) #x
 #define TOSTRING(x)  STRINGIFY(x)
