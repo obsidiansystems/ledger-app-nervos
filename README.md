@@ -8,7 +8,7 @@ Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Mana
 
 System requirements differ based on if you are using or installing the application. If you are using a Linux machine, you will need to [Prepare your Linux Machine for Ledger Device Communication](#preparing-your-linux-machine-for-ledger-device-communication) for both installing and usaging the application.
 
-This applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware XXX. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
+This application is has been tested against Ledger Nano S firmware 1.6.1. Ledger Nano X has not been tested yet. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
 
 ## For Application Installation
 
@@ -42,7 +42,7 @@ Installation requirements differ based on installation method:
 #### Supported Operating Systems ####
 
 - **Linux**: Supported. Debian distributions such as Ubuntu (18.04+) and NixOS (vXXX+). Other linux distributions may work, but have not been tested.
-- **Mac**: Supported on Mojave (10.14), but not supported on Catalina due to [issues with Nix installation](https://nixos.org/nix/manual/#sect-macos-installation).
+- **Mac**: Supported on Catalina (10.15) but note that Catalina requires extra steps in the [Nix installation](https://nixos.org/nix/manual/#sect-macos-installation).
 - **Windows**: Not currently supported.
 
 #### Package/Tool Dependency ####
@@ -50,8 +50,6 @@ Installation requirements differ based on installation method:
 - **Nix Package Manager**: Use `nix-env --version` to check whether you have Nix installed or to confirm an installation was successful. We recommend checking which [Nix Installation](https://nixos.org/nix/manual/#chap-installation) is right for you, but for most users the following will will work:
      - Linux Installation: `sh <(curl -L https://nixos.org/nix/install) --daemon`
      - Mac Installation: `sh <(curl -L https://nixos.org/nix/install) --daemon`
-
-These applications are built against Ledger Nano S firmware 1.6.0 and Ledger Nano X firmware 1.2.4-1. Please use [Ledger Live](https://www.ledger.com/ledger-live) to manage your Ledger device's firmware.
 
 ## Preparing Your Linux Machine for Ledger Device Communication
 
@@ -77,7 +75,7 @@ $ wget https://raw.githubusercontent.com/LedgerHQ/udev-rules/master/add_udev_rul
 $ chmod +x add_udev_rules.sh
 ```
 
-We recommend against running the next command without reviewing the script and modifying it to match your configuration.
+**We recommend against running the next command without reviewing the script** and modifying it to match your configuration.
 
 ```
 $ sudo ./add_udev_rules.sh
@@ -204,6 +202,7 @@ $ cd ledger-app-avax
 $ git checkout master
 $ ./nix/install.sh -t s
 ```
+
 Some notes during app installation:
 - 'Starting bats': When building and installing the application from source, the client will run a suite of tests found in the `tests.sh` file. 'bats' stands for "[Bash Automated Testing System](https://github.com/bats-core/bats-core)". These tests may take some time to complete. When they are done, the app installation will proceed.
 - Unsafe Manager: you will see a prompt to either allow or deny 'unsafe manager' when running `./nix/install.sh s`. 'Unsafe Manager' is any manager which is not Ledger Live.
@@ -217,23 +216,21 @@ To confirm the version of the application installed on your hardware wallet, fir
 
 - connected
 - unlocked
-- has the “AVA” app open (shows “Use wallet to view accounts”)
+- has the “Avax” app open (shows “Use wallet to view accounts”)
 
 Then run the following:
 
 ``` sh
 ./check-installed-version.sh
-
 ```
 
 If the results of that command match the results of `git rev-parse --short HEAD`, the installation was successful.
-
 
 # Troubleshooting #
 
 ## Application Build Failure ##
 
-If you run into issues building the Ledger application using `nix-shell -A wallet.s --run 'make SHELL=sh all'`, we recommend trying `nix-shell -A wallet.s --run 'make SHELL=sh clean all`.
+If you run into issues building the Ledger application using `nix-shell -A wallet.s --run 'make all'`, we recommend trying `nix-shell -A wallet.s --run 'make clean all`.
 
 ## Manually Removing Applications from a Ledger Device  ##
 
