@@ -4,7 +4,7 @@
 #include "keys.h"
 #include "key_macros.h"
 #include "globals.h"
-#include "base58.h"
+#include "bech32encode.h"
 
 #include <string.h>
 
@@ -12,40 +12,19 @@
 
 #define CB58_HASH_CHECKSUM_SIZE 4
 
-void bip32_path_to_pkh_string(char *const out, size_t const out_size, bip32_path_t const *const bip32_path) {
-    check_null(out);
-    check_null(bip32_path);
-    cx_ecfp_public_key_t pubkey;
-    generate_public_key(&pubkey, bip32_path);
-    public_key_hash_t pkh;
-    generate_pkh_for_pubkey(&pubkey, &pkh);
-    pkh_to_string(out, out_size, &pkh);
-}
+void pkh_to_string(char *out, size_t out_size,
+                   const char *hrp, size_t hrp_size,
+                   const public_key_hash_t *const payload) {
+  uint8_t base32_enc[32];
+  size_t base32_size = sizeof(base32_enc);
 
-static void compute_hash_checksum(uint8_t out[CB58_HASH_CHECKSUM_SIZE], void const *const data, size_t size) {
-    check_null(out);
-    check_null(data);
-    uint8_t checksum[CX_SHA256_SIZE];
-    cx_hash_sha256(data, size, checksum, sizeof(checksum));
-    memcpy(out, checksum+CX_SHA256_SIZE-CB58_HASH_CHECKSUM_SIZE, CB58_HASH_CHECKSUM_SIZE);
-}
+  if (!base32_encode(base32_enc, &base32_size, (const uint8_t *)payload, sizeof(*payload))) {
+    THROW(EXC_MEMORY_ERROR);
+  }
 
-void pkh_to_string(char *const out, size_t const out_size, public_key_hash_t const *const payload) {
-    check_null(out);
-    check_null(payload);
-    size_t const binary_cb58_size = sizeof(public_key_hash_t) + CB58_HASH_CHECKSUM_SIZE;
-    uint8_t binary_cb58_buf[binary_cb58_size];
-    memcpy(binary_cb58_buf, payload, sizeof(public_key_hash_t));
-    compute_hash_checksum(binary_cb58_buf + sizeof(public_key_hash_t), payload, sizeof(public_key_hash_t));
-    if (out_size < 2) {
-        THROW(EXC_MEMORY_ERROR);
-    }
-    out[0] = 'X';
-    out[1] = '-';
-    size_t b58_out_size = out_size - 2;
-    if (!b58enc(&out[2], &b58_out_size, binary_cb58_buf, binary_cb58_size)) {
-        THROW(EXC_MEMORY_ERROR);
-    }
+  if (!bech32_encode(out, &out_size, hrp, hrp_size, base32_enc, base32_size)) {
+    THROW(EXC_MEMORY_ERROR);
+  }
 }
 
 static inline void bound_check_buffer(size_t const counter, size_t const size) {

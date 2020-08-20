@@ -9,8 +9,9 @@
 #include "ui.h"
 
 void bip32_path_to_string(char *const out, size_t const out_size, bip32_path_t const *const path);
-void bip32_path_to_pkh_string(char *const out, size_t const out_size, bip32_path_t const *const key);
-void pkh_to_string(char *const out, size_t const out_size, public_key_hash_t const *const payload);
+void pkh_to_string(char *out, size_t out_size,
+                   const char *hrp, size_t hrp_size,
+                   const public_key_hash_t *const payload);
 
 // dest must be at least MAX_INT_DIGITS
 size_t number_to_string(char *const dest, uint64_t number);

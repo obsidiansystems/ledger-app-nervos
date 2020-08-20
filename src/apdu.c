@@ -9,13 +9,12 @@
 #include <string.h>
 
 
-size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey) {
+size_t provide_address(uint8_t *const io_buffer, public_key_hash_t const *const pubkey_hash) {
     check_null(io_buffer);
-    check_null(pubkey);
+    check_null(pubkey_hash);
     size_t tx = 0;
-    io_buffer[tx++] = pubkey->W_len;
-    memmove(io_buffer + tx, pubkey->W, pubkey->W_len);
-    tx += pubkey->W_len;
+    memcpy(io_buffer + tx, pubkey_hash, sizeof(*pubkey_hash));
+    tx += sizeof(*pubkey_hash);
     return finalize_successful_send(tx);
 }
 

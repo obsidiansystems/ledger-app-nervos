@@ -26,6 +26,9 @@ typedef struct {
 typedef struct {
     bip32_path_t bip32_path;
     extended_public_key_t ext_public_key;
+    public_key_hash_t pkh;
+    ascii_hrp_t hrp;
+    size_t hrp_len;
 } apdu_pubkey_state_t;
 
 typedef struct {
