@@ -10,21 +10,20 @@
 
 #define BIP32_HARDENED_PATH_BIT 0x80000000
 
-#define CB58_HASH_CHECKSUM_SIZE 4
+void pkh_to_string(char *const out, size_t const out_size, char const *const hrp, size_t const hrp_size,
+                   public_key_hash_t const *const payload)
+{
+    uint8_t base32_enc[32];
 
-void pkh_to_string(char *out, size_t out_size,
-                   const char *hrp, size_t hrp_size,
-                   const public_key_hash_t *const payload) {
-  uint8_t base32_enc[32];
-  size_t base32_size = sizeof(base32_enc);
+    size_t base32_size = sizeof(base32_enc);
+    if (!base32_encode(base32_enc, &base32_size, (uint8_t const *const)payload, sizeof(*payload))) {
+        THROW(EXC_MEMORY_ERROR);
+    }
 
-  if (!base32_encode(base32_enc, &base32_size, (const uint8_t *)payload, sizeof(*payload))) {
-    THROW(EXC_MEMORY_ERROR);
-  }
-
-  if (!bech32_encode(out, &out_size, hrp, hrp_size, base32_enc, base32_size)) {
-    THROW(EXC_MEMORY_ERROR);
-  }
+    size_t bech32_out_size = out_size;
+    if (!bech32_encode(out, &bech32_out_size, hrp, hrp_size, base32_enc, base32_size)) {
+        THROW(EXC_MEMORY_ERROR);
+    }
 }
 
 static inline void bound_check_buffer(size_t const counter, size_t const size) {
