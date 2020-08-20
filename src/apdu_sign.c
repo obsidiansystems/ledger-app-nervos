@@ -112,8 +112,8 @@ static size_t sign_hash_impl(
         PRINTF("Signing hash = %.*h\n", sizeof(G.final_hash), G.final_hash);
 #endif
 
-        size_t const tx = WITH_KEY_PAIR(bip32_path, key_pair, size_t, ({
-            sign(G_io_apdu_buffer, MAX_SIGNATURE_SIZE, key_pair, G.final_hash, sizeof(G.final_hash));
+        size_t const tx = WITH_EXTENDED_KEY_PAIR(bip32_path, it, size_t, ({
+            sign(G_io_apdu_buffer, MAX_SIGNATURE_SIZE, &it->key_pair, G.final_hash, sizeof(G.final_hash));
         }));
 
         if (G.num_signatures_left == 0) {

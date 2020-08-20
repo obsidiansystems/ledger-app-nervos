@@ -26,6 +26,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+#define PRIVATE_KEY_DATA_SIZE 32
+
+
 size_t read_bip32_path(bip32_path_t *const out, uint8_t const *const in, size_t const in_size) {
     struct bip32_path_wire const *const buf_as_bip32 = (struct bip32_path_wire const *)in;
 
@@ -57,41 +60,52 @@ void concat_bip32_path(bip32_path_t *const out, bip32_path_t const *const in) {
     out->length = new_length;
 }
 
-key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const *const bip32_path, uint8_t *const chain_code /* optional */) {
+void generate_extended_key_pair(extended_key_pair_t *const out, bip32_path_t const *const bip32_path) {
+    check_null(out);
     check_null(bip32_path);
-    struct priv_generate_key_pair *const priv = &global.apdu.priv.generate_key_pair;
 
     cx_curve_t const cx_curve = CX_CURVE_SECP256K1;
 
-    os_perso_derive_node_bip32(cx_curve, bip32_path->components, bip32_path->length, priv->private_key_data, chain_code);
+    unsigned char volatile private_key_data[PRIVATE_KEY_DATA_SIZE];
+    explicit_bzero((unsigned char /*volatile*/*const)&private_key_data, sizeof(private_key_data));
 
     BEGIN_TRY {
         TRY {
-            cx_ecfp_init_private_key(cx_curve, priv->private_key_data, sizeof(priv->private_key_data),
-                                     &priv->res.private_key);
-            cx_ecfp_generate_pair(cx_curve, &priv->res.public_key, &priv->res.private_key, 1);
+            os_perso_derive_node_bip32(
+                cx_curve,
+                bip32_path->components, bip32_path->length,
+                (unsigned char /*volatile*/*const)private_key_data,
+                out->chain_code);
+
+            cx_ecfp_init_private_key(
+                cx_curve,
+                (unsigned char /*volatile*/*const)private_key_data, sizeof(private_key_data),
+                &out->key_pair.private_key);
+            cx_ecfp_generate_pair(
+                cx_curve,
+                &out->key_pair.public_key,
+                &out->key_pair.private_key,
+                1);
 
             if (cx_curve == CX_CURVE_Ed25519) {
-                cx_edward_compress_point(CX_CURVE_Ed25519, priv->res.public_key.W, priv->res.public_key.W_len);
-                priv->res.public_key.W_len = 33;
+                cx_edward_compress_point(
+                    CX_CURVE_Ed25519,
+                    out->key_pair.public_key.W,
+                    out->key_pair.public_key.W_len);
+                out->key_pair.public_key.W_len = 33;
             }
         }
+        CATCH_OTHER(e) {
+            THROW(e);
+        }
         FINALLY {
-            explicit_bzero(priv->private_key_data, sizeof(priv->private_key_data));
+            explicit_bzero((unsigned char /*volatile*/*const)private_key_data, sizeof(private_key_data));
         }
     }
     END_TRY;
-
-    return &priv->res;
 }
 
-key_pair_t *generate_key_pair_return_global(bip32_path_t const *const bip32_path) {
-    key_pair_t *const result = generate_extended_key_pair_return_global(bip32_path, NULL);
-    return result;
-}
-
-size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const pair, uint8_t const *const in,
-            size_t const in_size) {
+size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const pair, uint8_t const *const in, size_t const in_size) {
     check_null(out);
     check_null(pair);
     check_null(in);
