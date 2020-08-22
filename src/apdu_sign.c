@@ -105,7 +105,7 @@ static size_t sign_hash_impl(
         memcpy(&bip32_path, &G.bip32_path_prefix, sizeof(G.bip32_path_prefix));
         concat_bip32_path(&bip32_path, &bip32_path_suffix);
 
-#if defined(NERVOS_DEBUG)
+#if defined(AVA_DEBUG)
         char pathstr[100];
         bip32_path_to_string(pathstr, sizeof(pathstr), &bip32_path);
         PRINTF("Signing with %s\n", pathstr);
