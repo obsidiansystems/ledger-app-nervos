@@ -86,7 +86,7 @@ static size_t sign_hash_impl(
             THROW(EXC_SECURITY);
         }
 
-        PRINTF("First signing message: requested_num_signatures = %d\n", G.num_signatures_left);
+        PRINTF("First signing message: requested_num_signatures = %d\n", G.requested_num_signatures);
 
         return sign_complete();
     } else {
