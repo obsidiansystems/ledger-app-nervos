@@ -154,6 +154,12 @@ include $(BOLOS_SDK)/Makefile.rules
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
 
-.phony: test
-test: test.sh bin/app.elf
-	./test.sh
+.PHONY: test
+
+test: tests/*.js tests/package.json bin/app.elf
+	(cd tests; yarn test)
+
+# Looks like this mixes up host and ledger code; doesn't work.
+tests/node_packages:
+	(cd tests; yarn install)
+

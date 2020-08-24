@@ -80,6 +80,11 @@ let
           blake2_simd
           usbtool
           bolos.env.clang
+          pkgs.yarn
+          pkgs.nodejs
+          pkgs.gdb
+          pkgs.python2
+          pkgs.entr
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
@@ -260,4 +265,5 @@ in rec {
     inherit (bolos) sdk;
   });
   inherit speculos;
+  tests = import ./tests { inherit pkgs; };
 }
