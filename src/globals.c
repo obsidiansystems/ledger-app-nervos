@@ -27,6 +27,7 @@ bolos_ux_params_t G_ux_params;
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
 void clear_apdu_globals(void) {
+    PRINTF("Clearing APDU globals\n");
     memset(&global.apdu, 0, sizeof(global.apdu));
 }
 

@@ -66,10 +66,10 @@ size_t handle_apdu_get_wallet_id(void) {
 
     cx_hmac_sha256_t hmac_state;
     cx_hmac_sha256_init(&hmac_state, hmac_key, sizeof(hmac_key)-1);
-    WITH_KEY_PAIR(id_path, key_pair, size_t, ({
-        PRINTF("\nPublic Key: %.*h\n", key_pair->public_key.W_len, key_pair->public_key.W);
-        cx_hmac((cx_hmac_t *)&hmac_state, CX_LAST, (uint8_t *)key_pair->public_key.W,
-                key_pair->public_key.W_len, wallet_id, sizeof(wallet_id));
+    WITH_EXTENDED_KEY_PAIR(id_path, it, size_t, ({
+        PRINTF("\nPublic Key: %.*h\n", it->key_pair.public_key.W_len, it->key_pair.public_key.W);
+        cx_hmac((cx_hmac_t *)&hmac_state, CX_LAST, (uint8_t const *const)it->key_pair.public_key.W,
+                it->key_pair.public_key.W_len, wallet_id, sizeof(wallet_id));
     }));
 
     memcpy(G_io_apdu_buffer, wallet_id, WALLET_ID_LENGTH);
@@ -128,6 +128,14 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
 #endif
 
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
+
+                // Don't let state between *different* APDU instructions persist.
+                if (instruction != global.latest_apdu_instruction) {
+                    clear_apdu_globals();
+                }
+                if (instruction < handlers_size) {
+                    global.latest_apdu_instruction = instruction;
+                }
 
                 PRINTF("Handling instruction %d when number of handlers is %d\n", instruction, handlers_size);
                 apdu_handler const cb = instruction >= handlers_size

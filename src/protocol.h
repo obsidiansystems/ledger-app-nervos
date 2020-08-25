@@ -26,6 +26,7 @@
 // have been read by adding sizeof(type) to the given counter.
 #define CONSUME_UNALIGNED_BIG_ENDIAN(counter, type, addr)                                                              \
     ({                                                                                                                 \
+        type consume_res = READ_UNALIGNED_BIG_ENDIAN(type, addr);                                                      \
         counter += sizeof(type);                                                                                       \
-        READ_UNALIGNED_BIG_ENDIAN(type, addr);                                                                         \
+        consume_res;                                                                                                   \
     })

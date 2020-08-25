@@ -4,6 +4,7 @@
 #include "cx.h"
 #include "globals.h"
 #include "keys.h"
+#include "key_macros.h"
 #include "protocol.h"
 #include "to_string.h"
 #include "ui.h"
