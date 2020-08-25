@@ -1,5 +1,10 @@
-{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", nanoXSdk ? null, debug?false, runTest?true, ... }:
-let
+{ pkgs ? import ./nix/dep/nixpkgs {}
+, gitDescribe ? "TEST-dirty"
+, nanoXSdk ? null
+, debug ? false
+, runTest ? true
+}:
+assert runTest == false; let
   fetchThunk = p:
     if builtins.pathExists (p + /git.json)
       then pkgs.fetchgit { inherit (builtins.fromJSON (builtins.readFile (p + /git.json))) url rev sha256; }
@@ -12,14 +17,14 @@ let
   usbtool = import ./nix/dep/usbtool.nix { };
 
   patchSDKBinBash = sdk: pkgs.stdenv.mkDerivation {
-    # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
-    name =  sdk.name + "_patched_bin_bash";
+    # Replaces SDK's Makefile instances of /bin/bash with Nix's bash
+    name = sdk.name + "_patched_bin_bash";
     src = sdk.out;
     dontBuild = true;
     installPhase = ''
       mkdir -p $out
       cp -a $src/. $out
-      substituteInPlace $out/Makefile.rules_generic --replace /bin/bash /bin/sh
+      substituteInPlace $out/Makefile.rules_generic --replace /bin/bash "${pkgs.bash}/bin/bash"
     '';
   };
   targets =
@@ -69,6 +74,7 @@ let
         inherit src;
         postConfigure = ''
           PATH="$BOLOS_ENV/clang-arm-fropi/bin:$PATH"
+          patchShebangs test.sh
         '';
         nativeBuildInputs = [
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
