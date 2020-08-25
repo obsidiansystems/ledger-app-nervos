@@ -141,7 +141,7 @@ assert runTest == false; let
 
       release = rec {
         app = mkRelease "avax" "Avax" ledgerApp;
-        all = pkgs.runCommand "ledger-app-avax-${bolos.name}.tar.gz" {} ''
+        all = pkgs.runCommand "ledger-app-avax-${bolos.name}${if debug then "-debug" else ""}.tar.gz" {} ''
           mkdir ledger-app-avax-${bolos.name}
 
           cp -r ${app} ledger-app-avax-${bolos.name}/app
