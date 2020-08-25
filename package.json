@@ -16,7 +16,7 @@
 		"tap": "^14.10.8"
 	},
 	"dependencies": {
-		"@ledgerhq/hw-app-avalanche": "https://github.com/obsidiansystems/hw-app-avalanche.git#eac@everest-and-multisign",
+		"@ledgerhq/hw-app-avalanche": "https://github.com/obsidiansystems/hw-app-avalanche.git#jg-update-for-verbose-parser",
 		"@ledgerhq/hw-transport-node-speculos": "5.19.1",
 		"bip32-path": "^0.4.2"
 	}
