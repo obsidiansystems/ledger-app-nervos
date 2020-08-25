@@ -4,7 +4,7 @@
 , debug ? false
 , runTest ? true
 }:
-assert runTest == false; let
+let
   fetchThunk = p:
     if builtins.pathExists (p + /git.json)
       then pkgs.fetchgit { inherit (builtins.fromJSON (builtins.readFile (p + /git.json))) url rev sha256; }
