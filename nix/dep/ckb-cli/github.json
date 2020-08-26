@@ -1,8 +1,8 @@
 {
-  "owner": "obsidiansystems",
+  "owner": "TheWaWaR",
   "repo": "ckb-cli",
-  "branch": "ledger-support-plugin",
+  "branch": "ledger-support",
   "private": false,
-  "rev": "08bf2f52d479f8adff3591009f163b298b379632",
-  "sha256": "1z64sai5a5f0cnbvh2ny8xsz576ivnr71rwamib0838limb4rwzw"
+  "rev": "fe6410d2cfa313cba7bbd512ea183ead2985fb0f",
+  "sha256": "1d2w55b4b8vya92vhmjhy1rkgkhcm2wmyzwccwi13mmza3761gwx"
 }
