@@ -8,6 +8,8 @@ src/glyphs.c
 result*
 speculos.log
 
+node_modules/
+
 compile_commands.json
 .vscode/
 vscode.code-workspace
