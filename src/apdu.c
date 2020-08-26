@@ -45,7 +45,7 @@ size_t handle_apdu_version(void) {
     memcpy(&G_io_apdu_buffer[tx], commit, sizeof(commit));
     tx += sizeof(commit);
 
-    static char const name[] = "Avax";
+    static char const name[] = "Avalanche";
     memcpy(&G_io_apdu_buffer[tx], name, sizeof(name));
     tx += sizeof(name);
 

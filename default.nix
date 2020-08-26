@@ -70,7 +70,7 @@ let
   build = bolos:
     let
       app = pkgs.stdenv.mkDerivation {
-        name = "ledger-app-avax-nano-${bolos.name}";
+        name = "ledger-app-avalanche-nano-${bolos.name}";
         inherit src;
         postConfigure = ''
           PATH="$BOLOS_ENV/clang-arm-fropi/bin:$PATH"
@@ -140,15 +140,15 @@ let
       inherit app;
 
       release = rec {
-        app = mkRelease "avax" "Avax" ledgerApp;
-        all = pkgs.runCommand "ledger-app-avax-${bolos.name}${if debug then "-debug" else ""}.tar.gz" {} ''
-          mkdir ledger-app-avax-${bolos.name}
+        app = mkRelease "avalanche" "Avalanche" ledgerApp;
+        all = pkgs.runCommand "ledger-app-avalanche-${bolos.name}${if debug then "-debug" else ""}.tar.gz" {} ''
+          mkdir ledger-app-avalanche-${bolos.name}
 
-          cp -r ${app} ledger-app-avax-${bolos.name}/app
+          cp -r ${app} ledger-app-avalanche-${bolos.name}/app
 
-          install -m a=rx ${./nix/app-installer-impl.sh} ledger-app-avax-${bolos.name}/install.sh
+          install -m a=rx ${./nix/app-installer-impl.sh} ledger-app-avalanche-${bolos.name}/install.sh
 
-          tar czf $out ledger-app-avax-${bolos.name}/*
+          tar czf $out ledger-app-avalanche-${bolos.name}/*
         '';
       };
     };
@@ -213,7 +213,7 @@ let
        installPhase = ''
         {
           echo "<html><title>Analyzer Report</title><body><h1>Clang Static Analyzer Results</h1>"
-          printf "<p>App: <code>"avax"</code></p>"
+          printf "<p>App: <code>"Avalanche"</code></p>"
           printf "<h2>File-results:</h2>"
           for html in "$out"/report*.html ; do
             echo "<p>"

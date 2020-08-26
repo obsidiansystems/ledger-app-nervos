@@ -71,7 +71,7 @@ UX_STEP_NOCB(
     ux_idle_flow_1_step,
     bn,
     {
-      "Avax",
+      "Avalanche",
       VERSION
     });
 UX_STEP_CB(

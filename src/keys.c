@@ -157,7 +157,7 @@ void generate_pkh_for_pubkey(const cx_ecfp_public_key_t *const key, public_key_h
       cx_ripemd160_t ripemd160;
     } hash_state;
 
-    // AVA uses bitcoin's Elliptic Curve point compression when generating addresses
+    // Avalanche uses bitcoin's Elliptic Curve point compression when generating addresses
     // Full uncompressed keys are encoded with the tag 0x04, followed by two 32-byte numbers,  X and Y
     // Given X, there's only two possibilities for Y, so the public key can encoded in 32 bytes + one bit.
     // Bitcoin tags the public key as follows:

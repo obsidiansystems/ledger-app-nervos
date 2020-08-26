@@ -280,7 +280,7 @@ static const ux_menu_entry_t main_menu_data[];
 static const ux_menu_entry_t about_menu_data[];
 
 static const ux_menu_entry_t about_menu_data[] = {
-    {NULL, NULL, 0, NULL, "Avax", "Version " VERSION, 0, 0},
+    {NULL, NULL, 0, NULL, "Avalanche", "Version " VERSION, 0, 0},
     {main_menu_data, NULL, 1, NULL, "Back", NULL, 61, 40}, // TODO: Put icon for "back" in
     UX_MENU_END};
 
