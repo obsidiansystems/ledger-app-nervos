@@ -28,7 +28,7 @@ exports.mochaHooks = {
         await new Promise(r => setTimeout(r, 500));
       }
     }
-    this.ava = new Avalanche(this.speculos);
+    this.ava = new Avalanche(this.speculos, "Avalanche", (_) => { return; });
   },
   afterAll: async function () {
     this.speculosProcess.kill();
