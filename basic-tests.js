@@ -19,7 +19,6 @@ describe("Basic Tests", ()=> {
     it('returns the expected wallet ID', async function () {
       id=await this.ava.getWalletId();
       expect(id).to.equalBytes('f0e476edaffc');
-
     });
   });
   context('Public Keys', function () {
@@ -54,7 +53,7 @@ describe("Basic Tests", ()=> {
       prompts = flowAccept(this.speculos, 3);
       let hash="111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000"
       let path="44'/9000'/1'/0/0"
-      sig=this.ava.signHash(path, hash);
+      sig=this.ava.signHash(path, Buffer.from(hash, "hex"));
       expect(await sig).to.have.property('hash').to.equalBytes(hash);
       expect(await sig).to.have.property('signature');
 
@@ -62,7 +61,7 @@ describe("Basic Tests", ()=> {
 	[  {"3":"Sign","17":"Hash"}
 	  ,{"3":"Derivation Path","17":"44'/9000'/1'/0/0"}
 	  ,{"3":"Hash","17":"111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000"}]);
-      
+
       flowAccept(this.speculos);
       key=await this.ava.getWalletPublicKey(path);
       recovered=secp256k1.recover(Buffer.from(hash, 'hex'), (await sig).signature.slice(0,64), (await sig).signature[64], false);

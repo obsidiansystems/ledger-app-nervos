@@ -573,9 +573,9 @@
   resolved "https://registry.yarnpkg.com/@ledgerhq/errors/-/errors-5.22.0.tgz#7327fc152d4896ddc26aada0943065db21c14880"
   integrity sha512-XDT0meBn39+q+JWzUFXmiFbVYLTy+uHRFMb9napcxyZ0Q/MdKkle9/vkgtvRHjPIkGobklXpyefsgH3BZQHukA==
 
-"@ledgerhq/hw-app-avalanche@ssh://git@github.com:obsidiansystems/ledgerjs#split/hw-app-avalanche":
+"@ledgerhq/hw-app-avalanche@https://github.com/obsidiansystems/hw-app-avalanche.git#master":
   version "0.1.0"
-  resolved "ssh://git@github.com:obsidiansystems/ledgerjs#fdd8414877476a115be818653c2f023fc4ce65d4"
+  resolved "https://github.com/obsidiansystems/hw-app-avalanche.git#c0f56656d5421b9876bb095a8b1fcbf8201a7456"
   dependencies:
     "@ledgerhq/hw-transport" "^5.9.0"
     bip32-path "0.4.2"

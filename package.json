@@ -1,4 +1,6 @@
 {
+	"name": "avax-ledger-tests",
+	"version": "0.1.0",
 	"scripts": {
 		"test": "mocha . --exit --reporter tap --require hooks",
 		"watch": "mocha . --exit --reporter tap --require hooks"
@@ -14,7 +16,7 @@
 		"bcrypto": "^5.3.0"
 	},
 	"dependencies": {
-		"@ledgerhq/hw-app-avalanche": "ssh://git@github.com:obsidiansystems/ledgerjs#split/hw-app-avalanche",
+		"@ledgerhq/hw-app-avalanche": "https://github.com/obsidiansystems/hw-app-avalanche.git#master",
 		"@ledgerhq/hw-transport-node-speculos": "5.19.1"
 	}
 }
