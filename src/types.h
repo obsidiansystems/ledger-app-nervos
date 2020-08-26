@@ -62,7 +62,7 @@ typedef struct {
     uint8_t chain_code[CHAIN_CODE_DATA_SIZE];
 } extended_key_pair_t;
 
-#define MAX_BIP32_PATH 5
+#define MAX_BIP32_PATH 6
 
 typedef struct {
     uint8_t length;
@@ -88,7 +88,7 @@ static inline bool bip32_paths_eq(bip32_path_t volatile const *const a, bip32_pa
 #define PROTOCOL_HASH_BASE58_STRING_SIZE sizeof("ProtoBetaBetaBetaBetaBetaBetaBetaBetaBet11111a5ug96")
 
 #define MAX_SCREEN_COUNT 7 // Current maximum usage
-#define PROMPT_WIDTH     16
+#define PROMPT_WIDTH     17
 #define VALUE_WIDTH      128 // Needs to hold a 32 bytes of hash in hex.
 
 // Macros to wrap a static prompt and value strings and ensure they aren't too long.
@@ -126,6 +126,12 @@ enum operation_tag {
 };
 
 typedef uint8_t public_key_hash_t[CX_RIPEMD160_SIZE];
+
+#define ASCII_HRP_MAX_SIZE 24
+#define ASCII_ADDRESS_MAX_SIZE 64
+
+typedef char ascii_adddress_t[ASCII_ADDRESS_MAX_SIZE];
+typedef char ascii_hrp_t[ASCII_HRP_MAX_SIZE];
 
 #define ADDRESS_FORMAT_TYPE_SHORT 0x01
 #define ADDRESS_FORMAT_TYPE_FULL_DATA 0x02

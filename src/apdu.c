@@ -9,13 +9,12 @@
 #include <string.h>
 
 
-size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *const pubkey) {
+size_t provide_address(uint8_t *const io_buffer, public_key_hash_t const *const pubkey_hash) {
     check_null(io_buffer);
-    check_null(pubkey);
+    check_null(pubkey_hash);
     size_t tx = 0;
-    io_buffer[tx++] = pubkey->W_len;
-    memmove(io_buffer + tx, pubkey->W, pubkey->W_len);
-    tx += pubkey->W_len;
+    memcpy(io_buffer + tx, pubkey_hash, sizeof(*pubkey_hash));
+    tx += sizeof(*pubkey_hash);
     return finalize_successful_send(tx);
 }
 
@@ -46,7 +45,7 @@ size_t handle_apdu_version(void) {
     memcpy(&G_io_apdu_buffer[tx], commit, sizeof(commit));
     tx += sizeof(commit);
 
-    static char const name[] = "Avax";
+    static char const name[] = "Avalanche";
     memcpy(&G_io_apdu_buffer[tx], name, sizeof(name));
     tx += sizeof(name);
 
@@ -67,10 +66,10 @@ size_t handle_apdu_get_wallet_id(void) {
 
     cx_hmac_sha256_t hmac_state;
     cx_hmac_sha256_init(&hmac_state, hmac_key, sizeof(hmac_key)-1);
-    WITH_KEY_PAIR(id_path, key_pair, size_t, ({
-        PRINTF("\nPublic Key: %.*h\n", key_pair->public_key.W_len, key_pair->public_key.W);
-        cx_hmac((cx_hmac_t *)&hmac_state, CX_LAST, (uint8_t *)key_pair->public_key.W,
-                key_pair->public_key.W_len, wallet_id, sizeof(wallet_id));
+    WITH_EXTENDED_KEY_PAIR(id_path, it, size_t, ({
+        PRINTF("\nPublic Key: %.*h\n", it->key_pair.public_key.W_len, it->key_pair.public_key.W);
+        cx_hmac((cx_hmac_t *)&hmac_state, CX_LAST, (uint8_t const *const)it->key_pair.public_key.W,
+                it->key_pair.public_key.W_len, wallet_id, sizeof(wallet_id));
     }));
 
     memcpy(G_io_apdu_buffer, wallet_id, WALLET_ID_LENGTH);
@@ -129,6 +128,14 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
 #endif
 
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
+
+                // Don't let state between *different* APDU instructions persist.
+                if (instruction != global.latest_apdu_instruction) {
+                    clear_apdu_globals();
+                }
+                if (instruction < handlers_size) {
+                    global.latest_apdu_instruction = instruction;
+                }
 
                 PRINTF("Handling instruction %d when number of handlers is %d\n", instruction, handlers_size);
                 apdu_handler const cb = instruction >= handlers_size

@@ -12,24 +12,23 @@ void init_globals(void);
 
 #define MAX_APDU_SIZE 230 // Maximum number of bytes in a single APDU
 
-#define PRIVATE_KEY_DATA_SIZE 32
-
 #define MAX_SIGNATURE_SIZE 100
 
-struct priv_generate_key_pair {
-    uint8_t private_key_data[PRIVATE_KEY_DATA_SIZE];
-    key_pair_t res;
-};
-
 typedef struct {
-    bip32_path_t bip32_path;
+    uint8_t requested_num_signatures;
+    bip32_path_t bip32_path_prefix;
     uint8_t final_hash[SIGN_HASH_SIZE];
     buffer_t final_hash_as_buffer;
+
+    uint8_t num_signatures_left;
 } apdu_sign_state_t;
 
 typedef struct {
     bip32_path_t bip32_path;
     extended_public_key_t ext_public_key;
+    public_key_hash_t pkh;
+    ascii_hrp_t hrp;
+    size_t hrp_len;
 } apdu_pubkey_state_t;
 
 typedef struct {
@@ -63,11 +62,9 @@ typedef struct {
             apdu_pubkey_state_t pubkey;
             apdu_sign_state_t sign;
         } u;
-
-        struct {
-            struct priv_generate_key_pair generate_key_pair;
-        } priv;
     } apdu;
+
+    uint8_t latest_apdu_instruction; // For detecting when a sequence of requests to the same APDU ends
     nvram_data new_data;
 } globals_t;
 
