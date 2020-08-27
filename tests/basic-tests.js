@@ -43,35 +43,39 @@ describe("Basic Tests", () => {
 
   context('Signing', function () {
     it('can sign a hash-sized sequence of bytes with one path', async function () {
-      const hash = "111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000";
-      const pathPrefix = "44'/9000'/1'";
-      const pathSuffix = "0/0";
-
-      const prompts = flowAccept(this.speculos, 3);
-      const sigs = await this.ava.signHash(
-        BIPPath.fromString(pathPrefix),
-        [BIPPath.fromString(pathSuffix, false)],
-        Buffer.from(hash, "hex"),
+      await checkSignHash(
+        this,
+        "44'/9000'/1'",
+        ["0/0"],
+        "111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000"
       );
-      expect(sigs).to.have.keys([pathSuffix]);
-      expect(sigs.get(pathSuffix)).to.have.length(65);
+    });
 
-      expect(await prompts).to.deep.equal([
-        {"3":"Sign","17":"Hash"},
-        {"3":"Derivation Prefix","17":pathPrefix},
-        {"3":"Hash","17":"111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000"},
-      ]);
+    it('can sign a hash-sized sequence of bytes with many paths', async function () {
+      await checkSignHash(
+        this,
+        "44'/9000'/1'",
+        ["0/0", "1/20", "1'/200'", "3000'/90030'"],
+        "111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000"
+      );
+    });
 
-      for (suffix in sigs) {
-        const sig = sigs.get(suffix);
-        flowAccept(this.speculos);
-        const key = (await this.ava.getWalletExtendedPublicKey(pathPrefix + "/" + suffix)).public_key;
-        const recovered = recover(Buffer.from(hash, 'hex'), sig.slice(0, 64), sig[64], false);
-        expect(recovered).is.equalBytes(key);
+    it('cannot sign a hash-sized sequence of bytes with long paths', async function () {
+      try {
+        await checkSignHash(
+          this,
+          "44'/9000'/1'",
+          ["0/0/0/0/0"],
+          "111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000"
+        );
+        throw "Expected failure";
+      } catch (e) {
+        expect(e).has.property('statusCode', 0x9200); // MEMORY_ERROR
+        expect(e).has.property('statusText', 'UNKNOWN_ERROR');
       }
     });
 
-    it('Signing rejects when given garbage', async function () {
+    it('refuses to sign when given an invalid path suffix', async function () {
       const pathPrefix = "44'/9000'/1'";
       const firstMessage = Buffer.concat([
         this.ava.uInt8Buffer(1),
@@ -88,12 +92,40 @@ describe("Basic Tests", () => {
         {"3":"Hash","17":"111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000"},
       ]);
 
-      let err = {};
-      await this.speculos.send(this.ava.CLA, this.ava.INS_SIGN_HASH, 0x01, 0x00, Buffer.from("00001111", 'hex')).catch(e => err = e);
-      expect(err).has.property('statusCode', 0x6a80); // WRONG_VALUES
-      expect(err).has.property('statusText', 'INCORRECT_DATA');
+      try {
+        await this.speculos.send(this.ava.CLA, this.ava.INS_SIGN_HASH, 0x81, 0x00, Buffer.from("00001111", 'hex'));
+        throw "Expected failure";
+      } catch (e) {
+        expect(e).has.property('statusCode', 0x6a80); // WRONG_VALUES
+        expect(e).has.property('statusText', 'INCORRECT_DATA');
+      }
     });
   });
-
 });
 
+async function checkSignHash(this_, pathPrefix, pathSuffixes, hash) {
+  const prompts = flowAccept(this_.speculos, 3);
+  const sigs = await this_.ava.signHash(
+    BIPPath.fromString(pathPrefix),
+    pathSuffixes.map(x => BIPPath.fromString(x, false)),
+    Buffer.from(hash, "hex"),
+  );
+
+  expect(await prompts).to.deep.equal([
+    {"3":"Sign","17":"Hash"},
+    {"3":"Derivation Prefix","17":pathPrefix},
+    {"3":"Hash","17":"111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000"},
+  ]);
+
+  expect(sigs).to.have.keys(pathSuffixes);
+
+  for (suffix in sigs) {
+    const sig = sigs.get(suffix);
+    expect(sig).to.have.length(65);
+
+    flowAccept(this_.speculos);
+    const key = (await this_.ava.getWalletExtendedPublicKey(pathPrefix + "/" + suffix)).public_key;
+    const recovered = recover(Buffer.from(hash, 'hex'), sig.slice(0, 64), sig[64], false);
+    expect(recovered).is.equalBytes(key);
+  }
+}
