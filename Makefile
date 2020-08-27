@@ -156,10 +156,8 @@ dep/%.d: %.c Makefile
 
 .PHONY: test
 
-test: tests/*.js tests/package.json bin/app.elf
+test: tests/node_packages tests/*.js tests/package.json bin/app.elf
 	(cd tests; yarn test)
 
-# Looks like this mixes up host and ledger code; doesn't work.
-tests/node_packages:
-	(cd tests; yarn install)
-
+tests/node_packages: tests/package.json
+	(cd tests; yarn install --frozen-lockfile)
