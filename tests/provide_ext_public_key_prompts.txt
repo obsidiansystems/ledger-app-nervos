@@ -1,6 +1,0 @@
-Prompt 0:
-Provide
-Extended Public Key
-Prompt 1:
-Derivation Path
-44'/9000'/0'/0

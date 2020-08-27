@@ -154,6 +154,10 @@ include $(BOLOS_SDK)/Makefile.rules
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
 
-.phony: test
-test: test.sh bin/app.elf
-	./test.sh
+.PHONY: test
+
+test: tests/node_packages tests/*.js tests/package.json bin/app.elf
+	(cd tests; yarn test)
+
+tests/node_packages: tests/package.json
+	(cd tests; yarn install --frozen-lockfile)
