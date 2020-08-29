@@ -6,7 +6,8 @@ let
     ${yarn2nix}/bin/yarn2nix --offline ${./yarn.lock} > $out
   '';
   npmPackageNix = pkgs.runCommand "npm-package.nix" {} ''
-    ${yarn2nix}/bin/yarn2nix --template ${./package.json} > $out
+    # We sed hw-app-avalanche to a constant here, so that the package.json can be whatever; we're overriding it anyways.
+    ${yarn2nix}/bin/yarn2nix --template <(sed 's/hw-app-avalanche".*$/hw-app-avalanche": "0.1.0",/' ${./package.json}) > $out
   '';
   nixLib = yarn2nix.nixLib;
 
@@ -106,11 +107,7 @@ let
         "hw-app-avalanche@0.1.0" = super._buildNodePackage rec {
           key="hw-app-avalanche";
           version="0.1.0";
-          #src = hackGet ./hw-app-avalanche;
-          src = builtins.fetchGit {
-            url = "ssh://git@github.com/3noch/hw-app-avalanche";
-            rev = "d08325fdcb2ea8dc693ce35af33b5c1c6254f0e0";
-          };
+          src = hackGet ./hw-app-avalanche;
           buildPhase = ''
           echo "NODE_GYP TYME"
           echo $nodeModules
@@ -121,13 +118,9 @@ let
           nodeModules=nixLib.linkNodeDeps { name = "hw-app-avalanche"; dependencies = nodeBuildInputs; };
           passthru={ inherit nodeModules; };
           NODE_PATH=nodeModules;
-          #nativeBuildInputs = [ pkgs.python ];
           nodeBuildInputs = [
             (s."@ledgerhq/hw-transport@^5.9.0")
             (s."bip32-path@0.4.2")
-          #  (s."babel-cli@^6.26.0")
- #            (s."babel-core@^")
-          #  (s."babel-preset-env@^1.7.0")
           (s."babel-cli@^6.26.0")
           (s."babel-eslint@^8.0.2")
           (s."babel-preset-env@^1.7.0")
@@ -146,6 +139,6 @@ let
   deps = nixLib.buildNodeDeps (pkgs.lib.composeExtensions (pkgs.callPackage npmDepsNix {fetchgit=builtins.fetchGit;}) localOverrides);
 in
   nixLib.buildNodePackage
-    ( { src = nixLib.removePrefixes [ "node_modules" ] ./.; passthru = { inherit deps; inherit npmDepsNix; inherit hackGet;}; } //
+    ( { src = nixLib.removePrefixes [ "node_modules" ] ./.; passthru = { inherit deps npmDepsNix npmPackageNix hackGet;}; } //
       nixLib.callTemplate npmPackageNix
       (nixLib.buildNodeDeps (pkgs.lib.composeExtensions (pkgs.callPackage npmDepsNix {fetchgit=builtins.fetchGit;}) localOverrides)))

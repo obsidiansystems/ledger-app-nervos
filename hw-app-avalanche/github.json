@@ -1,8 +1,8 @@
 {
-  "owner": "jonored",
+  "owner": "obsidiansystems",
   "repo": "hw-app-avalanche",
-  "branch": "jg-update-for-verbose-parser",
+  "branch": "master",
   "private": false,
-  "rev": "3ac0aff13f67c7d16aaa52ace0a53a0fa6b36b6c",
-  "sha256": "0x00hc6anx6b53bkd58bys9k2qiwk14ydbg66p79hhgwprvi5gvc"
+  "rev": "c71eed3723dc2fb126b89590b0957fc7bf557c5f",
+  "sha256": "16gxgrvi2qjbdvzliwn1892c1yfyincph4q727kf9z4pdi7f5bd7"
 }
