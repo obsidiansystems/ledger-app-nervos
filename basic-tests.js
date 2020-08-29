@@ -1,6 +1,6 @@
 
 var { expect, assert } = require('chai').use(require('chai-bytes'));
-var jsc = require('jsverify');
+// var jsc = require('jsverify');
 var rxjs = require('rxjs/operators');
 var secp256k1 = require('bcrypto/lib/secp256k1');
 // var GDB = require('gdb-js').GDB;
@@ -52,8 +52,8 @@ describe("Basic Tests", ()=> {
     it('can sign a hash-sized sequence of bytes', async function () {
 
       prompts = flowAccept(this.speculos, 3);
-      let hash="111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000"
-      let path="44'/9000'/1'/0/0"
+      let hash=Buffer.from("111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000", 'hex');
+      let path="44'/9000'/1'/0/0";
       sig=this.ava.signHash(path, hash);
       expect(await sig).to.have.property('hash').to.equalBytes(hash);
       expect(await sig).to.have.property('signature');

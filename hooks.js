@@ -1,8 +1,7 @@
-
 var { expect, assert } = require('chai').use(require('chai-bytes'));
-var jsc = require('jsverify');
+// var jsc = require('jsverify');
 var SpeculosTransport = require('@ledgerhq/hw-transport-node-speculos').default;
-var Avalanche = require('@ledgerhq/hw-app-avalanche').default;
+var Avalanche = require('hw-app-avalanche').default;
 var rxjs = require('rxjs/operators');
 var secp256k1 = require('bcrypto/lib/secp256k1');
 var spawn = require('child_process').spawn;
@@ -10,7 +9,8 @@ var spawn = require('child_process').spawn;
 exports.mochaHooks = {
   beforeAll: async function () {
 	  this.timeout(10000); // We'll let this wait for up to 10 seconds to get a speculos instance.
-    this.speculosProcess=spawn('speculos', ['../bin/app.elf', '--display', 'headless', '--button-port', '8888', '--automation-port', '8899', '--apdu-port', '9999']);//, {stdio: "inherit"});
+    speculosOptions=process.env.SPECULOS_DEBUG?{stdio: "inherit"} : {};
+    this.speculosProcess=spawn('speculos', [process.env.LEDGER_APP, '--display', 'headless', '--button-port', '8888', '--automation-port', '8899', '--apdu-port', '9999'], speculosOptions);
     console.log("Speculos started");
     while(this.speculos === undefined) { // Let the test timeout handle the bad case
       try {
