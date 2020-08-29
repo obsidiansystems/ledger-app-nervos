@@ -1,5 +1,5 @@
+{ pkgs }:
 let
-  pkgs = import <nixpkgs> {};
   yarn2nix = import deps/yarn2nix { inherit pkgs; };
   hackGet = (pkgs.lib.fix (import deps/hack-get { lib=pkgs.lib; } ) ).hackGet;
   npmDepsNix = pkgs.runCommand "npm-deps.nix" {} ''
