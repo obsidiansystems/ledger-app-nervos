@@ -1,26 +1,35 @@
-var { expect, assert } = require('chai').use(require('chai-bytes'));
-// var jsc = require('jsverify');
-var SpeculosTransport = require('@ledgerhq/hw-transport-node-speculos').default;
-var Avalanche = require('hw-app-avalanche').default;
-var rxjs = require('rxjs/operators');
-var secp256k1 = require('bcrypto/lib/secp256k1');
-var spawn = require('child_process').spawn;
+const SpeculosTransport = require('@ledgerhq/hw-transport-node-speculos').default;
+const Avalanche = require('hw-app-avalanche').default;
+const spawn = require('child_process').spawn;
+
+const APDU_PORT = 9999;
+const BUTTON_PORT = 8888;
+const AUTOMATION_PORT = 8899;
 
 exports.mochaHooks = {
   beforeAll: async function () {
-	  this.timeout(10000); // We'll let this wait for up to 10 seconds to get a speculos instance.
-    speculosOptions=process.env.SPECULOS_DEBUG?{stdio: "inherit"} : {};
-    this.speculosProcess=spawn('speculos', [process.env.LEDGER_APP, '--display', 'headless', '--button-port', '8888', '--automation-port', '8899', '--apdu-port', '9999'], speculosOptions);
+    this.timeout(10000); // We'll let this wait for up to 10 seconds to get a speculos instance.
+    speculosProcessOptions=process.env.SPECULOS_DEBUG?{stdio:"inherit"} : {};
+    this.speculosProcess = spawn('speculos', [
+        process.env.LEDGER_APP,
+        '--display', 'headless',
+        '--button-port', '' + BUTTON_PORT,
+        '--automation-port', '' + AUTOMATION_PORT,
+        '--apdu-port', '' + APDU_PORT,
+      ], speculosProcessOptions);
     console.log("Speculos started");
-    while(this.speculos === undefined) { // Let the test timeout handle the bad case
+    while (this.speculos === undefined) { // Let the test timeout handle the bad case
       try {
-	this.speculos=await SpeculosTransport.open( { apduPort: 9999, buttonPort: 8888, automationPort: 8899 } );
+        this.speculos = await SpeculosTransport.open({
+          apduPort: APDU_PORT,
+          buttonPort: BUTTON_PORT,
+          automationPort: AUTOMATION_PORT,
+        });
       } catch(e) {
-	await new Promise(r=>setTimeout(r,500));
+        await new Promise(r => setTimeout(r, 500));
       }
     }
-    // this.speculos.automationEvents.subscribe({next: a=>console.log("AUTOMATION: " + JSON.stringify(a))});
-    this.ava=new Avalanche(this.speculos);
+    this.ava = new Avalanche(this.speculos, "Avalanche", (_) => { return; });
   },
   afterAll: async function () {
     this.speculosProcess.kill();
@@ -28,36 +37,34 @@ exports.mochaHooks = {
 }
 
 function flowAccept(speculos, n) {
-  return new Promise(r=> {
-    var prompts=[{}];
-    var canContinue=true;
-    var subscript=speculos.automationEvents.subscribe({
+  return new Promise(r => {
+    var prompts = [{}];
+    var subscript = speculos.automationEvents.subscribe({
       next: evt => {
-	if(evt.y == 3) {
-	  let m=evt.text.match(/^(.*) \(([0-9])\/([0-9])\)$/)
-	  if(m) {
-	    isFirst=(m[2]==='1');
-	    isLast=(m[2]===m[3]);
-	    evt.text=m[1];
-	  } else {
-	    isFirst=true;
-	    isLast=true;
-	  }
-	}
-	if(isFirst) {
-	  prompts[prompts.length-1][evt.y]=evt.text
-	} else {
-	  if(evt.y != 3) prompts[prompts.length-1][evt.y]=prompts[prompts.length-1][evt.y] + evt.text
-	}
-	if(evt.y != 3 && isLast) prompts.push({});
-	if(evt.text != "Accept") {
-	  if(evt.y != 3) speculos.button("Rr");
-	}
-	else {
-	  speculos.button("RLrl");
-	  subscript.unsubscribe();
-	  r(prompts.slice(-(n+3), -3));
-	}
+        if (evt.y === 3) {
+          let m = evt.text.match(/^(.*) \(([0-9])\/([0-9])\)$/)
+          if (m) {
+            isFirst = m[2] === '1';
+            isLast = m[2] === m[3];
+            evt.text = m[1];
+          } else {
+            isFirst = true;
+            isLast = true;
+          }
+        }
+        if (isFirst) {
+          prompts[prompts.length-1][evt.y] = evt.text;
+        } else if (evt.y !== 3) {
+          prompts[prompts.length-1][evt.y] = prompts[prompts.length-1][evt.y] + evt.text;
+        }
+        if (evt.y !== 3 && isLast) prompts.push({});
+        if (evt.text !== "Accept") {
+          if (evt.y !== 3) speculos.button("Rr");
+        } else {
+          speculos.button("RLrl");
+          subscript.unsubscribe();
+          r(prompts.slice(-(n+3), -3));
+        }
       }
     });
   });
