@@ -16,5 +16,5 @@ suite=${1:-$MY_DIR}
   fi
 
 export NODE_PATH=$suite:$MY_NODE_MODULES:$NODE_PATH
-$MY_NODE_MODULES/.bin/mocha $suite --exit --reporter tap --require $suite/hooks "$@"
+$MY_NODE_MODULES/.bin/mocha $suite --exit --require $suite/hooks --config tests/.mocharc.js "$@"
 

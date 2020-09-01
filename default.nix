@@ -1,4 +1,4 @@
-{ pkgs }:
+{ pkgs ? import ../nix/dep/nixpkgs {} }:
 let
   yarn2nix = import deps/yarn2nix { inherit pkgs; };
   hackGet = (pkgs.lib.fix (import deps/hack-get { lib=pkgs.lib; } ) ).hackGet;

@@ -1,6 +1,7 @@
 const SpeculosTransport = require('@ledgerhq/hw-transport-node-speculos').default;
 const Avalanche = require('hw-app-avalanche').default;
 const spawn = require('child_process').spawn;
+const fc = require('fast-check');
 
 const APDU_PORT = 9999;
 const BUTTON_PORT = 8888;
@@ -25,6 +26,10 @@ exports.mochaHooks = {
           buttonPort: BUTTON_PORT,
           automationPort: AUTOMATION_PORT,
         });
+        if(process.env.DEBUG_BUTTONS) {
+          subButton=this.speculos.button;
+          this.speculos.button=((btns)=>{console.log("Speculos Buttons: " + btns); return subButton(btns);});
+        }
       } catch(e) {
         await new Promise(r => setTimeout(r, 500));
       }
@@ -33,14 +38,58 @@ exports.mochaHooks = {
   },
   afterAll: async function () {
     this.speculosProcess.kill();
+  },
+  afterEach: async function () {
+    stdoutVal=this.speculosProcess.stdio[1].read();
+    stderrVal=this.speculosProcess.stdio[2].read();
+    if(this.currentTest.state === 'failed') {
+      console.log("SPECULOS STDOUT:\n"+stdoutVal);
+      console.log("SPECULOS STDERR:\n"+stderrVal);
+    }
   }
 }
 
-function flowAccept(speculos, n) {
-  return new Promise(r => {
-    var prompts = [{}];
-    var subscript = speculos.automationEvents.subscribe({
-      next: evt => {
+async function flowAccept(speculos, acceptPrompt="Accept") {
+  let promptsPromiseResolve;
+  let promptsPromise=new Promise(r => { promptsPromiseResolve = r; });
+  let readyPromiseResolve;
+  let readyPromise=new Promise(r => { readyPromiseResolve = r; });
+  let isReady = false;
+  let isPrimed = false;
+  let prompts = [{}];
+  let isFirst = false;
+  let isLast = false;
+
+  // This is so that you can just "await flowAccept(this.speculos);" in a test
+  // without actually waiting for the prompts.  If we don't do this, you can
+  // end up with two flowAccept calls active at once, causing issues.
+  
+  await speculos.promptsEndPromise; // Wait for any previous interaction to end.
+  speculos.promptsEndPromise=promptsPromise; // Set ourselves as the interaction.
+
+  let subscript = speculos.automationEvents.subscribe({
+    next: evt => {
+      if (!isReady) {
+        if(!isPrimed) {
+          if(evt.y == 19 && evt.text === "Quit") {
+            isPrimed = true;
+          }
+          speculos.button("Ll");
+          return;
+        } else {
+          if(evt.y === 17 && evt.text === "0.1.0") {
+            isReady=true;
+            readyPromiseResolve({prompts: promptsPromise});
+            return;
+          } else {
+            speculos.button("Ll");
+          }
+        }
+      } else {
+        if (evt.text === "Quit") {
+          // speculos.button("Rr");
+          return;
+        }
         if (evt.y === 3) {
           let m = evt.text.match(/^(.*) \(([0-9])\/([0-9])\)$/)
           if (m) {
@@ -52,22 +101,42 @@ function flowAccept(speculos, n) {
             isLast = true;
           }
         }
-        if (isFirst) {
-          prompts[prompts.length-1][evt.y] = evt.text;
-        } else if (evt.y !== 3) {
-          prompts[prompts.length-1][evt.y] = prompts[prompts.length-1][evt.y] + evt.text;
+        if(! { "Reject":true, "Accept":true }[evt.text]) {
+          if (isFirst) {
+            prompts[prompts.length-1][evt.y] = evt.text;
+          } else if (evt.y !== 3) {
+            prompts[prompts.length-1][evt.y] = prompts[prompts.length-1][evt.y] + evt.text;
+          }
         }
         if (evt.y !== 3 && isLast) prompts.push({});
-        if (evt.text !== "Accept") {
-          if (evt.y !== 3) speculos.button("Rr");
+        if (evt.text !== acceptPrompt) {
+          if (evt.y !== 3) {
+            speculos.button("Rr");
+          }
         } else {
           speculos.button("RLrl");
           subscript.unsubscribe();
-          r(prompts.slice(-(n+3), -3));
+          promptsPromiseResolve(prompts.filter(a=>(Object.keys(a).length!=0))); //.slice(-(n+3), -3));
         }
       }
-    });
+    }
   });
+  speculos.button("Rr");
+  return readyPromise;
 }
 
+
+
+fcConfig={
+	interruptAfterTimeLimit: parseInt(process.env.GEN_TIME_LIMIT || 1000),
+	markInterruptAsFailure: false,
+  numRuns: parseInt(process.env.GEN_NUM_RUNS || 100)
+};
+
+
+console.log(fcConfig);
+
+fc.configureGlobal(fcConfig);
+
 global.flowAccept = flowAccept;
+
