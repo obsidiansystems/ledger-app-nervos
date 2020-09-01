@@ -155,8 +155,14 @@ describe("Basic Tests", () => {
       prompts1 = await flowAccept(this.speculos, 1);
       prompts2 = await flowAccept(this.speculos, 1);
       prompts3 = await flowAccept(this.speculos, 1);
+      prompts4 = await flowAccept(this.speculos, 1);
       expect(await sig).to.have.property('hash');
       expect(await sig).to.have.property('signature');
+
+      expect(prompts1).to.deep.equal([{"3":"Sign","17":"Transaction"}]);
+      expect(prompts2).to.deep.equal([{"3":"Amount","17":"12345"}]);
+      expect(prompts3).to.deep.equal([{"3":"To","17":"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}]);
+      expect(prompts4).to.deep.equal([{"3":"To","17":"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}]);
     });
   });
 });
