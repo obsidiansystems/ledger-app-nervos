@@ -3,8 +3,7 @@
 	"version": "0.1.0",
 	"src": "hw-app-avalanche/src",
 	"scripts": {
-		"test": "mocha . --exit --reporter tap --require hooks -g 'Sign Hash tests'",
-		"watch": "mocha . --exit --reporter tap --require hooks"
+		"test": "mocha . --exit --require hooks --config .mocharc.js"
 	},
 	"bin": "run-tests.js",
 	"devDependencies": {
