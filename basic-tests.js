@@ -1,6 +1,7 @@
-const { expect } = require('chai').use(require('chai-bytes'));
-const { recover } = require('bcrypto/lib/secp256k1');
+const { recover } = require('bcrypto/lib/secp256k1')
 const BIPPath = require("bip32-path");
+const { expect } = require('chai').use(require('chai-bytes'));
+const createHash = require('create-hash');;
 
 describe("Basic Tests", () => {
   context('Basic APDUs', function () {
@@ -102,7 +103,7 @@ describe("Basic Tests", () => {
     });
 
     it('can sign the transaction from the serialization reference in verbose mode', async function () {
-      txn = Buffer.from([
+      const txn = Buffer.from([
         // Type ID
         0x00, 0x00, 0x00, 0x00,
         // networkID:
@@ -150,14 +151,17 @@ describe("Basic Tests", () => {
       ]);
 
       console.log("Sending transaction... (" + txn.length + ")");
-      let path = "44'/9000'/1'/0/0"
-      sig = this.ava.signTransaction(path, txn);
+      const path = "44'/9000'/1'/0/0";
+      const sig = this.ava.signTransaction(path, txn);
       prompts1 = await flowAccept(this.speculos, 1);
       prompts2 = await flowAccept(this.speculos, 1);
       prompts3 = await flowAccept(this.speculos, 1);
       prompts4 = await flowAccept(this.speculos, 1);
       expect(await sig).to.have.property('hash');
       expect(await sig).to.have.property('signature');
+
+      const hash = Buffer.from(createHash('sha256').update(txn).digest()); //TODO: Push this check into hw-app-avalanche;
+      expect((await sig).hash).to.equalBytes(hash);
 
       expect(prompts1).to.deep.equal([{"3":"Sign","17":"Transaction"}]);
       expect(prompts2).to.deep.equal([{"3":"Amount","17":"12345"}]);
