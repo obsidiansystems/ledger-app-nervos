@@ -151,8 +151,10 @@ describe("Basic Tests", () => {
 
       console.log("Sending transaction... (" + txn.length + ")");
       let path = "44'/9000'/1'/0/0"
-      prompts = flowAccept(this.speculos, 3);
       sig = this.ava.signTransaction(path, txn);
+      prompts1 = await flowAccept(this.speculos, 1);
+      prompts2 = await flowAccept(this.speculos, 1);
+      prompts3 = await flowAccept(this.speculos, 1);
       expect(await sig).to.have.property('hash');
       expect(await sig).to.have.property('signature');
     });
