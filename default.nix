@@ -1,4 +1,9 @@
-{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", nanoXSdk ? null, debug?false, runTest?true, ... }:
+{ pkgs ? import ./nix/dep/nixpkgs {}
+, gitDescribe ? "TEST-dirty"
+, nanoXSdk ? null
+, debug ? false
+, runTest ? true
+}:
 let
   fetchThunk = p:
     if builtins.pathExists (p + /git.json)
@@ -12,14 +17,14 @@ let
   usbtool = import ./nix/dep/usbtool.nix { };
 
   patchSDKBinBash = sdk: pkgs.stdenv.mkDerivation {
-    # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
-    name =  sdk.name + "_patched_bin_bash";
+    # Replaces SDK's Makefile instances of /bin/bash with Nix's bash
+    name = sdk.name + "_patched_bin_bash";
     src = sdk.out;
     dontBuild = true;
     installPhase = ''
       mkdir -p $out
       cp -a $src/. $out
-      substituteInPlace $out/Makefile.rules_generic --replace /bin/bash /bin/sh
+      substituteInPlace $out/Makefile.rules_generic --replace /bin/bash "${pkgs.bash}/bin/bash"
     '';
   };
   targets =
@@ -65,10 +70,11 @@ let
   build = bolos:
     let
       app = pkgs.stdenv.mkDerivation {
-        name = "ledger-app-avax-nano-${bolos.name}";
+        name = "ledger-app-avalanche-nano-${bolos.name}";
         inherit src;
         postConfigure = ''
           PATH="$BOLOS_ENV/clang-arm-fropi/bin:$PATH"
+          patchShebangs test.sh
         '';
         nativeBuildInputs = [
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
@@ -80,6 +86,11 @@ let
           blake2_simd
           usbtool
           bolos.env.clang
+          pkgs.yarn
+          pkgs.nodejs
+          pkgs.gdb
+          pkgs.python2
+          pkgs.entr
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
@@ -134,15 +145,15 @@ let
       inherit app;
 
       release = rec {
-        app = mkRelease "avax" "Avax" ledgerApp;
-        all = pkgs.runCommand "ledger-app-avax-${bolos.name}.tar.gz" {} ''
-          mkdir ledger-app-avax-${bolos.name}
+        app = mkRelease "avalanche" "Avalanche" ledgerApp;
+        all = pkgs.runCommand "ledger-app-avalanche-${bolos.name}${if debug then "-debug" else ""}.tar.gz" {} ''
+          mkdir ledger-app-avalanche-${bolos.name}
 
-          cp -r ${app} ledger-app-avax-${bolos.name}/app
+          cp -r ${app} ledger-app-avalanche-${bolos.name}/app
 
-          install -m a=rx ${./nix/app-installer-impl.sh} ledger-app-avax-${bolos.name}/install.sh
+          install -m a=rx ${./nix/app-installer-impl.sh} ledger-app-avalanche-${bolos.name}/install.sh
 
-          tar czf $out ledger-app-avax-${bolos.name}/*
+          tar czf $out ledger-app-avalanche-${bolos.name}/*
         '';
       };
     };
@@ -207,7 +218,7 @@ let
        installPhase = ''
         {
           echo "<html><title>Analyzer Report</title><body><h1>Clang Static Analyzer Results</h1>"
-          printf "<p>App: <code>"avax"</code></p>"
+          printf "<p>App: <code>"Avalanche"</code></p>"
           printf "<h2>File-results:</h2>"
           for html in "$out"/report*.html ; do
             echo "<p>"
@@ -260,4 +271,5 @@ in rec {
     inherit (bolos) sdk;
   });
   inherit speculos;
+  tests = import ./tests { inherit pkgs; };
 }
