@@ -84,14 +84,15 @@ describe("Basic Tests", () => {
         this.ava.encodeBip32Path(BIPPath.fromString(pathPrefix)),
       ]);
 
-      const prompts = flowAccept(this.speculos, 3);
+      const prompts = flowAccept(this.speculos, signHashPrompts("", "").length);
       await this.speculos.send(this.ava.CLA, this.ava.INS_SIGN_HASH, 0x00, 0x00, firstMessage);
 
-      expect(await prompts).to.deep.equal([
-        {"3":"Sign","17":"Hash"},
-        {"3":"Derivation Prefix","17":pathPrefix},
-        {"3":"Hash","17":"111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000"},
-      ]);
+      expect(await prompts).to.deep.equal(
+        signHashPrompts(
+          "111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000",
+          pathPrefix,
+        )
+      );
 
       try {
         await this.speculos.send(this.ava.CLA, this.ava.INS_SIGN_HASH, 0x81, 0x00, Buffer.from("00001111", 'hex'));
@@ -167,8 +168,8 @@ describe("Basic Tests", () => {
 
       expect(prompts1).to.deep.equal([{"3":"Sign","17":"Transaction"}]);
       expect(prompts2).to.deep.equal([{"3":"Amount","17":"12345"}]);
-      expect(prompts3).to.deep.equal([{"3":"To","17":"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}]);
-      expect(prompts4).to.deep.equal([{"3":"To","17":"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}]);
+      expect(prompts3).to.deep.equal([{"3":"To Address","17":"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}]);
+      expect(prompts4).to.deep.equal([{"3":"To Address","17":"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}]);
 
       expect(sig.signatures).to.have.keys([suffixPath.toString(true)]);
 
@@ -186,18 +187,19 @@ describe("Basic Tests", () => {
 });
 
 async function checkSignHash(this_, pathPrefix, pathSuffixes, hash) {
-  const prompts = flowAccept(this_.speculos, 3);
+  const prompts = flowAccept(this_.speculos, signHashPrompts("").length);
   const sigs = await this_.ava.signHash(
     BIPPath.fromString(pathPrefix),
     pathSuffixes.map(x => BIPPath.fromString(x, false)),
     Buffer.from(hash, "hex"),
   );
 
-  expect(await prompts).to.deep.equal([
-    {"3":"Sign","17":"Hash"},
-    {"3":"Derivation Prefix","17":pathPrefix},
-    {"3":"Hash","17":"111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000"},
-  ]);
+  expect(await prompts).to.deep.equal(
+    signHashPrompts(
+      "111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000",
+      pathPrefix,
+    )
+  );
 
   expect(sigs).to.have.keys(pathSuffixes);
 
@@ -210,4 +212,14 @@ async function checkSignHash(this_, pathPrefix, pathSuffixes, hash) {
     const recovered = recover(Buffer.from(hash, 'hex'), sig.slice(0, 64), sig[64], false);
     expect(recovered).is.equalBytes(key);
   }
+}
+
+function signHashPrompts(hash, pathPrefix) {
+  return [
+    {"3":"Sign","17":"Hash"},
+    {"3":"DANGER!","17":"YOU MUST verify this manually!!!"},
+    {"3":"Derivation Prefix","17":pathPrefix},
+    {"3":"Hash","17":hash},
+    {"3":"Are you sure?","17":"This is very dangerous!"},
+  ];
 }
