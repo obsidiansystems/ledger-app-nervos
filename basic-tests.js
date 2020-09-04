@@ -155,10 +155,12 @@ describe("Basic Tests", () => {
       const prefixPath = BIPPath.fromString("44'/9000'/1'");
       const suffixPath = BIPPath.fromString("0/0", false);
       const sigPromise = this.ava.signTransaction(prefixPath, [suffixPath], txn);
-      prompts1 = await flowAccept(this.speculos, 1);
-      prompts2 = await flowAccept(this.speculos, 1);
-      prompts3 = await flowAccept(this.speculos, 1);
-      prompts4 = await flowAccept(this.speculos, 1);
+      prompts1 = await flowAccept(this.speculos, 1, "Next");
+      prompts2 = await flowAccept(this.speculos, 1, "Next");
+      prompts3 = await flowAccept(this.speculos, 1, "Next");
+      prompts4 = await flowAccept(this.speculos, 1, "Next");
+      prompts5 = await flowAccept(this.speculos, 1);
+
       const sig = await sigPromise;
       expect(sig).to.have.property('hash');
       expect(sig).to.have.property('signatures');
@@ -170,6 +172,7 @@ describe("Basic Tests", () => {
       expect(prompts2).to.deep.equal([{"3":"Amount","17":"12345"}]);
       expect(prompts3).to.deep.equal([{"3":"To Address","17":"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}]);
       expect(prompts4).to.deep.equal([{"3":"To Address","17":"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}]);
+      expect(prompts5).to.deep.equal([{"3":"Finalize","17":"Transaction"}]);
 
       expect(sig.signatures).to.have.keys([suffixPath.toString(true)]);
 

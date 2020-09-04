@@ -35,7 +35,7 @@ exports.mochaHooks = {
   }
 }
 
-function flowAccept(speculos, n) {
+function flowAccept(speculos, n, accept = "Accept") {
   return new Promise(r => {
     var prompts = [{}];
     var subscript = speculos.automationEvents.subscribe({
@@ -57,7 +57,7 @@ function flowAccept(speculos, n) {
           prompts[prompts.length-1][evt.y] = prompts[prompts.length-1][evt.y] + evt.text;
         }
         if (evt.y !== 3 && isLast) prompts.push({});
-        if (evt.text !== "Accept") {
+        if (evt.text !== accept) {
           if (evt.y !== 3) speculos.button("Rr");
         } else {
           speculos.button("RLrl");
