@@ -83,14 +83,14 @@ describe("Basic Tests", () => {
         this.ava.encodeBip32Path(BIPPath.fromString(pathPrefix)),
       ]);
 
-      const prompts = await flowAccept(this.speculos);
-      await this.speculos.send(this.ava.CLA, this.ava.INS_SIGN_HASH, 0x00, 0x00, firstMessage);
-
-      expect(await prompts.prompts).to.deep.equal([
+      const prompts = await flowAccept(this.speculos, [
         {"3":"Sign","17":"Hash"},
         {"3":"Derivation Prefix","17":pathPrefix},
         {"3":"Hash","17":"111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000"},
       ]);
+      await this.speculos.send(this.ava.CLA, this.ava.INS_SIGN_HASH, 0x00, 0x00, firstMessage);
+
+      await prompts.promptsMatch;
 
       try {
         await this.speculos.send(this.ava.CLA, this.ava.INS_SIGN_HASH, 0x81, 0x00, Buffer.from("00001111", 'hex'));
@@ -104,18 +104,18 @@ describe("Basic Tests", () => {
 });
 
 async function checkSignHash(this_, pathPrefix, pathSuffixes, hash) {
-  const prompts = await flowAccept(this_.speculos);
+  const prompts = await flowAccept(this_.speculos, [
+    {"3":"Sign","17":"Hash"},
+    {"3":"Derivation Prefix","17":pathPrefix},
+    {"3":"Hash","17":"111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000"},
+  ]);
   const sigs = await this_.ava.signHash(
     BIPPath.fromString(pathPrefix),
     pathSuffixes.map(x => BIPPath.fromString(x, false)),
     Buffer.from(hash, "hex"),
   );
 
-  expect(await prompts.prompts).to.deep.equal([
-    {"3":"Sign","17":"Hash"},
-    {"3":"Derivation Prefix","17":pathPrefix},
-    {"3":"Hash","17":"111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000"},
-  ]);
+  await prompts.promptsMatch;
 
   expect(sigs).to.have.keys(pathSuffixes);
 

@@ -23,25 +23,27 @@ describe("Sign Hash tests", ()=> {
   context('Generative tests', function () {
     it('can sign a hash-sized sequence of bytes', async function () { // Needed to get 'this' for mocha.
       return await fc.assert(fc.asyncProperty(accountGen, fc.array(subAddressGen), fc.hexaString(64, 64), async (account, subAccts, hashHex) => {
-        this.speculosProcess.stdio[2].read(); // Drain the stderr buffer.
-        ui = await flowAccept(this.speculos);
-        let hash=Buffer.from(hashHex, 'hex');
-        sigs=this.ava.signHash(account, subAccts, hash);
+        this.flushStderr(); // Drain the stderr buffer.
 
         expectedPrompts = [
           { '3': 'Sign', '17': 'Hash' },
           { '3': 'Derivation Prefix', '17': account.toString(true) },
           { '3': 'Hash', '17': hashHex.toUpperCase() }
         ];
-        expect(await ui.prompts).to.deep.equal(expectedPrompts);
-        
+
+        ui = await flowAccept(this.speculos, expectedPrompts);
+        let hash=Buffer.from(hashHex, 'hex');
+        sigs=this.ava.signHash(account, subAccts, hash);
+
+        await ui.promptsMatch;
+
         sv=await sigs;
         for (ks of sv) {
           [keySuffix, sig] = ks;
 
           await flowAccept(this.speculos);
           key=await this.ava.getWalletExtendedPublicKey(account.toString() + "/" + keySuffix);
-          
+
           recovered=secp256k1.recover(Buffer.from(hash, 'hex'), sig.slice(0,64), sig[64], false);
           expect(recovered).is.equalBytes(key.public_key);
         }
@@ -49,9 +51,16 @@ describe("Sign Hash tests", ()=> {
     });
     it('User rejection does not produce signatures', async function () { // Needed to get 'this' for mocha.
       return await fc.assert(fc.asyncProperty(accountGen, fc.array(subAddressGen), fc.hexaString(64, 64), async (account, subAccts, hashHex) => {
-        this.speculosProcess.stdio[2].read(); // Drain the stderr buffer.
+        this.flushStderr(); // Drain the stderr buffer.
         if(subAccts.length==0) return;
-        ui = await flowAccept(this.speculos, "Reject");
+
+        expectedPrompts = [
+          { '3': 'Sign', '17': 'Hash' },
+          { '3': 'Derivation Prefix', '17': account.toString(true) },
+          { '3': 'Hash', '17': hashHex.toUpperCase() }
+        ];
+
+        ui = await flowAccept(this.speculos, expectedPrompts, "Reject");
         let hash=Buffer.from(hashHex, 'hex');
         let sigs;
         try {
@@ -62,17 +71,12 @@ describe("Sign Hash tests", ()=> {
           expect(e).has.property('statusText', 'CONDITIONS_OF_USE_NOT_SATISFIED');
         }
 
-        expectedPrompts = [
-          { '3': 'Sign', '17': 'Hash' },
-          { '3': 'Derivation Prefix', '17': account.toString(true) },
-          { '3': 'Hash', '17': hashHex.toUpperCase() }
-        ];
-        expect(await ui.prompts).to.deep.equal(expectedPrompts);
+        await ui.promptsMatch;
       }));
     });
     it('rejects incorrectly-sized hashes', async function () {
       return await fc.assert(fc.asyncProperty(accountGen, fc.array(subAddressGen), fc.hexaString(), async (account, subAccts, hashHex) => {
-        this.speculosProcess.stdio[2].read(); // Drain the stderr buffer.
+        this.flushStderr(); // Drain the stderr buffer.
         let hash=Buffer.from(hashHex, 'hex');
         const firstMessage = Buffer.concat([
           this.ava.uInt8Buffer(subAccts.length),

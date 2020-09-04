@@ -1,8 +1,8 @@
 {
-  "owner": "Profpatsch",
+  "owner": "jonored",
   "repo": "yarn2nix",
   "branch": "master",
   "private": false,
-  "rev": "afecc415533b9906f6d7cb1de0393e4c072de54c",
-  "sha256": "09g8nb3w0qzlvpklgwgswal7kbs2gva7krlnvdv8a66l6532hj28"
+  "rev": "3057ff4eab69776d500d2c8983d540a743372417",
+  "sha256": "1bz0pjirv88i0biwkys5xj7yq8iqw5x7789i6mch9wgw4z89z25q"
 }

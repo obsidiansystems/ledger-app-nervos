@@ -30,7 +30,7 @@ describe("APDU protocol integrity generative tests", function () {
           await this.speculos.send(this.ava.CLA, apdu, 0x00, 0x00, body);
           throw("Expected error");
         } catch (e) {
-          this.speculosProcess.stdio[2].read(); // Drain the stderr buffer.
+          this.flushStderr(); // Drain the stderr buffer.
           expect(e).has.property('statusCode', 27904); // INS_NOT_SUPPORTED
         }
         // subscription.unsubscribe();
@@ -44,7 +44,7 @@ describe("APDU protocol integrity generative tests", function () {
           await this.speculos.send(this.ava.CLA, apdu, p1, 0x00, body);
           throw("Expected error");
         } catch (e) {
-          this.speculosProcess.stdio[2].read(); // Drain the stderr buffer.
+          this.flushStderr(); // Drain the stderr buffer.
           //expect(e).has.property('statusCode', 27904); // INS_NOT_SUPPORTED
         }
         return;
@@ -55,7 +55,7 @@ describe("APDU protocol integrity generative tests", function () {
         let body=Buffer.from(hashHex, 'hex');
         rv=await this.speculos.exchange(body);
         expect(rv).to.not.equalBytes("9000");
-        this.speculosProcess.stdio[2].read(); // Drain the stderr buffer.
+        this.flushStderr(); // Drain the stderr buffer.
       }));
     });
     it('rejects short garbage dumped straight to the device', async function () {
@@ -67,7 +67,7 @@ describe("APDU protocol integrity generative tests", function () {
           return; // Errors that get here are probably from the transport, not from the ledger.
         }
         expect(rv).to.not.equalBytes("9000");
-        this.speculosProcess.stdio[2].read(); // Drain the stderr buffer.
+        this.flushStderr(); // Drain the stderr buffer.
       }));
     });
   });
