@@ -1,7 +1,7 @@
 const { recover } = require('bcrypto/lib/secp256k1')
 const BIPPath = require("bip32-path");
 const { expect } = require('chai').use(require('chai-bytes'));
-const createHash = require('create-hash');;
+const createHash = require('create-hash');
 
 describe("Basic Tests", () => {
   context('Basic APDUs', function () {
@@ -151,22 +151,36 @@ describe("Basic Tests", () => {
       ]);
 
       console.log("Sending transaction... (" + txn.length + ")");
-      const path = "44'/9000'/1'/0/0";
-      const sig = this.ava.signTransaction(path, txn);
+      const prefixPath = BIPPath.fromString("44'/9000'/1'");
+      const suffixPath = BIPPath.fromString("0/0", false);
+      const sigPromise = this.ava.signTransaction(prefixPath, [suffixPath], txn);
       prompts1 = await flowAccept(this.speculos, 1);
       prompts2 = await flowAccept(this.speculos, 1);
       prompts3 = await flowAccept(this.speculos, 1);
       prompts4 = await flowAccept(this.speculos, 1);
-      expect(await sig).to.have.property('hash');
-      expect(await sig).to.have.property('signature');
+      const sig = await sigPromise;
+      expect(sig).to.have.property('hash');
+      expect(sig).to.have.property('signatures');
 
-      const hash = Buffer.from(createHash('sha256').update(txn).digest()); //TODO: Push this check into hw-app-avalanche;
-      expect((await sig).hash).to.equalBytes(hash);
+      const hash = Buffer.from(createHash('sha256').update(txn).digest());
+      expect(sig.hash).to.equalBytes(hash);
 
       expect(prompts1).to.deep.equal([{"3":"Sign","17":"Transaction"}]);
       expect(prompts2).to.deep.equal([{"3":"Amount","17":"12345"}]);
       expect(prompts3).to.deep.equal([{"3":"To","17":"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}]);
       expect(prompts4).to.deep.equal([{"3":"To","17":"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}]);
+
+      expect(sig.signatures).to.have.keys([suffixPath.toString(true)]);
+
+      for (suffix in sig.signatures) {
+        const sig = sigs.get(suffix);
+        expect(sig).to.have.length(65);
+
+        flowAccept(this_.speculos);
+        const key = (await this.ava.getWalletExtendedPublicKey(pathPrefix + "/" + suffix)).public_key;
+        const recovered = recover(Buffer.from(hash, 'hex'), sig.slice(0, 64), sig[64], false);
+        expect(recovered).is.equalBytes(key);
+      }
     });
   });
 });
