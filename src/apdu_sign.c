@@ -617,6 +617,7 @@ void finish_output_cell_data(void) {
             if(G.maybe_transaction.v.tag != OPERATION_TAG_DAO_PREPARE && G.maybe_transaction.v.tag != 0) REJECT("Can't mix deposit, prepare, and withdraw in one transaction");
             G.maybe_transaction.v.tag = OPERATION_TAG_DAO_PREPARE;
         } else {
+            PRINTF("%d\n", G.maybe_transaction.v.tag);
             if(G.maybe_transaction.v.tag != OPERATION_TAG_DAO_DEPOSIT && G.maybe_transaction.v.tag != 0) REJECT("Can't mix deposit, prepare, and withdraw in one transaction");
             G.maybe_transaction.v.tag = OPERATION_TAG_DAO_DEPOSIT;
         }

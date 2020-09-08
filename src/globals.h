@@ -47,13 +47,13 @@ typedef struct {
 
 typedef struct {
     uint64_t capacity;
+    uint8_t dao_data_is_nonzero;
     uint8_t lock_arg_index : 5;
     uint8_t data_size : 4;
     uint8_t active : 1;
     uint8_t is_dao : 1;
     uint8_t is_change : 1;
     uint8_t is_multisig : 1;
-    uint8_t dao_data_is_nonzero : 1;
     uint8_t lock_arg_nonequal : 1;
 } cell_state_t;
 

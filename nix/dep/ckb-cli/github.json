@@ -1,8 +1,8 @@
 {
   "owner": "obsidiansystems",
   "repo": "ckb-cli",
-  "branch": "ledger-support-plugin",
+  "branch": "ledger-support",
   "private": false,
-  "rev": "08bf2f52d479f8adff3591009f163b298b379632",
-  "sha256": "1z64sai5a5f0cnbvh2ny8xsz576ivnr71rwamib0838limb4rwzw"
+  "rev": "47bf42b8d38e6b6fb8c49c51fde947357b278c63",
+  "sha256": "0xp2swaxzh9l1qrvxi0ps20i7sksvd13adc1px1hlws4bl1dw900"
 }
