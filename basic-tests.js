@@ -105,8 +105,8 @@ describe("Basic Tests", () => {
 
     it('can sign the transaction from the serialization reference in verbose mode', async function () {
       const pathPrefix = "44'/9000'/1'";
-      const pathSuffix = "0/0";
-      const sigPromise = signTransaction(this.ava, pathPrefix, [pathSuffix]);
+      const pathSuffixes = ["0/0", "0/1", "100/100"];
+      const sigPromise = signTransaction(this.ava, pathPrefix, pathSuffixes);
       const prompts = [
         await flowAccept(this.speculos, 1, "Next"),
         await flowAccept(this.speculos, 1, "Next"),
@@ -120,8 +120,8 @@ describe("Basic Tests", () => {
       expect(sig).to.have.property('signatures');
 
       expect(sig.hash).to.have.length(32);
-      expect(sig.signatures).to.have.length(1);
-      expect(sig.signatures).to.have.keys([pathSuffix]);
+      expect(sig.signatures).to.have.length(pathSuffixes.length);
+      expect(sig.signatures).to.have.keys(pathSuffixes);
 
       for (suffix in sig.signatures) {
         const sig = sigs.get(suffix);
