@@ -3,22 +3,22 @@ const HidTransport = require('@ledgerhq/hw-transport-node-hid').default;
 const Avalanche = require('hw-app-avalanche').default;
 const spawn = require('child_process').spawn;
 const fc = require('fast-check');
-var chai = require('chai');
-var { expect, assert } = chai.use(require('chai-bytes'));
+const chai = require('chai');
+const { expect } = chai.use(require('chai-bytes'));
 
 const APDU_PORT = 9999;
 const BUTTON_PORT = 8888;
 const AUTOMATION_PORT = 8899;
 
 exports.mochaHooks = {
-  beforeAll: async function () {
+  beforeAll: async function () { // Need 'function' to get 'this'
     this.timeout(10000); // We'll let this wait for up to 10 seconds to get a speculos instance.
-    if(process.env.LEDGER_LIVE_HARDWARE) {
-      this.speculos=await HidTransport.create();
-      this.speculos.button=console.log;
+    if (process.env.LEDGER_LIVE_HARDWARE) {
+      this.speculos = await HidTransport.create();
+      this.speculos.button = console.log;
       console.log(this.speculos);
     } else {
-      speculosProcessOptions=process.env.SPECULOS_DEBUG?{stdio:"inherit"} : {};
+      const speculosProcessOptions = process.env.SPECULOS_DEBUG ? {stdio:"inherit"} : {};
       this.speculosProcess = spawn('speculos', [
         process.env.LEDGER_APP,
         '--display', 'headless',
@@ -34,49 +34,52 @@ exports.mochaHooks = {
             buttonPort: BUTTON_PORT,
             automationPort: AUTOMATION_PORT,
           });
-          if(process.env.DEBUG_BUTTONS) {
-            subButton=this.speculos.button;
-            this.speculos.button=((btns)=>{console.log("Speculos Buttons: " + btns); return subButton(btns);});
+          if (process.env.DEBUG_BUTTONS) {
+            const subButton = this.speculos.button;
+            this.speculos.button = btns => {
+              console.log("Speculos Buttons: " + btns);
+              return subButton(btns);
+            };
           }
         } catch(e) {
           await new Promise(r => setTimeout(r, 500));
         }
       }
     }
-    this.ava = new Avalanche(this.speculos, "Avalanche", (_) => { return; });
+    this.ava = new Avalanche(this.speculos, "Avalanche", _ => { return; });
     this.flushStderr = function() {
-      if(this.speculosProcess) this.speculosProcess.stdio[2].read();
+      if (this.speculosProcess) this.speculosProcess.stdio[2].read();
     };
   },
   afterAll: async function () {
-    if(this.specuosProcess) {
+    if (this.specuosProcess) {
       this.speculosProcess.kill();
     }
   },
   afterEach: async function () {
-    if(this.speculosProcess) {
-    stdoutVal=this.speculosProcess.stdio[1].read();
-    stderrVal=this.speculosProcess.stdio[2].read();
-    if(this.currentTest.state === 'failed') {
-      console.log("SPECULOS STDOUT:\n"+stdoutVal);
-      console.log("SPECULOS STDERR:\n"+stderrVal);
-    }
+    if (this.speculosProcess) {
+      stdoutVal = this.speculosProcess.stdio[1].read();
+      stderrVal = this.speculosProcess.stdio[2].read();
+      if (this.currentTest.state === 'failed') {
+        console.log("SPECULOS STDOUT:\n" + stdoutVal);
+        console.log("SPECULOS STDERR:\n" + stderrVal);
+      }
     }
   }
 }
 
 async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
   let promptsPromiseResolve;
-  let promptsPromise=new Promise(r => { promptsPromiseResolve = r; });
+  const promptsPromise = new Promise(r => { promptsPromiseResolve = r; });
   let promptsMatchPromiseResolve;
-  let promptsMatchPromise=new Promise(r => { promptsMatchPromiseResolve = r; });
+  const promptsMatchPromise = new Promise(r => { promptsMatchPromiseResolve = r; });
   let readyPromiseResolve;
-  let readyPromise=new Promise(r => { readyPromiseResolve = r; });
+  const readyPromise = new Promise(r => { readyPromiseResolve = r; });
 
-  if(!speculos.automationEvents) {
-    if(expectedPrompts) {
+  if (!speculos.automationEvents) {
+    if (expectedPrompts) {
       console.log("Expected prompts: ");
-      for(p in expectedPrompts) {
+      for (p in expectedPrompts) {
         console.log("Prompt %d", p);
         console.log(expectedPrompts[p][3]);
         console.log(expectedPrompts[p][17]);
@@ -99,20 +102,20 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
   // end up with two flowAccept calls active at once, causing issues.
 
   await speculos.promptsEndPromise; // Wait for any previous interaction to end.
-  speculos.promptsEndPromise=promptsPromise; // Set ourselves as the interaction.
+  speculos.promptsEndPromise = promptsPromise; // Set ourselves as the interaction.
 
   let subscript = speculos.automationEvents.subscribe({
     next: evt => {
       if (!isReady) {
-        if(!isPrimed) {
-          if(evt.y == 19 && evt.text === "Quit") {
+        if (!isPrimed) {
+          if (evt.y == 19 && evt.text === "Quit") {
             isPrimed = true;
           }
           speculos.button("Ll");
           return;
         } else {
-          if(evt.y === 17 && evt.text === "0.1.0") {
-            isReady=true;
+          if (evt.y === 17 && evt.text === "0.1.0") {
+            isReady = true;
             readyPromiseResolve({prompts: promptsPromise, promptsMatch: promptsMatchPromise});
             return;
           } else {
@@ -121,7 +124,6 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
         }
       } else {
         if (evt.text === "Quit") {
-          // speculos.button("Rr");
           return;
         }
         if (evt.y === 3) {
@@ -135,11 +137,11 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
             isLast = true;
           }
         }
-        if(! { "Reject":true, "Accept":true }[evt.text]) {
+        if (! { "Reject":true, "Accept":true }[evt.text]) {
           if (isFirst) {
-            prompts[prompts.length-1][evt.y] = evt.text;
+            prompts[prompts.length - 1][evt.y] = evt.text;
           } else if (evt.y !== 3) {
-            prompts[prompts.length-1][evt.y] = prompts[prompts.length-1][evt.y] + evt.text;
+            prompts[prompts.length - 1][evt.y] = prompts[prompts.length - 1][evt.y] + evt.text;
           }
         }
         if (evt.y !== 3 && isLast) prompts.push({});
@@ -150,10 +152,10 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
         } else {
           speculos.button("RLrl");
           subscript.unsubscribe();
-          resultingPrompts = prompts.filter(a=>(Object.keys(a).length!=0));
-          if(expectedPrompts) {
+          const resultingPrompts = prompts.filter(a => Object.keys(a).length != 0);
+          if (expectedPrompts) {
             expect(resultingPrompts).to.deep.equal(expectedPrompts);
-            promptsMatchPromiseResolve( true );
+            promptsMatchPromiseResolve(true);
           }
           promptsPromiseResolve(resultingPrompts);
         }
@@ -165,8 +167,7 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
 }
 
 
-
-fcConfig={
+const fcConfig = {
 	interruptAfterTimeLimit: parseInt(process.env.GEN_TIME_LIMIT || 1000),
 	markInterruptAsFailure: false,
   numRuns: parseInt(process.env.GEN_NUM_RUNS || 100)
@@ -175,4 +176,3 @@ fcConfig={
 fc.configureGlobal(fcConfig);
 
 global.flowAccept = flowAccept;
-
