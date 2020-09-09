@@ -15,7 +15,7 @@ exports.mochaHooks = {
         '--button-port', '' + BUTTON_PORT,
         '--automation-port', '' + AUTOMATION_PORT,
         '--apdu-port', '' + APDU_PORT,
-      ]);
+      ], {stdio: "inherit"});
     console.log("Speculos started");
     while (this.speculos === undefined) { // Let the test timeout handle the bad case
       try {
