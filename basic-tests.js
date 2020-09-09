@@ -105,6 +105,8 @@ describe("Basic Tests", () => {
 
     it('can sign the transaction from the serialization reference in verbose mode', async function () {
       const txn = Buffer.from([
+        // Codec ID
+        0x00, 0x00,
         // Type ID
         0x00, 0x00, 0x00, 0x00,
         // networkID:
