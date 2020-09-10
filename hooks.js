@@ -176,3 +176,12 @@ const fcConfig = {
 fc.configureGlobal(fcConfig);
 
 global.flowAccept = flowAccept;
+global.signHashPrompts = (hash, pathPrefix) => {
+  return [
+    {"3":"Sign","17":"Hash"},
+    {"3":"DANGER!","17":"YOU MUST verify this manually!!!"},
+    {"3":"Derivation Prefix","17":pathPrefix},
+    {"3":"Hash","17":hash},
+    {"3":"Are you sure?","17":"This is very dangerous!"},
+  ];
+};

@@ -3,18 +3,11 @@ const { expect, assert } = chai.use(require('chai-bytes'));
 chai.config.showDiff = true;
 chai.config.truncateThreshold = 0;
 const fc = require('fast-check');
-const bip = require('bip32-path');
-
-const prefix = bip.fromString("m/44'/9000'").toPathArray();
-const bipNotHardened = fc.integer(0x7fffffff);
-const bipHardened = bipNotHardened.map(a => a + 0x80000000);
-const accountGen = bipHardened.map(a => bip.fromPathArray(prefix.concat([a])));
-const subAddressGen = fc.array(fc.integer(0, 4294967295), 2, 2).map(bip.fromPathArray);
 
 describe("APDU protocol integrity generative tests", function () {
   context('Generative tests', function () {
     it('rejects incorrect APDU numbers', async function () {
-      return await fc.assert(fc.asyncProperty(fc.integer(5, 255), fc.hexaString(), async (apdu, hashHex) => {
+      return await fc.assert(fc.asyncProperty(fc.integer(6, 255), fc.hexaString(), async (apdu, hashHex) => {
         const body = Buffer.from(hashHex, 'hex');
         try {
           await this.speculos.send(this.ava.CLA, apdu, 0x00, 0x00, body);

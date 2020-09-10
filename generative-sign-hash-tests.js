@@ -18,12 +18,7 @@ describe("Sign Hash tests", () => {
       return await fc.assert(fc.asyncProperty(accountGen, fc.array(subAddressGen), fc.hexaString(64, 64), async (account, subAccts, hashHex) => {
         this.flushStderr();
 
-        expectedPrompts = [
-          { '3': 'Sign', '17': 'Hash' },
-          { '3': 'Derivation Prefix', '17': account.toString(true) },
-          { '3': 'Hash', '17': hashHex.toUpperCase() }
-        ];
-
+        const expectedPrompts = signHashPrompts(hashHex.toUpperCase(), account.toString(true));
         const ui = await flowAccept(this.speculos, expectedPrompts);
         const hash = Buffer.from(hashHex, "hex");
         const sigs = this.ava.signHash(account, subAccts, hash);
@@ -48,12 +43,7 @@ describe("Sign Hash tests", () => {
         this.flushStderr();
         if (subAccts.length == 0) return;
 
-        const expectedPrompts = [
-          { '3': 'Sign', '17': 'Hash' },
-          { '3': 'Derivation Prefix', '17': account.toString(true) },
-          { '3': 'Hash', '17': hashHex.toUpperCase() }
-        ];
-
+        const expectedPrompts = signHashPrompts(hashHex.toUpperCase(), account.toString(true));
         const ui = await flowAccept(this.speculos, expectedPrompts, "Reject");
         const hash = Buffer.from(hashHex, "hex");
         try {
@@ -79,8 +69,12 @@ describe("Sign Hash tests", () => {
         ]);
         try {
           await this.speculos.send(this.ava.CLA, this.ava.INS_SIGN_HASH, 0x00, 0x00, firstMessage);
+          throw "Expected rejection";
         } catch (e) {
-          expect(e).has.property('statusCode', 0x6C00); // WRONG_LENGTH
+          expect(e).has.property('statusCode', subAccts.length > 0
+            ? 0x6C00 // WRONG_LENGTH
+            : 0x6B00 // WRONG_PARAM
+          );
         }
       }));
     });

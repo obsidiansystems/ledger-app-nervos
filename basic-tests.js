@@ -1,7 +1,6 @@
 const { recover } = require('bcrypto/lib/secp256k1')
 const BIPPath = require("bip32-path");
 const { expect } = require('chai').use(require('chai-bytes'));
-const createHash = require('create-hash');
 
 describe("Basic Tests", () => {
   context('Basic APDUs', function () {
@@ -84,12 +83,12 @@ describe("Basic Tests", () => {
         this.ava.encodeBip32Path(BIPPath.fromString(pathPrefix)),
       ]);
 
-      const prompts = flowAccept(
+      const prompts = await flowAccept(
         this.speculos,
         signHashPrompts(
           "111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000",
           pathPrefix,
-        )
+        ),
       );
       await this.speculos.send(this.ava.CLA, this.ava.INS_SIGN_HASH, 0x00, 0x00, firstMessage);
       await prompts.promptsMatch;
@@ -331,7 +330,7 @@ describe("Basic Tests", () => {
 });
 
 async function checkSignHash(this_, pathPrefix, pathSuffixes, hash) {
-  const prompts = flowAccept(
+  const prompts = await flowAccept(
     this_.speculos,
     signHashPrompts(
       "111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF0000",
@@ -356,16 +355,6 @@ async function checkSignHash(this_, pathPrefix, pathSuffixes, hash) {
     const recovered = recover(Buffer.from(hash, 'hex'), sig.slice(0, 64), sig[64], false);
     expect(recovered).is.equalBytes(key);
   }
-}
-
-function signHashPrompts(hash, pathPrefix) {
-  return [
-    {"3":"Sign","17":"Hash"},
-    {"3":"DANGER!","17":"YOU MUST verify this manually!!!"},
-    {"3":"Derivation Prefix","17":pathPrefix},
-    {"3":"Hash","17":hash},
-    {"3":"Are you sure?","17":"This is very dangerous!"},
-  ];
 }
 
 async function signTransaction(
