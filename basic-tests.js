@@ -221,7 +221,7 @@ async function signTransaction(
   ava,
   pathPrefix,
   pathSuffixes,
-  fieldOverrides,
+  fieldOverrides = {},
 ) {
   const fields = {
     ...{
