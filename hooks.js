@@ -137,7 +137,7 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
             isLast = true;
           }
         }
-        if (! { "Reject":true, "Accept":true }[evt.text]) {
+        if (evt.text !== "Reject" && evt.text !== acceptPrompt) {
           if (isFirst) {
             prompts[prompts.length - 1][evt.y] = evt.text;
           } else if (evt.y !== 3) {
