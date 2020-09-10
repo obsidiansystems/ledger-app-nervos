@@ -168,8 +168,8 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
 
 
 const fcConfig = {
-	interruptAfterTimeLimit: parseInt(process.env.GEN_TIME_LIMIT || 1000),
-	markInterruptAsFailure: false,
+  interruptAfterTimeLimit: parseInt(process.env.GEN_TIME_LIMIT || 1000),
+  markInterruptAsFailure: false,
   numRuns: parseInt(process.env.GEN_NUM_RUNS || 100)
 };
 
