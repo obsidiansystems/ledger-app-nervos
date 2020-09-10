@@ -112,6 +112,7 @@ describe("Basic Tests", () => {
         await flowAccept(this.speculos, 1, "Next"),
         await flowAccept(this.speculos, 1, "Next"),
         await flowAccept(this.speculos, 1, "Next"),
+        await flowAccept(this.speculos, 1, "Next"),
         await flowAccept(this.speculos, 1),
       ];
 
@@ -122,13 +123,12 @@ describe("Basic Tests", () => {
         [{"3":"Amount","17":"12345"}],
         [{"3":"To Address","17":"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
         [{"3":"To Address","17":"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
+        [{"3":"Fee","17":"123444444"}],
         [{"3":"Finalize","17":"Transaction"}],
       ]);
     });
 
     it('can sign a sample everest transaction', async function () {
-      console.log("TESTING");
-
       const txn = Buffer.from([
         // Codec ID
         0x00, 0x00,
@@ -219,6 +219,7 @@ describe("Basic Tests", () => {
         await flowAccept(this.speculos, 1, "Next"),
         await flowAccept(this.speculos, 1, "Next"),
         await flowAccept(this.speculos, 1, "Next"),
+        await flowAccept(this.speculos, 1, "Next"),
         await flowAccept(this.speculos, 1),
       ];
 
@@ -230,6 +231,7 @@ describe("Basic Tests", () => {
         [{"3":"To Address","17":"everest10an3cucdfqru984pnvv6y0rspvvclz63qnegnr"}],
         [{"3":"Amount","17":"6999000"}],
         [{"3":"To Address","17":"everest15jh6hlessx2jtxvs48jnr0vzxrg34x32ef0ckt"}],
+        [{"3":"Fee","17":"1000000"}],
         [{"3":"Finalize","17":"Transaction"}],
       ]);
     });
@@ -239,6 +241,7 @@ describe("Basic Tests", () => {
         const sigPromise = signTransaction(this.ava, "44'/9000'/1'", ["0/0"], {
           extraEndBytes: Buffer.from([0x00])
         });
+        await flowAccept(this.speculos, 1, "Next");
         await flowAccept(this.speculos, 1, "Next");
         await flowAccept(this.speculos, 1, "Next");
         await flowAccept(this.speculos, 1, "Next");
