@@ -52,7 +52,7 @@ exports.mochaHooks = {
     };
   },
   afterAll: async function () {
-    if (this.specuosProcess) {
+    if (this.speculosProcess) {
       this.speculosProcess.kill();
     }
   },
