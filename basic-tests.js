@@ -125,7 +125,6 @@ describe("Basic Tests", () => {
       await checkSignTransactionResult(this.ava, await sigPromise, pathPrefix, pathSuffixes);
     });
 
-    /*
     it('can sign a sample everest transaction', async function () {
       const txn = Buffer.from([
         // Codec ID
@@ -205,25 +204,7 @@ describe("Basic Tests", () => {
 
       const pathPrefix = "44'/9000'/1'";
       const pathSuffixes = ["0/0", "0/1", "100/100"];
-      console.log("Sending transaction... (" + txn.length + ")");
-      const sigPromise = this.ava.signTransaction(
-        BIPPath.fromString(pathPrefix),
-        pathSuffixes.map(x => BIPPath.fromString(x, false)),
-        txn,
-      );
-      const prompts = [
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1),
-      ];
-
-      await checkSignTransactionResult(this.ava, await sigPromise, pathPrefix, pathSuffixes);
-
-      expect(prompts).to.deep.equal([
+      const ui = await flowMultiPrompt(this.speculos, [
         [{header:"Sign",body:"Transaction"}],
         [{header:"Amount",body:"1000"}],
         [{header:"To Address",body:"everest10an3cucdfqru984pnvv6y0rspvvclz63qnegnr"}],
@@ -232,19 +213,28 @@ describe("Basic Tests", () => {
         [{header:"Fee",body:"1000000"}],
         [{header:"Finalize",body:"Transaction"}],
       ]);
+      const sigPromise = this.ava.signTransaction(
+        BIPPath.fromString(pathPrefix),
+        pathSuffixes.map(x => BIPPath.fromString(x, false)),
+        txn,
+      );
+      await ui.promptsPromise;
+      await checkSignTransactionResult(this.ava, await sigPromise, pathPrefix, pathSuffixes);
     });
 
     it('rejects a transaction that has extra data', async function () {
       try {
-        const sigPromise = signTransaction(this.ava, "44'/9000'/1'", ["0/0"], {
+        const ui = await flowMultiPrompt(this.speculos, [
+          [{header:"Sign",body:"Transaction"}],
+          [{header:"Amount",body:"12345"}],
+          [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
+          [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
+          [{header:"Fee",body:"123444444"}],
+        ], "Next", "Next");
+        await signTransaction(this.ava, "44'/9000'/1'", ["0/0"], {
           extraEndBytes: Buffer.from([0x00])
         });
-        await flowAccept(this.speculos, 1, "Next");
-        await flowAccept(this.speculos, 1, "Next");
-        await flowAccept(this.speculos, 1, "Next");
-        await flowAccept(this.speculos, 1, "Next");
-        await flowAccept(this.speculos, 1, "Next");
-        await sigPromise;
+        await ui.promptsPromise;
         throw "Signing should have been rejected";
       } catch (e) {
         expect(e).has.property('statusCode', 0x9405); // PARSE_ERROR
@@ -253,33 +243,29 @@ describe("Basic Tests", () => {
     });
 
     it('rejects an unrecognized codec ID', async function () {
-      await expectSignFailure(this.ava, { codecId: Buffer.from([0x01, 0x00]) });
+      await expectSignFailure(this.speculos, this.ava, { codecId: Buffer.from([0x01, 0x00]) });
     });
 
     it('rejects an unrecognized type ID', async function () {
-      await expectSignFailure(this.ava, { typeId: Buffer.from([0x01, 0x00, 0x00, 0x00]) });
+      await expectSignFailure(this.speculos, this.ava, { typeId: Buffer.from([0x01, 0x00, 0x00, 0x00]) });
     });
 
     it('rejects an unrecognized network ID', async function () {
-      const prompts1 = flowAccept(this.speculos, 1, "Next");
-      await expectSignFailure(this.ava, { networkId: Buffer.from([0x01, 0x00, 0x00, 0x00]) });
-      expect(await prompts1).to.deep.equal([{header:"Sign",body:"Transaction"}]);
+      await expectSignFailure(
+        this.speculos,
+        this.ava,
+        { networkId: Buffer.from([0x01, 0x00, 0x00, 0x00]) },
+        [[{header:"Sign",body:"Transaction"}]],
+      );
     });
 
     it('rejects a recognized network ID that does not match blockchain ID', async function () {
-      const speculos = this.speculos;
-      const prompts = await expectSignFailure(
+      await expectSignFailure(
+        this.speculos,
         this.ava,
         { networkId: Buffer.from([0x00, 0x00, 0x00, 0x01]) },
-        async () => {
-          return [
-            await flowAccept(speculos, 1, "Next"),
-          ];
-        },
+        [[{header:"Sign",body:"Transaction"}]],
       );
-      expect(prompts).to.deep.equal([
-        [{header:"Sign",body:"Transaction"}],
-      ]);
     });
 
     it('rejects transactions with non-uniform asset IDs', async function () {
@@ -303,29 +289,20 @@ describe("Basic Tests", () => {
         { inputAssetId: assetId2, outputAssetId: assetId1 },
       ];
 
-      for (i in overrides) {
-        const prompts = await expectSignFailure(
+      for (o of overrides) {
+        await expectSignFailure(
+          this.speculos,
           this.ava,
-          overrides[i],
-          async () => {
-            return [
-              await flowAccept(speculos, 1, "Next"),
-              await flowAccept(speculos, 1, "Next"),
-              await flowAccept(speculos, 1, "Next"),
-              await flowAccept(speculos, 1, "Next"),
-            ];
-          },
+          o,
+          [
+            [{header:"Sign",body:"Transaction"}],
+            [{header:"Amount",body:"12345"}],
+            [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
+            [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
+          ],
         );
-
-        expect(prompts).to.deep.equal([
-          [{header:"Sign",body:"Transaction"}],
-          [{header:"Amount",body:"12345"}],
-          [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
-          [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
-        ]);
       }
     });
-    */
   });
 });
 
@@ -456,7 +433,6 @@ async function signTransaction(
     fields.extraEndBytes,
   ]);
 
-  console.log("Sending transaction... (" + txn.length + ")");
   return await ava.signTransaction(
     BIPPath.fromString(pathPrefix),
     pathSuffixes.map(x => BIPPath.fromString(x, false)),
@@ -464,18 +440,18 @@ async function signTransaction(
   );
 }
 
-async function expectSignFailure(ava, fields, makePrompts = () => { return; }) {
-  let prompts;
+async function expectSignFailure(speculos, ava, fields, prompts=undefined) {
   try {
-    const sigPromise = signTransaction(ava, "44'/9000'/1'", ["0/0"], fields);
-    prompts = await makePrompts();
-    await sigPromise;
+    const ui = prompts && prompts.length > 0
+      ? await flowMultiPrompt(speculos, prompts, "Next", "Next")
+      : undefined;
+    await signTransaction(ava, "44'/9000'/1'", ["0/0"], fields);
+    if (ui) await ui.promptsPromise;
     throw "Signing should have been rejected";
   } catch (e) {
     expect(e).has.property('statusCode', 0x9405); // PARSE_ERROR
     expect(e).has.property('statusText', 'UNKNOWN_ERROR');
   }
-  return prompts;
 }
 
 async function checkSignTransactionResult(ava, sig, pathPrefix, pathSuffixes) {
