@@ -108,32 +108,37 @@ describe("Basic Tests", () => {
       }
     });
 
-    /*
     it('can sign the transaction from the serialization reference in verbose mode', async function () {
       const pathPrefix = "44'/9000'/1'";
       const pathSuffixes = ["0/0", "0/1", "100/100"];
-      const sigPromise = signTransaction(this.ava, pathPrefix, pathSuffixes);
-      const prompts = [
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1, "Next"),
-        await flowAccept(this.speculos, 1),
-      ];
 
-      await checkSignTransactionResult(this.ava, await sigPromise, pathPrefix, pathSuffixes);
-
-      expect(prompts).to.deep.equal([
+      prompts = [
         [{header:"Sign",body:"Transaction"}],
         [{header:"Amount",body:"12345"}],
         [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
         [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
         [{header:"Fee",body:"123444444"}],
         [{header:"Finalize",body:"Transaction"}],
-      ]);
+      ]
+      const ui = await automationStart(this.speculos, async (speculos, screens) => {
+        for (p of prompts.slice(0,-1)) {
+          let rp = (await acceptPrompts(undefined, "Next")(speculos, screens)).promptList;
+          // Only looking at the last prompt, because we bounce off the home screen sometimes during this process:
+          expect([ rp[rp.length-1] ]).to.deep.equal(p);
+        }
+        let rp = (await acceptPrompts(undefined, "Accept")(speculos, screens)).promptList;
+        expect([ rp[rp.length-1] ]).to.deep.equal(prompts[prompts.length-1]);
+        return true;
+      });
+      const sigPromise = signTransaction(this.ava, pathPrefix, pathSuffixes);
+
+      await ui.promptsPromise;
+
+      await checkSignTransactionResult(this.ava, await sigPromise, pathPrefix, pathSuffixes);
+
     });
 
+    /*
     it('can sign a sample everest transaction', async function () {
       const txn = Buffer.from([
         // Codec ID

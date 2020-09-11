@@ -109,6 +109,9 @@ async function automationStart(speculos, interactionFunc) {
       promptVal=await sendPromise;
       sendPromise=new Promise(r=>{sendEvent = r;});
       return promptVal;
+    },
+    peek: async ()=>{
+      return await sendPromise;
     }
   };
   
@@ -163,9 +166,13 @@ async function syncWithLedger(speculos, source, interactionFunc) {
     speculos.button("Ll");
     screen = await source.next();
   }
+  // Sink some extra homescreens to make us a bit more durable to failing tests.
+  while(await source.peek().header == "Avalanche" || await source.peek().body == "Quit") {
+    await source.next();
+  }
   // And continue on to interactionFunc
   let interactFP = interactionFunc(speculos, source);
-  return { promptsPromise: interactFP };
+  return { promptsPromise: interactFP.finally(() => { source.unsubscribe(); }) };
 }
 
 async function readMultiScreenPrompt(speculos, source) {
@@ -217,7 +224,6 @@ function acceptPrompts(expectedPrompts, selectPrompt) {
         }
       }
 
-      screens.unsubscribe();
       if (expectedPrompts) {
         expect(promptList).to.deep.equal(expectedPrompts);
         return { promptList, promptsMatch: true };
@@ -237,6 +243,8 @@ const fcConfig = {
 fc.configureGlobal(fcConfig);
 
 global.flowAccept = flowAccept;
+global.automationStart = automationStart;
+global.acceptPrompts = acceptPrompts;
 global.signHashPrompts = (hash, pathPrefix) => {
   return [
     {header:"Sign",body:"Hash"},
