@@ -18,20 +18,26 @@ describe("Basic Tests", () => {
 
   context('Public Keys', function () {
     it('can retrieve an address from the app', async function() {
-      await flowAccept(this.speculos);
+      const flow = await flowAccept(this.speculos);
+      console.log("Proceeding");
       const key = await this.ava.getWalletAddress("44'/9000'/0'/0/0");
       expect(key).to.equalBytes('41c9cc6fd27e26e70f951869fb09da685a696f0a');
+      console.log("Waiting for prompts");
+      await flow.promptsPromise;
+      console.log("Done");
     });
     it('can retrieve a different address from the app', async function() {
-      await flowAccept(this.speculos);
+      const flow = await flowAccept(this.speculos);
       const key = await this.ava.getWalletAddress("44'/9000'/1'/0/0");
       expect(key).to.equalBytes('f14c91be3a26e3ce30f970d87257fd2fb3dfbb7f');
+      //await flow.promptsPromise;
     });
     it('produces the expected top-level extended key', async function() {
-      await flowAccept(this.speculos);
+      const flow = await flowAccept(this.speculos);
       const key = await this.ava.getWalletExtendedPublicKey("44'/9000'");
       expect(key).to.have.property('public_key').equalBytes('044b68da714d7f8b9d97a9071f2977b587183972f0aa18a6af0b5917d3b2820686c521a7d4ac90a6565df51cb9e7a5309cd2d46907450bd8d8dd89ba16751ed8ee');
       expect(key).to.have.property('chain_code').to.equalBytes('3b0c30e8b72f70ebe99698aca6ef8f380290c235337916b27730b301e978e664');
+      // await flow.promptsPromise;
     });
     it('can retrieve an extended public key from the app', async function() {
       await flowAccept(this.speculos);
@@ -102,6 +108,7 @@ describe("Basic Tests", () => {
       }
     });
 
+    /*
     it('can sign the transaction from the serialization reference in verbose mode', async function () {
       const pathPrefix = "44'/9000'/1'";
       const pathSuffixes = ["0/0", "0/1", "100/100"];
@@ -118,12 +125,12 @@ describe("Basic Tests", () => {
       await checkSignTransactionResult(this.ava, await sigPromise, pathPrefix, pathSuffixes);
 
       expect(prompts).to.deep.equal([
-        [{"3":"Sign","17":"Transaction"}],
-        [{"3":"Amount","17":"12345"}],
-        [{"3":"To Address","17":"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
-        [{"3":"To Address","17":"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
-        [{"3":"Fee","17":"123444444"}],
-        [{"3":"Finalize","17":"Transaction"}],
+        [{header:"Sign",body:"Transaction"}],
+        [{header:"Amount",body:"12345"}],
+        [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
+        [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
+        [{header:"Fee",body:"123444444"}],
+        [{header:"Finalize",body:"Transaction"}],
       ]);
     });
 
@@ -225,13 +232,13 @@ describe("Basic Tests", () => {
       await checkSignTransactionResult(this.ava, await sigPromise, pathPrefix, pathSuffixes);
 
       expect(prompts).to.deep.equal([
-        [{"3":"Sign","17":"Transaction"}],
-        [{"3":"Amount","17":"1000"}],
-        [{"3":"To Address","17":"everest10an3cucdfqru984pnvv6y0rspvvclz63qnegnr"}],
-        [{"3":"Amount","17":"6999000"}],
-        [{"3":"To Address","17":"everest15jh6hlessx2jtxvs48jnr0vzxrg34x32ef0ckt"}],
-        [{"3":"Fee","17":"1000000"}],
-        [{"3":"Finalize","17":"Transaction"}],
+        [{header:"Sign",body:"Transaction"}],
+        [{header:"Amount",body:"1000"}],
+        [{header:"To Address",body:"everest10an3cucdfqru984pnvv6y0rspvvclz63qnegnr"}],
+        [{header:"Amount",body:"6999000"}],
+        [{header:"To Address",body:"everest15jh6hlessx2jtxvs48jnr0vzxrg34x32ef0ckt"}],
+        [{header:"Fee",body:"1000000"}],
+        [{header:"Finalize",body:"Transaction"}],
       ]);
     });
 
@@ -264,7 +271,7 @@ describe("Basic Tests", () => {
     it('rejects an unrecognized network ID', async function () {
       const prompts1 = flowAccept(this.speculos, 1, "Next");
       await expectSignFailure(this.ava, { networkId: Buffer.from([0x01, 0x00, 0x00, 0x00]) });
-      expect(await prompts1).to.deep.equal([{"3":"Sign","17":"Transaction"}]);
+      expect(await prompts1).to.deep.equal([{header:"Sign",body:"Transaction"}]);
     });
 
     it('rejects a recognized network ID that does not match blockchain ID', async function () {
@@ -279,7 +286,7 @@ describe("Basic Tests", () => {
         },
       );
       expect(prompts).to.deep.equal([
-        [{"3":"Sign","17":"Transaction"}],
+        [{header:"Sign",body:"Transaction"}],
       ]);
     });
 
@@ -319,13 +326,14 @@ describe("Basic Tests", () => {
         );
 
         expect(prompts).to.deep.equal([
-          [{"3":"Sign","17":"Transaction"}],
-          [{"3":"Amount","17":"12345"}],
-          [{"3":"To Address","17":"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
-          [{"3":"To Address","17":"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
+          [{header:"Sign",body:"Transaction"}],
+          [{header:"Amount",body:"12345"}],
+          [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
+          [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
         ]);
       }
     });
+    */
   });
 });
 
