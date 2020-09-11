@@ -87,6 +87,7 @@ let
             (s."flow-typed@^2.6.1")
             (s."prettier@^1.18.2")
             (s."uglify-js@^3.6.1")
+            (s."create-hash@1.2.0")
           ];
         };
       };

@@ -47,6 +47,7 @@ exports.mochaHooks = {
       }
     }
     this.ava = new Avalanche(this.speculos, "Avalanche", _ => { return; });
+    this.speculos.
     this.flushStderr = function() {
       if (this.speculosProcess) this.speculosProcess.stdio[2].read();
     };
@@ -69,33 +70,21 @@ exports.mochaHooks = {
 }
 
 async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
-  let promptsPromiseResolve;
-  const promptsPromise = new Promise(r => { promptsPromiseResolve = r; });
-  let promptsMatchPromiseResolve;
-  const promptsMatchPromise = new Promise(r => { promptsMatchPromiseResolve = r; });
+  automationStart(speculos, acceptPrompts(expectedPrompts, acceptPrompt));
+}
+
+
+/* State machine to read screen events and turn them into screens of prompts. */
+async function automationStart(speculos, interactionFunc) {
   let readyPromiseResolve;
   const readyPromise = new Promise(r => { readyPromiseResolve = r; });
 
-  if (!speculos.automationEvents) {
-    if (expectedPrompts) {
-      console.log("Expected prompts: ");
-      for (p in expectedPrompts) {
-        console.log("Prompt %d", p);
-        console.log(expectedPrompts[p][3]);
-        console.log(expectedPrompts[p][17]);
-      }
-    }
-    console.log("Please %s this prompt", acceptPrompt);
-    promptsPromiseResolve();
-    readyPromiseResolve({ prompts: promptsPromise, promptsMatch: Promise.resolve(true) });
+  // If this doens't exist, we're running against a hardware ledger; just call
+  // interactionFunc with no events iterator.
+  if(!speculos.automationEvents) {
+    readyPromiseResolve({ promptsPromise: interactionFunc(speculos) });
     return readyPromise;
   }
-
-  let isReady = false;
-  let isPrimed = false;
-  let prompts = [{}];
-  let isFirst = false;
-  let isLast = false;
 
   // This is so that you can just "await flowAccept(this.speculos);" in a test
   // without actually waiting for the prompts.  If we don't do this, you can
@@ -103,69 +92,125 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
 
   await speculos.promptsEndPromise; // Wait for any previous interaction to end.
   speculos.promptsEndPromise = promptsPromise; // Set ourselves as the interaction.
+        
+  // Make an async iterator we can push stuff into.
+  let sendEvent;
+  let sendPromise=new Promise(r=>{sendEvent = r;});
+  let asyncEventIter = {
+    next: async ()=>{
+      promptVal=await sendPromise;
+      sendPromise=new Promise(r=>{sendEvent = r;});
+      return promptVal;
+    }
+  };
+  
+  // Sync up with the ledger; wait until we're on the home screen, and do some
+  // clicking back and forth to make sure we see the event.
+  // Then pass screens to interactionFunc.
+  readyPromise = syncWithLedger(speculos, asyncEventIter, interactionFunc);
+
+  let promptHeader;
+  let promptBody;
 
   let subscript = speculos.automationEvents.subscribe({
     next: evt => {
-      if (!isReady) {
-        if (!isPrimed) {
-          if (evt.y == 19 && evt.text === "Quit") {
-            isPrimed = true;
-          }
-          speculos.button("Ll");
-          return;
+        // Wrap up two-line prompts into one:
+        if(evt.y == 3) {
+          promptHeader = evt.text;
+          return; // The top line comes out first, so now wait for the next draw.
         } else {
-          if (evt.y === 17 && evt.text === "0.1.0") {
-            isReady = true;
-            readyPromiseResolve({prompts: promptsPromise, promptsMatch: promptsMatchPromise});
-            return;
-          } else {
-            speculos.button("Ll");
-          }
+          promptBody = evt.text;
         }
-      } else {
-        if (evt.text === "Quit") {
-          return;
-        }
-        if (evt.y === 3) {
-          let m = evt.text.match(/^(.*) \(([0-9])\/([0-9])\)$/)
-          if (m) {
-            isFirst = m[2] === '1';
-            isLast = m[2] === m[3];
-            evt.text = m[1];
-          } else {
-            isFirst = true;
-            isLast = true;
-          }
-        }
-        if (evt.text !== "Reject" && evt.text !== acceptPrompt) {
-          if (isFirst) {
-            prompts[prompts.length - 1][evt.y] = evt.text;
-          } else if (evt.y !== 3) {
-            prompts[prompts.length - 1][evt.y] = prompts[prompts.length - 1][evt.y] + evt.text;
-          }
-        }
-        if (evt.y !== 3 && isLast) prompts.push({});
-        if (evt.text !== acceptPrompt) {
-          if (evt.y !== 3) {
-            speculos.button("Rr");
-          }
-        } else {
-          speculos.button("RLrl");
-          subscript.unsubscribe();
-          const resultingPrompts = prompts.filter(a => Object.keys(a).length != 0);
-          if (expectedPrompts) {
-            expect(resultingPrompts).to.deep.equal(expectedPrompts);
-            promptsMatchPromiseResolve(true);
-          }
-          promptsPromiseResolve(resultingPrompts);
-        }
-      }
-    }
-  });
+
+        sendEvent({ promptHeader, promptBody });
+        promptBody=undefined;
+        promptHeader=undefined;
+    }});
+  
+  asyncEventIter.unsubscribe = subscript.unsubscribe;
+
+  // Send a rightward-click to make sure we get _an_ event and our state
+  // machine starts.
   speculos.button("Rr");
+
   return readyPromise;
 }
 
+async function syncWithLedger(speculos, source, interactionFunc) {
+  let screen = await source.next();
+  // Scroll to the end; we do this because we might have seen "Avalanche" when
+  // we subscribed, but needed to send a button click to make sure we reached
+  // this point.
+  while(screen.promptBody != "Quit") {
+    speculos.button("Rr");
+    screen = await source.next();
+    body = body + screen.promptBody;
+  }
+  // Scroll back to "Avalanche", and we're ready and pretty sure we're on the
+  // home screen.
+  while(screen.promptHeader != "Avalanche") {
+    speculos.button("Ll");
+    screen = await source.next();
+    body = body + screen.promptBody;
+  }
+  // And continue on to interactionFunc
+  return { promptsPromise: interactionFunc(speculos, asyncEventIter).finally(source.unsubscribe()) };
+}
+
+async function readMultiScreenPrompt(speculos, source) {
+  let header;
+  let body;
+  let screen = await source.next();
+  let m = screen.promptHeader.match(/^(.*) \(([0-9])\/([0-9])\)$/);
+  if (m) {
+    header = m[1];
+    body = screen.promptBody;
+    while(m[2] !== m[3]) {
+      speculos.button("Rr");
+      let screen = await source.next();
+      let m = screen.promptHeader.match(/^(.*) \(([0-9])\/([0-9])\)$/);
+      body = body + screen.promptBody;
+    }
+    return { promptHeader: header, promptBody: body };
+  } else {
+    return screen;
+  }
+}
+
+async function acceptPrompts(expectedPrompts, selectPrompt) {
+  return (speculos, screens) => {
+    if(!screens) {
+      // We're running against hardware, so we can't prompt but
+      // should tell the person running the test what to do.
+      if (expectedPrompts) {
+        console.log("Expected prompts: ");
+        for (p in expectedPrompts) {
+          console.log("Prompt %d", p);
+          console.log(expectedPrompts[p][3]);
+          console.log(expectedPrompts[p][17]);
+        }
+      }
+      console.log("Please %s this prompt", acceptPrompt);
+    } else {
+      let promptList = [];
+      while((screen = readMultiScreenPrompt(speculos, screens)) != selectPrompt) {
+        if(screen.promptHeader != selectPrompt && screen.promptHeader != "Reject") {
+          promptList.push(screen);
+        }
+        if(screen.promptHeader != selectPrompt) speculos.button("Rr");
+        if(screen.promptHeader === selectPrompt) {
+          speculos.button("RLrl");
+        }
+      }
+      if (expectedPrompts) {
+        expect(promptList).to.deep.equal(expectedPrompts);
+        return { promptsList, promptsMatch: true };
+      } else {
+        return { promptsList };
+      }
+    }
+  }
+}
 
 const fcConfig = {
   interruptAfterTimeLimit: parseInt(process.env.GEN_TIME_LIMIT || 1000),
