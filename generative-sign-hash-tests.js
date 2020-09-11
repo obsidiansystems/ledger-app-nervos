@@ -15,46 +15,58 @@ const subAddressGen = fc.array(fc.integer(0,4294967295),2,2).map(bip.fromPathArr
 describe("Sign Hash tests", () => {
   context('Generative tests', function () {
     it('can sign a hash-sized sequence of bytes', async function () { // Need 'function' to get 'this' for mocha.
-      return await fc.assert(fc.asyncProperty(accountGen, fc.array(subAddressGen), fc.hexaString(64, 64), async (account, subAccts, hashHex) => {
-        this.flushStderr();
+      return await fc.assert(fc.asyncProperty(accountGen, fc.array(subAddressGen,1,10), fc.hexaString(64, 64), async (account, subAccts, hashHex) => {
+        let ui;
+        try {
+          this.flushStderr();
 
-        const expectedPrompts = signHashPrompts(hashHex.toUpperCase(), account.toString(true));
-        const ui = await flowAccept(this.speculos, expectedPrompts);
-        const hash = Buffer.from(hashHex, "hex");
-        const sigs = this.ava.signHash(account, subAccts, hash);
+          const expectedPrompts = signHashPrompts(hashHex.toUpperCase(), account.toString(true));
+          ui = await flowAccept(this.speculos, expectedPrompts);
+          const hash = Buffer.from(hashHex, "hex");
+          const sigs = this.ava.signHash(account, subAccts, hash);
 
-        await ui.promptsMatch;
+          const sv = await sigs;
 
-        const sv = await sigs;
-        for (ks of sv) {
-          const [keySuffix, sig] = ks;
+          await ui.promptsMatch;
+          for (ks of sv) {
+            const [keySuffix, sig] = ks;
 
-          await flowAccept(this.speculos);
-          const key = await this.ava.getWalletExtendedPublicKey(account.toString() + "/" + keySuffix);
+            await flowAccept(this.speculos);
+            const key = await this.ava.getWalletExtendedPublicKey(account.toString() + "/" + keySuffix);
 
-          const recovered = secp256k1.recover(Buffer.from(hash, "hex"), sig.slice(0, 64), sig[64], false);
-          expect(recovered).is.equalBytes(key.public_key);
+            const recovered = secp256k1.recover(Buffer.from(hash, "hex"), sig.slice(0, 64), sig[64], false);
+            expect(recovered).is.equalBytes(key.public_key);
+          }
+        } catch(e) {
+          ui.cancel();
+          throw(e);
         }
       }));
     });
 
     it('does not produce signatures when prompt is rejected', async function () { // Need 'function' to get 'this' for mocha.
       return await fc.assert(fc.asyncProperty(accountGen, fc.array(subAddressGen), fc.hexaString(64, 64), async (account, subAccts, hashHex) => {
-        this.flushStderr();
-        if (subAccts.length == 0) return;
-
-        const expectedPrompts = signHashPrompts(hashHex.toUpperCase(), account.toString(true));
-        const ui = await flowAccept(this.speculos, expectedPrompts, "Reject");
-        const hash = Buffer.from(hashHex, "hex");
+        let ui;
         try {
-          await this.ava.signHash(account, subAccts, hash);
-          throw "Rejected prompts should reject";
-        } catch(e) {
-          expect(e).has.property('statusCode', 0x6985);
-          expect(e).has.property('statusText', 'CONDITIONS_OF_USE_NOT_SATISFIED');
-        }
+          this.flushStderr();
+          if (subAccts.length == 0) return;
 
-        await ui.promptsMatch;
+          const expectedPrompts = signHashPrompts(hashHex.toUpperCase(), account.toString(true));
+          const ui = await flowAccept(this.speculos, expectedPrompts, "Reject");
+          const hash = Buffer.from(hashHex, "hex");
+          try {
+            await this.ava.signHash(account, subAccts, hash);
+            throw "Rejected prompts should reject";
+          } catch(e) {
+            expect(e).has.property('statusCode', 0x6985);
+            expect(e).has.property('statusText', 'CONDITIONS_OF_USE_NOT_SATISFIED');
+          }
+
+          await ui.promptsMatch;
+        } catch(e) {
+          ui.cancel();
+          throw(e);
+        }
       }));
     });
 

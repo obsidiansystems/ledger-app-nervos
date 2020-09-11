@@ -34,6 +34,7 @@
 		"hw-app-avalanche": "https://github.com/obsidiansystems/hw-app-avalanche.git#eac@verbose-signing-multi",
 		"@ledgerhq/hw-transport-node-speculos": "5.19.1",
 		"@ledgerhq/hw-transport-node-hid": "5.22.0",
-		"bip32-path": "^0.4.2"
+		"bip32-path": "^0.4.2",
+		"create-hash": "1.2.0"
 	}
 }

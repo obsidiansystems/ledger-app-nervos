@@ -41,14 +41,23 @@ exports.mochaHooks = {
               return subButton(btns);
             };
           }
+          if (process.env.DEBUG_SENDS) {
+            this.speculos.subExchange = this.speculos.exchange;
+            this.speculos.exchange = buff => {
+              console.log("Speculos send: " + buff.toString('hex'));
+              return this.speculos.subExchange(buff);
+            };
+          }
         } catch(e) {
           await new Promise(r => setTimeout(r, 500));
         }
       }
     }
+    this.speculos.handlerNum=0;
+    this.speculos.waitingQueue=[];
     this.ava = new Avalanche(this.speculos, "Avalanche", _ => { return; });
     this.flushStderr = function() {
-      if (this.speculosProcess) this.speculosProcess.stdio[2].read();
+      if (this.speculosProcess && this.speculosProcess.stdio[2]) this.speculosProcess.stdio[2].read();
     };
   },
   afterAll: async function () {
@@ -58,8 +67,8 @@ exports.mochaHooks = {
   },
   afterEach: async function () {
     if (this.speculosProcess) {
-      stdoutVal = this.speculosProcess.stdio[1].read();
-      stderrVal = this.speculosProcess.stdio[2].read();
+      stdoutVal = this.speculosProcess.stdio[1] && this.speculosProcess.stdio[1].read();
+      stderrVal = this.speculosProcess.stdio[2] && this.speculosProcess.stdio[2].read();
       if (this.currentTest.state === 'failed') {
         console.log("SPECULOS STDOUT:\n" + stdoutVal);
         console.log("SPECULOS STDERR:\n" + stderrVal);
@@ -84,12 +93,13 @@ async function automationStart(speculos, interactionFunc) {
   // This is so that you can just "await flowAccept(this.speculos);" in a test
   // without actually waiting for the prompts.  If we don't do this, you can
   // end up with two flowAccept calls active at once, causing issues.
+  let subNum = speculos.handlerNum++;
   let promptLockResolve;
   let promptsLock=new Promise(r=>{promptLockResolve=r});
   if(speculos.promptsEndPromise) {
-    await speculos.promptsEndPromise; // Wait for any previous interaction to end.
-    speculos.promptsEndPromise = promptsLock; // Set ourselves as the interaction.
+    await speculos.promptsEndPromise;
   }
+  speculos.promptsEndPromise = promptsLock; // Set ourselves as the interaction.
         
   // Make an async iterator we can push stuff into.
   let sendEvent;
@@ -108,23 +118,25 @@ async function automationStart(speculos, interactionFunc) {
   let readyPromise = syncWithLedger(speculos, asyncEventIter, interactionFunc);
   
   // Resolve our lock when we're done
-  readyPromise.then(r=>r.promptsPromise.then(promptLockResolve(true)));
+  readyPromise.then(r=>r.promptsPromise.then(()=>{promptLockResolve(true)}));
 
   let header;
   let body;
 
   let subscript = speculos.automationEvents.subscribe({
     next: evt => {
-        // Wrap up two-line prompts into one:
-        if(evt.y == 3) {
-          header = evt.text;
-          return; // The top line comes out first, so now wait for the next draw.
-        } else {
-          body = evt.text;
-        }
-        sendEvent({ ...(header && {header}), body });
-        body=undefined;
-        header=undefined;
+      // Wrap up two-line prompts into one:
+      if(evt.y == 3) {
+        header = evt.text;
+        return; // The top line comes out first, so now wait for the next draw.
+      } else {
+        body = evt.text;
+      }
+      screen = { ...(header && {header}), body };
+      // console.log("SCREEN (" + subNum + "): " + JSON.stringify(screen));
+      sendEvent(screen);
+      body=undefined;
+      header=undefined;
     }});
   
   asyncEventIter.unsubscribe = () => { subscript.unsubscribe(); };
@@ -133,7 +145,7 @@ async function automationStart(speculos, interactionFunc) {
   // machine starts.
   speculos.button("Rr");
 
-  return readyPromise;
+  return readyPromise.then(r=>{r.cancel = ()=>{subscript.unsubscribe(); promptLockResolve(true);}; return r;});
 }
 
 async function syncWithLedger(speculos, source, interactionFunc) {
@@ -153,7 +165,6 @@ async function syncWithLedger(speculos, source, interactionFunc) {
   }
   // And continue on to interactionFunc
   let interactFP = interactionFunc(speculos, source);
-  console.log("Calling interactionFunc, letting test proceed.");
   return { promptsPromise: interactFP };
 }
 
