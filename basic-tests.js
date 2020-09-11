@@ -19,12 +19,9 @@ describe("Basic Tests", () => {
   context('Public Keys', function () {
     it('can retrieve an address from the app', async function() {
       const flow = await flowAccept(this.speculos);
-      console.log("Proceeding");
       const key = await this.ava.getWalletAddress("44'/9000'/0'/0/0");
       expect(key).to.equalBytes('41c9cc6fd27e26e70f951869fb09da685a696f0a');
-      console.log("Waiting for prompts");
       await flow.promptsPromise;
-      console.log("Done");
     });
     it('can retrieve a different address from the app', async function() {
       await flowAccept(this.speculos);
@@ -106,15 +103,13 @@ describe("Basic Tests", () => {
       }
     });
 
-    it('can sign the transaction from the serialization reference in verbose mode', async function () {
+    it('can sign a transaction based on the serialization reference in verbose mode', async function () {
       const pathPrefix = "44'/9000'/1'";
       const pathSuffixes = ["0/0", "0/1", "100/100"];
-
       const ui = await flowMultiPrompt(this.speculos, [
         [{header:"Sign",body:"Transaction"}],
         [{header:"Amount",body:"12345"}],
         [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
-        [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
         [{header:"Fee",body:"123444444"}],
         [{header:"Finalize",body:"Transaction"}],
       ]);
@@ -226,7 +221,6 @@ describe("Basic Tests", () => {
           [{header:"Sign",body:"Transaction"}],
           [{header:"Amount",body:"12345"}],
           [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
-          [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
           [{header:"Fee",body:"123444444"}],
         ], "Next", "Next");
         await signTransaction(this.ava, "44'/9000'/1'", ["0/0"], {
@@ -284,7 +278,6 @@ describe("Basic Tests", () => {
           [{header:"Sign",body:"Transaction"}],
           [{header:"Amount",body:"12345"}],
           [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
-          [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
         ],
       );
     });
@@ -319,7 +312,6 @@ describe("Basic Tests", () => {
             [{header:"Sign",body:"Transaction"}],
             [{header:"Amount",body:"12345"}],
             [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
-            [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
           ],
         );
       }
@@ -399,15 +391,17 @@ async function signTransaction(
       fields.outputAssetId,
       fields.outputTypeId,
       Buffer.from([
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x30, 0x39, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0xd4, 0x31, 0x00, 0x00, 0x00, 0x01,
-        0x00, 0x00, 0x00, 0x02, 0x51, 0x02, 0x5c, 0x61,
-        0xfb, 0xcf, 0xc0, 0x78, 0xf6, 0x93, 0x34, 0xf8,
-        0x34, 0xbe, 0x6d, 0xd2, 0x6d, 0x55, 0xa9, 0x55,
-        0xc3, 0x34, 0x41, 0x28, 0xe0, 0x60, 0x12, 0x8e,
-        0xde, 0x35, 0x23, 0xa2, 0x4a, 0x46, 0x1c, 0x89,
-        0x43, 0xab, 0x08, 0x59,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x39, // amount
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xd4, 0x31, // locktime
+        0x00, 0x00, 0x00, 0x01, // threshold
+        0x00, 0x00, 0x00, 0x01, // number of addresses (modified from reference)
+        0x51, 0x02, 0x5c, 0x61, 0xfb, 0xcf, 0xc0, 0x78,
+        0xf6, 0x93, 0x34, 0xf8, 0x34, 0xbe, 0x6d, 0xd2,
+        0x6d, 0x55, 0xa9, 0x55, // address 1
+        // part of reference serialiazation transaction but we reject multi-address outputs
+        // 0xc3, 0x34, 0x41, 0x28, 0xe0, 0x60, 0x12, 0x8e,
+        // 0xde, 0x35, 0x23, 0xa2, 0x4a, 0x46, 0x1c, 0x89,
+        // 0x43, 0xab, 0x08, 0x59, // address 2
       ]),
   ]);
 
