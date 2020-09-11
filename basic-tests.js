@@ -27,17 +27,15 @@ describe("Basic Tests", () => {
       console.log("Done");
     });
     it('can retrieve a different address from the app', async function() {
-      const flow = await flowAccept(this.speculos);
+      await flowAccept(this.speculos);
       const key = await this.ava.getWalletAddress("44'/9000'/1'/0/0");
       expect(key).to.equalBytes('f14c91be3a26e3ce30f970d87257fd2fb3dfbb7f');
-      //await flow.promptsPromise;
     });
     it('produces the expected top-level extended key', async function() {
-      const flow = await flowAccept(this.speculos);
+      await flowAccept(this.speculos);
       const key = await this.ava.getWalletExtendedPublicKey("44'/9000'");
       expect(key).to.have.property('public_key').equalBytes('044b68da714d7f8b9d97a9071f2977b587183972f0aa18a6af0b5917d3b2820686c521a7d4ac90a6565df51cb9e7a5309cd2d46907450bd8d8dd89ba16751ed8ee');
       expect(key).to.have.property('chain_code').to.equalBytes('3b0c30e8b72f70ebe99698aca6ef8f380290c235337916b27730b301e978e664');
-      // await flow.promptsPromise;
     });
     it('can retrieve an extended public key from the app', async function() {
       await flowAccept(this.speculos);
