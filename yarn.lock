@@ -3972,7 +3972,7 @@ human-signals@^1.1.1:
 
 "hw-app-avalanche@https://github.com/obsidiansystems/hw-app-avalanche.git#eac@verbose-signing-multi":
   version "0.1.0"
-  resolved "https://github.com/obsidiansystems/hw-app-avalanche.git#2dbc2f09574f3ad65e7adaaf5f5430b9e9ff7f5f"
+  resolved "https://github.com/obsidiansystems/hw-app-avalanche.git#d00c3098d55306277c6f61c0d01edb139a86ef4d"
   dependencies:
     "@ledgerhq/hw-transport" "^5.9.0"
     bip32-path "0.4.2"
