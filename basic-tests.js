@@ -108,8 +108,7 @@ describe("Basic Tests", () => {
       const pathSuffixes = ["0/0", "0/1", "100/100"];
       const ui = await flowMultiPrompt(this.speculos, [
         [{header:"Sign",body:"Transaction"}],
-        [{header:"Amount",body:"12345"}],
-        [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
+        [{header:"Transfer",body:"12345 to denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
         [{header:"Fee",body:"123444444"}],
         [{header:"Finalize",body:"Transaction"}],
       ]);
@@ -199,10 +198,8 @@ describe("Basic Tests", () => {
       const pathSuffixes = ["0/0", "0/1", "100/100"];
       const ui = await flowMultiPrompt(this.speculos, [
         [{header:"Sign",body:"Transaction"}],
-        [{header:"Amount",body:"1000"}],
-        [{header:"To Address",body:"everest10an3cucdfqru984pnvv6y0rspvvclz63qnegnr"}],
-        [{header:"Amount",body:"6999000"}],
-        [{header:"To Address",body:"everest15jh6hlessx2jtxvs48jnr0vzxrg34x32ef0ckt"}],
+        [{header:"Transfer",body:"1000 to everest10an3cucdfqru984pnvv6y0rspvvclz63qnegnr"}],
+        [{header:"Transfer",body:"6999000 to everest15jh6hlessx2jtxvs48jnr0vzxrg34x32ef0ckt"}],
         [{header:"Fee",body:"1000000"}],
         [{header:"Finalize",body:"Transaction"}],
       ]);
@@ -219,8 +216,7 @@ describe("Basic Tests", () => {
       try {
         const ui = await flowMultiPrompt(this.speculos, [
           [{header:"Sign",body:"Transaction"}],
-          [{header:"Amount",body:"12345"}],
-          [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
+          [{header:"Transfer",body:"12345 to denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
           [{header:"Fee",body:"123444444"}],
         ], "Next", "Next");
         await signTransaction(this.ava, "44'/9000'/1'", ["0/0"], {
@@ -276,8 +272,7 @@ describe("Basic Tests", () => {
         { inputTypeId: Buffer.from([0x01, 0x00, 0x00, 0x00]) },
         [
           [{header:"Sign",body:"Transaction"}],
-          [{header:"Amount",body:"12345"}],
-          [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
+          [{header:"Transfer",body:"12345 to denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
         ],
       );
     });
@@ -308,8 +303,7 @@ describe("Basic Tests", () => {
           o,
           [
             [{header:"Sign",body:"Transaction"}],
-            [{header:"Amount",body:"12345"}],
-            [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
+            [{header:"Transfer",body:"12345 to denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
           ],
         );
       }
@@ -339,7 +333,6 @@ describe("Basic Tests", () => {
         { transferrableOutput: output },
         [
           [{header:"Sign",body:"Transaction"}],
-          [{header:"Amount",body:"6999000"}],
         ],
       );
     });
