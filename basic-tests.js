@@ -268,6 +268,29 @@ describe("Basic Tests", () => {
       );
     });
 
+    it('rejects an unrecognized output type ID', async function () {
+      await expectSignFailure(
+        this.speculos,
+        this.ava,
+        { outputTypeId: Buffer.from([0x01, 0x00, 0x00, 0x00]) },
+        [[{header:"Sign",body:"Transaction"}]],
+      );
+    });
+
+    it('rejects an unrecognized input type ID', async function () {
+      await expectSignFailure(
+        this.speculos,
+        this.ava,
+        { inputTypeId: Buffer.from([0x01, 0x00, 0x00, 0x00]) },
+        [
+          [{header:"Sign",body:"Transaction"}],
+          [{header:"Amount",body:"12345"}],
+          [{header:"To Address",body:"denali12yp9cc0melq83a5nxnurf0nd6fk4t224dtg0lx"}],
+          [{header:"To Address",body:"denali1cv6yz28qvqfgah34yw3y53su39p6kzzexk8ar3"}],
+        ],
+      );
+    });
+
     it('rejects transactions with non-uniform asset IDs', async function () {
       const assetId1 = Buffer.from([
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -367,15 +390,18 @@ async function signTransaction(
       networkId: Buffer.from([0x00, 0x00, 0x00, 0x03]),
       extraEndBytes: Buffer.from([]),
       inputAssetId: assetId,
-      outputAssetId: assetId
+      inputTypeId: Buffer.from([0x00, 0x00, 0x00, 0x05]),
+      outputAssetId: assetId,
+      outputTypeId: Buffer.from([0x00, 0x00, 0x00, 0x07])
     },
     ...fieldOverrides,
   }
 
   const transferrableOutput = Buffer.concat([
       fields.outputAssetId,
+      fields.outputTypeId,
       Buffer.from([
-        0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x30, 0x39, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0xd4, 0x31, 0x00, 0x00, 0x00, 0x01,
         0x00, 0x00, 0x00, 0x02, 0x51, 0x02, 0x5c, 0x61,
@@ -396,8 +422,8 @@ async function signTransaction(
       0x00, 0x00, 0x00, 0x05, // UTXO index
     ]),
     fields.inputAssetId,
+    fields.inputTypeId,
     Buffer.from([
-      0x00, 0x00, 0x00, 0x05, // type ID
       0x00, 0x00, 0x00, 0x00, 0x07, 0x5b, 0xcd, 0x15, // amount
       0x00, 0x00, 0x00, 0x02, // number of address indices
       0x00, 0x00, 0x00, 0x03, // address index 1
