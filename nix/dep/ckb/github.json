@@ -3,6 +3,6 @@
   "repo": "ckb",
   "branch": "add-default-nix",
   "private": false,
-  "rev": "ce3afe1bdd4a25b190251fe12dacd09c26fa24c1",
-  "sha256": "0wqv5hrbqrjklvcasa5y0x6kydrkwqavv2wbsw0zmczyl6qy54x1"
+  "rev": "31fba30c3973f8dde6223bad36646077c2262d0c",
+  "sha256": "0zfp61gbwxhaclgkr5fg0pih2y5a945z019r8grl144q4g3m66fs"
 }
