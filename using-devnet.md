@@ -46,12 +46,12 @@ Uncomment the the last 5 lines of `ckb.toml` by removing the `#` at the beginnin
 
 When you're done, the section should look something like this:
 
-```
+```toml
 [block_assembler]
-code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8" // Do not change this.
-args = "<lock-arg>" // Set this to the lock-arg which should receive block rewards
-hash_type = "type" // Do not change this.
-message = "A 0x-prefixed hex string" // Change this to "0x" to supply an empty message
+code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8" # Do not change this.
+args = "<lock-arg>" # Set this to the lock-arg which should receive block rewards
+hash_type = "type" # Do not change this.
+message = "A 0x-prefixed hex string" # Change this to "0x" to supply an empty message
 ```
 
 ### Modifications: specs/dev.toml
@@ -62,20 +62,20 @@ In this file we will make two adjustments to make time move faster in our devnet
 
 When you are done with your modifications, this portion of the `[params]` section should look like this:
 
-```
-genesis_epoch_length = 1 // Make sure this line is uncommented!
+```toml
+genesis_epoch_length = 1 # Make sure this line is uncommented!
 # For development and testing purposes only.
 # Keep difficulty be permanent if the pow is Dummy. (default: false)
-permanent_difficulty_in_dummy = true // Make sure this line is uncommented by removing the '#' from the beginning of the line
+permanent_difficulty_in_dummy = true # Make sure this line is uncommented by removing the '#' from the beginning of the line
 ```
 
 This file also allocates CKB in the genesis block to a few addresses. We recommend allocating CKB to one of your accounts for testing purposes:
 
-```
+```toml
 [[genesis.issued_cells]]
 capacity = 20_000_000_000_00000000
 lock.code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
-lock.args = "<your-lock-arg-here>" // set this value to your lock-arg to receive CKB in the genesis block
+lock.args = "<your-lock-arg-here>" # set this value to your lock-arg to receive CKB in the genesis block
 lock.hash_type = "type"
 ```
 
