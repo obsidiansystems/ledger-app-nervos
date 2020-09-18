@@ -1,8 +1,16 @@
 { pkgs ? import ./dep/nixpkgs {} }:
 
+let
+  # TODO: Replace this with hackGet for added safety checking once hackGet is separated from reflex-platform
+  fetchThunk = p:
+    if builtins.pathExists (p + /thunk.nix)
+      then (import (p + /thunk.nix))
+    else p;
+in
+
 pkgs.stdenv.mkDerivation {
   name = "usbtool";
-  src = import ./dep/v-usb/thunk.nix;
+  src = fetchThunk ./dep/v-usb;
   preBuild = ''
     cd examples/usbtool
     ./make-files.sh

@@ -1,8 +1,8 @@
 {
-  "owner": "obdev",
+  "owner": "obsidiansystems",
   "repo": "v-usb",
-  "branch": "master",
+  "branch": "ledger-log-new",
   "private": false,
-  "rev": "aff0af2a1d19feb31b2a93cda928c2b34e58c8d6",
-  "sha256": "1zps12nvlaxxix3j3bxpl98rpfagh2r8l3f6dqargfxarcaiahhk"
+  "rev": "31547d5d55acc77d3c0c8b8a65ba2bad5611018a",
+  "sha256": "1ihdxbz6z6wyz71sb5fb5rf2510vfv566wi2js0wnh5mivmrbrfd"
 }
