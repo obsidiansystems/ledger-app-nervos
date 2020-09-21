@@ -62,7 +62,7 @@ size_t handle_apdu_get_wallet_id(void) {
     uint8_t wallet_id[CX_SHA256_SIZE];
 
     bip32_path_t id_path = {2, {ROOT_PATH_0, ROOT_PATH_1}};
-    const unsigned char hmac_key[] = "wallet-id";
+    static const unsigned char hmac_key[] = "wallet-id";
 
     cx_hmac_sha256_t hmac_state;
     cx_hmac_sha256_init(&hmac_state, hmac_key, sizeof(hmac_key)-1);
@@ -78,14 +78,14 @@ size_t handle_apdu_get_wallet_id(void) {
 }
 
 #ifdef STACK_MEASURE
-__attribute__((noinline)) void stack_sentry_fill() {
+__attribute__((noinline)) void stack_sentry_fill(void) {
   uint32_t* p;
   volatile int top;
   top=5;
   memset((void*)(&app_stack_canary+1), 42, ((uint8_t*)(&top-10))-((uint8_t*)&app_stack_canary));
 }
 
-void measure_stack_max() {
+void measure_stack_max(void) {
   uint32_t* p;
   volatile int top;
   for(p=&app_stack_canary+1; p<((&top)-10); p++)
