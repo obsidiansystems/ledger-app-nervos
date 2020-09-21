@@ -87,7 +87,7 @@ async function automationStart(speculos, interactionFunc) {
   // If this doens't exist, we're running against a hardware ledger; just call
   // interactionFunc with no events iterator.
   if(!speculos.automationEvents) {
-    return new Promise(r=>{ promptsPromise: interactionFunc(speculos) });
+    return new Promise(r=>r({ promptsPromise: interactionFunc(speculos) }));
   }
 
   // This is so that you can just "await flowAccept(this.speculos);" in a test
@@ -208,7 +208,8 @@ function acceptPrompts(expectedPrompts, selectPrompt) {
           console.log(expectedPrompts[p][17]);
         }
       }
-      console.log("Please %s this prompt", acceptPrompt);
+      console.log("Please %s this prompt", selectPrompt);
+      return { expectedPrompts, promptsMatch: true }
     } else {
       let promptList = [];
       let done = false;
