@@ -8,7 +8,7 @@ let
 
   blake2_simd = import ./nix/dep/b2sum.nix { };
 
-  usbtool = import ./nix/dep/usbtool.nix { };
+  usbtool = import ./nix/usbtool.nix { };
 
   patchSDKBinBash = name: sdk: pkgs.stdenv.mkDerivation {
     # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
