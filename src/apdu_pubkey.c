@@ -29,7 +29,7 @@ static void apdu_pubkey_state_to_string
   pkh_to_string(out, out_size, payload->hrp, payload->hrp_len, &payload->pkh);
 }
 
-__attribute__((noreturn)) static void prompt_address() {
+__attribute__((noreturn)) static void prompt_address(void) {
     static size_t const TYPE_INDEX = 0;
     static size_t const ADDRESS_INDEX = 1;
     static size_t const DRV_PATH_INDEX = 2;
@@ -46,7 +46,7 @@ __attribute__((noreturn)) static void prompt_address() {
     ui_prompt(pubkey_labels, address_ok, delay_reject);
 }
 
-__attribute__((noreturn)) static void prompt_ext_pubkey() {
+__attribute__((noreturn)) static void prompt_ext_pubkey(void) {
     static size_t const TYPE_INDEX = 0;
     static size_t const DRV_PATH_INDEX = 1;
 
@@ -78,7 +78,7 @@ __attribute__((noreturn)) size_t handle_apdu_get_public_key_impl(bool const prom
     }
 
     if (p1 == 0) {
-      static const char default_hrp[] = "mainnet";
+      static const char default_hrp[] = "avax";
       G.hrp_len = sizeof(default_hrp) - 1;
       memcpy(G.hrp, default_hrp, G.hrp_len);
     } else {
@@ -99,10 +99,10 @@ __attribute__((noreturn)) size_t handle_apdu_get_public_key_impl(bool const prom
 }
 
 
-__attribute__((noreturn)) size_t handle_apdu_get_public_key() {
+__attribute__((noreturn)) size_t handle_apdu_get_public_key(void) {
     handle_apdu_get_public_key_impl(false);
 }
 
-__attribute__((noreturn)) size_t handle_apdu_get_public_key_ext() {
+__attribute__((noreturn)) size_t handle_apdu_get_public_key_ext(void) {
     handle_apdu_get_public_key_impl(true);
 }

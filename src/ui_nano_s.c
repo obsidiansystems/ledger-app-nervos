@@ -290,7 +290,7 @@ static const ux_menu_entry_t main_menu_data[] = {
     {NULL, exit_app_cb, 0, NULL, "Quit app", NULL, 50, 29}, // TODO: Put icon for "dashboard" in
     UX_MENU_END};
 
-void main_menu() {
+void main_menu(void) {
     UX_MENU_DISPLAY(0, main_menu_data, NULL);
 }
 

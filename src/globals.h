@@ -81,7 +81,7 @@ extern ux_state_t ux;
 #endif
 extern unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
-static inline void throw_stack_size() {
+static inline void throw_stack_size(void) {
     uint8_t st;
     // uint32_t tmp1 = (uint32_t)&st - (uint32_t)&app_stack_canary;
     uint32_t tmp2 = (uint32_t)global.stack_root - (uint32_t)&st;
@@ -109,8 +109,8 @@ static inline void throw_stack_size() {
         nvm_write((void *)&N_data, &global.new_data, sizeof(N_data));                                 \
     })
 
-void switch_network();
-void switch_sign_hash();
+void switch_network(void);
+void switch_sign_hash(void);
 
 #ifdef AVA_DEBUG
 // Aid for tracking down app crashes
