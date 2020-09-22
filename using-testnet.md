@@ -15,11 +15,10 @@ $ mkdir -p testnet
 $ cd testnet/
 ```
 
-Next, get aggron.toml and intialize the testnet chain using the spec from aggron.toml:
+Next, intialize the testnet chain using the most recent spec:
 
 ``` sh
-$ curl -o aggron.toml https://gist.githubusercontent.com/doitian/573513c345165c0fe4f3504ebc1c8f9f/raw/3032bed68550e0a50e91df2c706481e80b579c70/aggron.toml
-$ ckb init --import-spec ./aggron.toml --chain testnet
+$ ckb init --chain testnet
 ```
 
 You can then run the node with:
