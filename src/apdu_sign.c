@@ -604,8 +604,10 @@ void output_end(void) {
             }
             G.u.tx.plain_output_amount += G.cell_state.capacity;
             G.u.tx.outputs[G.u.tx.output_count - 1].capacity+=G.cell_state.capacity;
+            G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
         } else {
             G.u.tx.change_amount += G.cell_state.capacity;
+            G.maybe_transaction.v.flags |= HAS_CHANGE_ADDRESS;
         }
     }
 }
