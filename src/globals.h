@@ -52,7 +52,6 @@ typedef struct {
     uint8_t data_size : 4;
     uint8_t active : 1;
     uint8_t is_dao : 1;
-    uint8_t is_change : 1;
     uint8_t is_multisig : 1;
     uint8_t lock_arg_nonequal : 1;
 } cell_state_t;
@@ -92,7 +91,6 @@ typedef struct {
             uint8_t hash_only : 1;
             uint8_t first_witness_done : 1;
             uint8_t is_self_transfer : 1;
-            uint8_t processed_change_cell : 1; // Has at least one change-address been processed?
             uint8_t sending_to_multisig_output : 1;
         } tx;
     } u;
