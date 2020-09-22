@@ -1,3 +1,49 @@
+genPort() {
+    shuf -i 2000-65000 -n 1
+}
+
+writeFile() {
+    cat > $1
+}
+
+# Start, Speculos, if not hardware testing
+setup() {
+    echo "Start init" >&2
+    if [[ ! "$USE_SPECULOS" = 1 ]]; then
+        usbtool -v 0x2c97 log &
+        appPid=$!
+    else
+        export LEDGER_PROXY_ADDRESS=127.0.0.1
+        export LEDGER_PROXY_PORT=$(genPort)
+        export LEDGER_BUTTON_PORT=$(genPort)
+
+        speculos_output_file="speculos.log"
+
+        if [[ "$SPECULOS_VERBOSE" = 1 ]]; then
+            speculos_output_cmd="writeFile"
+        else
+            speculos_output_cmd="tee"
+        fi
+
+        speculos \
+            --display headless bin/app.elf \
+            --button-port $LEDGER_BUTTON_PORT \
+            --apdu-port $LEDGER_PROXY_PORT \
+            --deterministic-rng 42 \
+            |& $speculos_output_cmd $speculos_output_file &
+        appPid=$!
+    fi
+    echo "Finish init, now sleep 1" >&2
+    sleep 1
+}
+
+teardown () {
+    if [[ "$USE_SPECULOS" = 1 ]]; then
+        echo rRrRrRrRrlRLrRrRrRrRrlRLrlRL > /dev/tcp/localhost/$LEDGER_BUTTON_PORT || :
+        sleep 0.3
+    fi
+    kill $appPid >& /dev/null
+}
 
 apdu() {
   python -m ledgerblue.runScript --apdu
@@ -9,15 +55,15 @@ apdu_fixed () {
 
 # l/r represent pushing button down, L/R represent releasing
 clicks() {
-  echo "$1" > /dev/tcp/localhost/5667
+    echo "$1" > /dev/tcp/localhost/$LEDGER_BUTTON_PORT
 }
 
 apdu_with_clicks () {
   echo "$1" | apdu &
   sleep 1;
   while read -n1 click; do
-	  clicks $click
-	  sleep 0.1
+    clicks $click
+    sleep 0.1
   done <<<"$2"
 }
 
@@ -121,5 +167,5 @@ formatVersion() {
 }
 
 getCurrentVersion() {
-  printf "%02x%02x%02x" $APP_VM $APP_VN $APP_VP 
+  printf "%02x%02x%02x" $APP_VM $APP_VN $APP_VP
 }

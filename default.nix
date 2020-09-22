@@ -69,7 +69,15 @@ let
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
           pkgs.jq
           speculos.speculos
-          pkgs.bats
+          (pkgs.bats.overrideDerivation (_: {
+            src = pkgs.buildPackages.fetchFromGitHub {
+               owner = "bats-core";
+               repo = "bats-core";
+               rev = "73b8d2f95513207b319efe34685553b75c0b214e";
+               sha256 = "0f59zh4d4pa1a7ybs5zl6h0csbqqv11lbnq0jl1dgwm1s6p49bsq";
+            };
+          }))
+          pkgs.parallel
           pkgs.xxd
           pkgs.openssl
           blake2_simd
