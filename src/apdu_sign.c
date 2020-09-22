@@ -654,9 +654,9 @@ void finalize_raw_transaction(void) {
             G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
             break;
         case OPERATION_TAG_MULTI_OUTPUT_TRANSFER:
-        if(G.distinct_input_sources > 1) REJECT("Multi-input multi-output transactions are not supported");
-        G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
-        break;
+            if(G.distinct_input_sources > 1) REJECT("Multi-input multi-output transactions are not supported");
+            G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
+            break;
         case OPERATION_TAG_DAO_DEPOSIT:
             G.maybe_transaction.v.dao_amount = G.u.tx.dao_output_amount;
             break;
