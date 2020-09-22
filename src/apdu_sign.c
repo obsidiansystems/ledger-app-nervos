@@ -543,6 +543,10 @@ void output_start(mol_num_t index) {
     G.cell_state.is_change = true;
 }
 
+// Called after all transaction outputs
+void outputs_end(void) {
+}
+
 void output_end(void) {
     bool is_second_change = G.u.tx.processed_change_cell && G.cell_state.is_change;
     uint64_t zero_val = 0;
@@ -709,7 +713,8 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
                 }
             },
             .end = output_end
-        }
+        },
+        .end = outputs_end
     },
     .outputs_data = &(BytesVec_cb) {
         .chunk = blake2b_chunk,
