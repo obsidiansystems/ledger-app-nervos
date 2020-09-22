@@ -371,20 +371,11 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
     uint32_t current_offset = G.cell_state.lock_arg_index;
     if(G.cell_state.lock_arg_index+buflen > 28) { // Unknown arg
         G.cell_state.lock_arg_nonequal |= true;
-        G.cell_state.is_change = false;
         return;
     }
 
     memcpy(((uint8_t*) &G.lock_arg_tmp) + current_offset, buf, buflen);
     G.cell_state.lock_arg_index+=buflen;
-
-    for(mol_num_t i=0;i<buflen;i++) {
-        // Change address cannot be timelock, ie more than 20 bytes long
-        if ((current_offset+i > 20) || (G.change_lock_arg[current_offset+i] != buf[i])) {
-            G.cell_state.is_change = false;
-            break;
-        }
-    }
 
     if(!G.lock_arg_cmp) {
         G.cell_state.lock_arg_nonequal=true;
@@ -540,68 +531,85 @@ void output_start(mol_num_t index) {
     explicit_bzero((void*) &G.lock_arg_tmp, sizeof(G.lock_arg_tmp));
     G.cell_state.active = true;
     G.lock_arg_cmp=G.change_lock_arg;
-    G.cell_state.is_change = true;
 }
 
 // Called after all transaction outputs
 void outputs_end(void) {
+    // No final processing needed for DAO transactions
+    if (G.u.tx.dao_bitmask)
+        return;
+
+    bool is_self_transfer =
+        !(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS)
+        && (G.maybe_transaction.v.flags & HAS_CHANGE_ADDRESS);
+
+    if(!is_self_transfer) {
+        if(G.maybe_transaction.v.tag == OPERATION_TAG_NOT_SET)
+            G.maybe_transaction.v.tag = OPERATION_TAG_PLAIN_TRANSFER;
+    } else {
+        if(G.maybe_transaction.v.tag == OPERATION_TAG_NOT_SET)
+            G.maybe_transaction.v.tag = OPERATION_TAG_SELF_TRANSFER;
+        if (G.u.tx.plain_output_amount != 0) {
+            // If all outputs are change, then the output amount should be 0
+            THROW(EXC_WRONG_PARAM);
+        }
+        if (G.u.tx.output_count != 0) {
+            // Should be 0 if we haven't seent address yet
+            THROW(EXC_MEMORY_ERROR);
+        }
+
+        // Swap output and change, so output is change and change is 0
+        G.u.tx.plain_output_amount += G.u.tx.change_amount;
+        G.u.tx.change_amount = 0;
+
+        // Swap flags likewise
+        G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
+        G.maybe_transaction.v.flags &= !HAS_CHANGE_ADDRESS;
+
+        // Set single output prompt for the then-change-now-output
+        G.u.tx.output_count++;
+        memcpy(G.u.tx.outputs[G.u.tx.output_count - 1].destination.hash, G.change_lock_arg, 20);
+    }
 }
 
+// Called per item (tx output in this case)
 void output_end(void) {
-    bool is_second_change = G.u.tx.processed_change_cell && G.cell_state.is_change;
-    uint64_t zero_val = 0;
-    bool dest_is_src = !G.cell_state.is_change
-        && (0 == memcmp(G.current_lock_arg, G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash)))
-        && (0 == memcmp(&zero_val, G.lock_arg_tmp.lock_period, sizeof(G.lock_arg_tmp.lock_period)));
-
-    G.u.tx.is_self_transfer |=  is_second_change || dest_is_src;
-
-    // Have we now processed at least 1 change cell?
-    G.u.tx.processed_change_cell |= G.cell_state.is_change;
-
     if(G.cell_state.is_dao) {
         memcpy(&G.dao_cell_owner, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
-        if(!G.cell_state.is_change && G.cell_state.lock_arg_nonequal)
+        if(G.cell_state.lock_arg_nonequal)
             REJECT("Not allowing DAO outputs to be sent to a non-self address");
     } else {
         if(G.cell_state.is_multisig) {
             G.u.tx.sending_to_multisig_output = true;
         }
-        if(G.u.tx.is_self_transfer) {
-            // The normal rules no longer apply
-            if(is_second_change) {
-                // It is now a self_txn so no change exists
-                G.u.tx.plain_output_amount += G.u.tx.change_amount;
-                G.u.tx.change_amount = 0;
-            }
-            G.u.tx.plain_output_amount += G.cell_state.capacity;
-            uint8_t *dest_to_show = dest_is_src ? G.lock_arg_tmp.hash : G.change_lock_arg;
-
-            // Doesn't cover the case where dst is src, but different change address, which sets maybe-txn, even
-            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.u.tx.outputs[0].destination.hash, dest_to_show, 20)) {
-                // If here either, the destination is the signer, but the change address is different, or we need to reject it because of multiple output cells
-                if(dest_is_src || is_second_change) {
-                    REJECT("Can't handle self-transactions with multiple non-change destination addresses");
+        // if the output lock arg doesn't match the change bip-32 path
+        if(G.cell_state.lock_arg_nonequal) {
+            if (!(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) ) {
+                if (G.u.tx.output_count != 0) {
+                    // Should be 0 if we haven't seent address yet
+                    THROW(EXC_MEMORY_ERROR);
                 }
-            } else {
-                G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-                memcpy(G.u.tx.outputs[0].destination.hash, dest_to_show, 20);
-            }
-        } else if(G.cell_state.lock_arg_nonequal) {
-            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.u.tx.outputs[0].destination.hash, G.lock_arg_tmp.hash, 20)) {
-                if(G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET && G.maybe_transaction.v.tag != OPERATION_TAG_MULTI_OUTPUT_TRANSFER)
+                memcpy(&G.u.tx.outputs[0].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+                G.u.tx.output_count++; // we found the first output
+            } else if(memcmp(G.u.tx.outputs[0].destination.hash, G.lock_arg_tmp.hash, 20)) {
+                // Not the same as last output, so cannot coalesce and need to
+                // make new prompt / cell in our output array.
+                if(G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET
+                   && G.maybe_transaction.v.tag != OPERATION_TAG_MULTI_OUTPUT_TRANSFER)
                     REJECT("Can't handle mixed transaction types with multiple non-change destination addresses. Tag: %d", G.maybe_transaction.v.tag);
                 G.maybe_transaction.v.tag = OPERATION_TAG_MULTI_OUTPUT_TRANSFER;
                 if(G.u.tx.output_count>=MAX_OUTPUTS) REJECT("Can't handle more than five outputs");
                 G.u.tx.output_count++;
                 memcpy(&G.u.tx.outputs[G.u.tx.output_count - 1].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
-            } else if( !(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) ) {
-                G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-                G.u.tx.output_count++;
-                memcpy(&G.u.tx.outputs[G.u.tx.output_count - 1].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+            } else {
+                // Same address as last output, can reuse promopt and so do
+                // nothing here.
             }
+            // We have either the old output array cell, because we can and did
+            // coalesce and the address is the same, or a new cell, because it
+            // wasn't.
             G.u.tx.plain_output_amount += G.cell_state.capacity;
             G.u.tx.outputs[G.u.tx.output_count - 1].capacity+=G.cell_state.capacity;
             G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
@@ -648,12 +656,8 @@ void finalize_raw_transaction(void) {
                 G.maybe_transaction.v.input_count.snd = G.distinct_input_sources;
                 // Display the complete input amount we are signing, without deducting change
                 G.maybe_transaction.v.amount.fst = G.input_amount.fst;
-            } else {
-                G.maybe_transaction.v.tag = G.u.tx.is_self_transfer ?
-                    OPERATION_TAG_SELF_TRANSFER : OPERATION_TAG_PLAIN_TRANSFER;
             }
             // intentional fall-through
-        // Shouldn't actually hit this case because of the handling of TAG_NOT_SET above
         case OPERATION_TAG_SELF_TRANSFER:
             // N.B. In plain_output_amount, the change was never summed (unless
             // self-transfer, where there is no change in the end).
@@ -704,7 +708,11 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
             .lock = &(Script_cb) {
                 .code_hash = &(Byte32_cb) { { cell_lock_code_hash } },
                 .hash_type = &hash_type_cb,
-                .args = &(Bytes_cb) { .body_chunk = script_arg_chunk }
+                .args = &(Bytes_cb) {
+                    // don't need a `script_arg_start_output` callback here
+                    // because output_start above handles it.
+                    .body_chunk = script_arg_chunk
+                }
             },
             .type_ = &(ScriptOpt_cb) {
                 .item = &(Script_cb) {
