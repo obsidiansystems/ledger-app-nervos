@@ -83,21 +83,21 @@ static void multi_output_prompts_cb(size_t which) {
                 memcpy(global.ui.prompt.active_prompt, (const void*)PIC(prompt), sizeof(prompt));
                 memcpy(global.ui.prompt.active_value, (const void*)PIC(value), sizeof(value));
             }
-	    break;
+        break;
         case 1:
             {
                 static const char prompt[]="Amount";
                 memcpy(global.ui.prompt.active_prompt, (const void*)PIC(prompt), sizeof(prompt));
                 frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.amount.snd);
             }
-	    break;
+        break;
         case 2:
             {
                 static const char prompt[]="Fee";
                 memcpy(global.ui.prompt.active_prompt, (const void*)PIC(prompt), sizeof(prompt));
                 frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.maybe_transaction.v.total_fee);
             }
-	    break;
+        break;
         default:
             {
                 if(sizeof(global.ui.prompt.active_prompt)<13) THROW(EXC_WRONG_LENGTH);
@@ -223,9 +223,9 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t OWNER_INDEX = 3;
         static const char *const prepare_prompts_full[] = {
                                                             PROMPT("Confirm DAO"),
-                                                            PROMPT("Deposit Amount"), 
-                                                            PROMPT("Fee"), 
-                                                            PROMPT("Cell Owner"), 
+                                                            PROMPT("Deposit Amount"),
+                                                            PROMPT("Fee"),
+                                                            PROMPT("Cell Owner"),
                                                             NULL };
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Prepare");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
@@ -478,7 +478,7 @@ const struct byte_callbacks hash_type_cb = { cell_script_hash_type };
 const AnnotatedCellInput_cb annotatedCellInput_callbacks = {
     .start = input_start,
     .input = &(CellInput_cb) {
-	.since = &(Uint64_cb) { { blake2b_chunk } },
+    .since = &(Uint64_cb) { { blake2b_chunk } },
         .previous_output = &(OutPoint_cb) {
             .index = &(Uint32_cb) { { input_save_index } }
         }
@@ -489,7 +489,7 @@ const AnnotatedCellInput_cb annotatedCellInput_callbacks = {
             .index = input_context_start_idx,
             .item = &(CellOutput_cb) {
                 .capacity = &(Uint64_cb) { { cell_capacity } },
-                .lock = &(Script_cb) { 
+                .lock = &(Script_cb) {
                     .code_hash = &(Byte32_cb) { { cell_lock_code_hash } },
                     .hash_type = &hash_type_cb,
                     .args = &(Bytes_cb) { .start = script_arg_start_input, .body_chunk = script_arg_chunk },
@@ -567,7 +567,7 @@ void output_end(void) {
         }
         if(G.u.tx.is_self_transfer) {
           // The normal rules no longer apply
-          if(is_second_change) { 
+          if(is_second_change) {
             // It is now a self_txn so no change exists
             G.u.tx.plain_output_amount += G.u.tx.change_amount;
             G.u.tx.change_amount = 0;
@@ -645,7 +645,7 @@ void finalize_raw_transaction(void) {
                 // In plain_output_amount, the change has been deducted
                 G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
             } else {
-                G.maybe_transaction.v.tag = G.u.tx.is_self_transfer ? 
+                G.maybe_transaction.v.tag = G.u.tx.is_self_transfer ?
                     OPERATION_TAG_SELF_TRANSFER : OPERATION_TAG_PLAIN_TRANSFER;
                 G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
             }
@@ -655,9 +655,9 @@ void finalize_raw_transaction(void) {
             G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
             break;
         case OPERATION_TAG_MULTI_OUTPUT_TRANSFER:
-	    if(G.distinct_input_sources > 1) REJECT("Multi-input multi-output transactions are not supported");
-	    G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
-	    break;
+        if(G.distinct_input_sources > 1) REJECT("Multi-input multi-output transactions are not supported");
+        G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
+        break;
         case OPERATION_TAG_DAO_DEPOSIT:
             G.maybe_transaction.v.dao_amount = G.u.tx.dao_output_amount;
             break;
@@ -691,7 +691,7 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
         .item = &annotatedCellInput_callbacks,
         .end = finish_inputs
     },
-    .outputs = &(CellOutputVec_cb) { 
+    .outputs = &(CellOutputVec_cb) {
         .chunk = blake2b_chunk,
         .index = output_start,
         .item = &(CellOutput_cb) {
@@ -1034,7 +1034,7 @@ static int perform_message_signature() {
 
 static bool sign_message_ok(void) {
   delayed_send(perform_message_signature());
-  return true; 
+  return true;
 }
 
 static bool check_magic_bytes(uint8_t const * message, uint8_t message_len) {
@@ -1140,10 +1140,10 @@ static size_t handle_apdu_sign_message_impl(uint8_t const __attribute__((unused)
 
     // Move msg, so we dont hash the same data that we mutate
     memcpy(tmp_msg_buff, buff, tmp_msg_buff_size);
- 
+
     //Remove magic bytes, because, even though we sign them, the user should not be aware of their existence
     slice_magic_bytes((char*)tmp_msg_buff, &tmp_msg_buff_size);
-    if(!g_sign_msg->display_as_hex) { 
+    if(!g_sign_msg->display_as_hex) {
       // If we are not displaying the hex, then replace all the non-displayable chars with '*'
       replace_undisplayable(tmp_msg_buff, &tmp_msg_buff_size);
     }
@@ -1200,7 +1200,7 @@ static int perform_message_hash_signature() {
 
 static bool sign_message_hash_ok(void) {
   delayed_send(perform_message_hash_signature());
-  return true; 
+  return true;
 }
 
 static size_t handle_apdu_sign_message_hash_impl(void) {
