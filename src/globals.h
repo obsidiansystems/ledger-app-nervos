@@ -84,6 +84,9 @@ typedef struct {
             // but here we save space as we expect them to be < 256
             uint8_t witness_multisig_threshold;
             uint8_t witness_multisig_pubkeys_cnt;
+            // Counting just outputs which we deem "non-change" outputs because
+            // they don't match the change bip32 path given as part of the
+            // transaction annotations.
             uint8_t output_count;
             uint8_t is_first_witness : 1;
             uint8_t hash_only : 1;

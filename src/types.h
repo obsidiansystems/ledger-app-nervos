@@ -163,7 +163,10 @@ struct output_t {
 	lock_arg_t destination;
 };
 
+// Have we found an output cell which doesn't correspond to the change
+// bip32-path given in the annotation?
 #define HAS_DESTINATION_ADDRESS 0x01
+// Have we found an output cell which does...ditto
 #define HAS_CHANGE_ADDRESS      0x02
 
 #define MAX_OUTPUTS 5
