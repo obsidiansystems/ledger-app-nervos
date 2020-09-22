@@ -78,6 +78,11 @@ void switch_sign_hash_cb(void) {
     ui_cfg_screen(1);
 }
 
+void switch_contract_data_cb(void) {
+    switch_contract_data();
+    ui_cfg_screen(2);
+}
+
 UX_STEP_CB(
     ux_cfg_flow_1_step,
     bn,
@@ -97,6 +102,14 @@ UX_STEP_CB(
 UX_STEP_CB(
     ux_cfg_flow_3_step,
     bn,
+    switch_contract_data_cb(),
+    {
+      "Allow contract data",
+      N_data_real.contract_data_prompt
+    });
+UX_STEP_CB(
+    ux_cfg_flow_4_step,
+    bn,
     ui_initial_screen(),
     {
       "Main menu",
@@ -105,7 +118,8 @@ UX_STEP_CB(
 UX_FLOW(ux_cfg_flow,
 		&ux_cfg_flow_1_step,
 		&ux_cfg_flow_2_step,
-		&ux_cfg_flow_3_step
+		&ux_cfg_flow_3_step,
+		&ux_cfg_flow_4_step
        );
 
 UX_STEP_NOCB(

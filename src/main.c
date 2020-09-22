@@ -22,7 +22,9 @@ __attribute__((noreturn)) void app_main(void) {
 		    ADDRESS_MAINNET,
 		    "mainnet",
         SIGN_HASH_OFF,
-		    "Off"
+		    "Off",
+                    DISALLOW_CONTRACT_DATA,
+                    "Off"
 	    };
 	    nvm_write((void*)&N_data, (void*)&data, sizeof(N_data));
     }

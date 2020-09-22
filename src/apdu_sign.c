@@ -149,16 +149,30 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
         static const uint32_t DESTINATION_INDEX = 3;
-        static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"),      PROMPT("Fee"),
-                                                          PROMPT("Destination"), NULL};
-        REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
-        //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
-        register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
-        register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
+        static const uint32_t CONTRACT_INDEX = 4;
 
-        ui_prompt(transaction_prompts, ok_c, sign_reject);
+        if (N_data.contract_data_type == ALLOW_CONTRACT_DATA) {
+            static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"), PROMPT("Fee"),
+                                                              PROMPT("Destination"), PROMPT("Contract"), NULL};
+            REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
+            //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
+            register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
+            register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+            register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
+            register_ui_callback(CONTRACT_INDEX, contract_type_to_string_indirect, &G.maybe_transaction.v.contract_type);
 
+            ui_prompt(transaction_prompts, ok_c, sign_reject);
+        } else {
+            static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"), PROMPT("Fee"),
+                                                              PROMPT("Destination"), NULL};
+            REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
+            //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
+            register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
+            register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+            register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
+
+            ui_prompt(transaction_prompts, ok_c, sign_reject);
+        }
     } break;
     case OPERATION_TAG_MULTI_OUTPUT_TRANSFER: {
         ui_prompt_with_cb(&multi_output_prompts_cb, 3 + G.u.tx.output_count, ok_c, sign_reject);
@@ -338,19 +352,35 @@ const uint8_t multisigLockScript[] = { 0x5c, 0x50, 0x69, 0xeb, 0x08, 0x57, 0xef,
                                        0x0c, 0x07, 0xdf, 0x34, 0xc3, 0x16, 0x63, 0xb3, 0x62, 0x2f, 0xd3,
                                        0x87, 0x6c, 0x87, 0x63, 0x20, 0xfc, 0x96, 0x34, 0xe2, 0xa8 };
 
+const uint8_t sudtLockScriptTestnet[] = { 0x48, 0xdb, 0xf5, 0x9b, 0x4c, 0x7e, 0xe1, 0x54, 0x72, 0x38, 0x02,
+                                          0x1b, 0x48, 0x69, 0xbc, 0xee, 0xdf, 0x4e, 0xea, 0x6b, 0x43, 0x77,
+                                          0x2e, 0x5d, 0x66, 0xef, 0x88, 0x65, 0xb6, 0xae, 0x72, 0x12 };
+const uint8_t sudtLockScriptMainnet[] = { 0x5e, 0x7a, 0x36, 0xa7, 0x7e, 0x68, 0xee, 0xcc, 0x01, 0x3d, 0xfa,
+                                          0x2f, 0xe6, 0xa2, 0x3f, 0x3b, 0x6c, 0x34, 0x4b, 0x04, 0x00, 0x58,
+                                          0x08, 0x69, 0x4a, 0xe6, 0xdd, 0x45, 0xee, 0xa4, 0xcf, 0xd5 };
+
+const uint8_t acpLockScriptTestnet[] = { 0x0f, 0xb3, 0x43, 0x95, 0x3e, 0xe7, 0x8c, 0x99, 0x86, 0xb0, 0x91,
+                                         0xde, 0xfb, 0x62, 0x52, 0x15, 0x4e, 0x0b, 0xb5, 0x10, 0x44, 0xfd,
+                                         0x28, 0x79, 0xfd, 0xe5, 0xb2, 0x73, 0x14, 0x50, 0x61, 0x11 };
+const uint8_t acpLockScriptMainnet[] = { 0x86, 0xa1, 0xc6, 0x98, 0x7a, 0x4a, 0xcb, 0xe1, 0xa8, 0x87, 0xcc,
+                                         0xa4, 0xc9, 0xdd, 0x2a, 0xc9, 0xfc, 0xb0, 0x74, 0x05, 0xbb, 0xed,
+                                         0xa5, 0x1b, 0x86, 0x1b, 0x18, 0xbb, 0xf7, 0x49, 0x2c, 0x4b };
+
 void cell_lock_code_hash(uint8_t* buf, mol_num_t len) {
     (void)len;
     if(!G.cell_state.active) return;
 
-    if(memcmp(buf, defaultLockScript, 32)) {
-        if(memcmp(buf, multisigLockScript, 32)) {
-            REJECT("Only the standard lock script is currently supported");
-        } else {
-            G.cell_state.is_multisig = true;
-        }
-    } else {
+    if(!memcmp(buf, defaultLockScript, 32)) {
         G.cell_state.is_multisig = false;
-    };
+    } else if (!memcmp(buf, multisigLockScript, 32)) {
+        G.cell_state.is_multisig = true;
+    } else if (!memcmp(buf, sudtLockScriptTestnet, 32) || !memcmp(buf, sudtLockScriptMainnet, 32)) {
+        G.cell_state.is_multisig = false;
+    } else if (!memcmp(buf, acpLockScriptTestnet, 32) || !memcmp(buf, acpLockScriptMainnet, 32)) {
+        G.cell_state.is_multisig = false;
+    } else {
+        REJECT("The lock script is unsupported");
+    }
 }
 
 void cell_script_hash_type(uint8_t hash_type) {
@@ -459,9 +489,11 @@ void finish_input_cell_data() {
             G.maybe_transaction.v.tag = OPERATION_TAG_DAO_PREPARE;
         }
     } else {
-        if(G.cell_state.data_size !=0) {
+        if(G.cell_state.data_size != 0 && N_data.contract_data_type == DISALLOW_CONTRACT_DATA) {
             REJECT("Data found in non-dao cell");
         }
+        if (G.cell_state.data_size > 0) // TODO: parse contract data here
+            G.maybe_transaction.v.contract_type = CONTRACT_UNKNOWN;
         // total input amount
         G.input_amount.snd += G.cell_state.capacity;
         if(!G.cell_state.lock_arg_nonequal) {
@@ -622,7 +654,10 @@ void finish_output_cell_data(void) {
             G.maybe_transaction.v.tag = OPERATION_TAG_DAO_DEPOSIT;
         }
     } else {
-        if(G.cell_state.data_size !=0) REJECT("Data found in non-dao cell");
+        if (G.cell_state.data_size != 0 && N_data.contract_data_type == DISALLOW_CONTRACT_DATA)
+            REJECT("Data found in non-dao cell");
+        if (G.cell_state.data_size > 0) // TODO: parse contract data here
+            G.maybe_transaction.v.contract_type = CONTRACT_UNKNOWN;
     }
 }
 
