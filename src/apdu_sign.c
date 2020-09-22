@@ -535,6 +535,21 @@ void output_start(mol_num_t index) {
 
 // Called after all transaction outputs
 void outputs_end(void) {
+    // No final processing needed for DAO transactions
+    if (G.u.tx.dao_bitmask)
+        return;
+
+    bool is_self_transfer =
+        !(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS)
+        && (G.maybe_transaction.v.flags & HAS_CHANGE_ADDRESS);
+
+    if(!is_self_transfer) {
+        if(G.maybe_transaction.v.tag == OPERATION_TAG_NOT_SET)
+            G.maybe_transaction.v.tag = OPERATION_TAG_PLAIN_TRANSFER;
+    } else {
+        if(G.maybe_transaction.v.tag == OPERATION_TAG_NOT_SET)
+            G.maybe_transaction.v.tag = OPERATION_TAG_SELF_TRANSFER;
+    }
 }
 
 // Called per item (tx output in this case)
@@ -652,9 +667,6 @@ void finalize_raw_transaction(void) {
                 G.maybe_transaction.v.input_count.snd = G.distinct_input_sources;
                 // Display the complete input amount we are signing, without deducting change
                 G.maybe_transaction.v.amount.fst = G.input_amount.fst;
-            } else {
-                G.maybe_transaction.v.tag = G.u.tx.is_self_transfer ?
-                    OPERATION_TAG_SELF_TRANSFER : OPERATION_TAG_PLAIN_TRANSFER;
             }
             // N.B. In plain_output_amount, the change was never summed (unless
             // self-transfer, where there is no change in the end).
