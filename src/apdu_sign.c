@@ -108,7 +108,7 @@ static void multi_output_prompts_cb(size_t which) {
                 if(which<100) prompt_fill+=number_to_string(global.ui.prompt.active_prompt+prompt_fill, which-2);
                 if(G.u.tx.output_count<100) {
                     global.ui.prompt.active_prompt[prompt_fill++]='/';
-                    number_to_string(global.ui.prompt.active_prompt+prompt_fill, G.u.tx.output_count+1);
+                    number_to_string(global.ui.prompt.active_prompt+prompt_fill, G.u.tx.output_count);
                 }
 
                 frac_ckb_to_string_indirect(global.ui.prompt.active_value, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3].capacity);
@@ -161,7 +161,7 @@ static size_t sign_complete(uint8_t instruction) {
 
     } break;
     case OPERATION_TAG_MULTI_OUTPUT_TRANSFER: {
-        ui_prompt_with_cb(&multi_output_prompts_cb, 4 + G.u.tx.output_count, ok_c, sign_reject);
+        ui_prompt_with_cb(&multi_output_prompts_cb, 3 + G.u.tx.output_count, ok_c, sign_reject);
     } break;
     case OPERATION_TAG_SELF_TRANSFER: {
         static const uint32_t TYPE_INDEX = 0;
@@ -590,15 +590,16 @@ void output_end(void) {
                 if(G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET && G.maybe_transaction.v.tag != OPERATION_TAG_MULTI_OUTPUT_TRANSFER)
                     REJECT("Can't handle mixed transaction types with multiple non-change destination addresses. Tag: %d", G.maybe_transaction.v.tag);
                 G.maybe_transaction.v.tag = OPERATION_TAG_MULTI_OUTPUT_TRANSFER;
-                if(G.u.tx.output_count+1>=MAX_OUTPUTS) REJECT("Can't handle more than five outputs");
+                if(G.u.tx.output_count>=MAX_OUTPUTS) REJECT("Can't handle more than five outputs");
                 G.u.tx.output_count++;
-                memcpy(&G.u.tx.outputs[G.u.tx.output_count].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+                memcpy(&G.u.tx.outputs[G.u.tx.output_count - 1].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
             } else if( !(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) ) {
                 G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-                memcpy(&G.u.tx.outputs[0].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+                G.u.tx.output_count++;
+                memcpy(&G.u.tx.outputs[G.u.tx.output_count - 1].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
             }
             G.u.tx.plain_output_amount += G.cell_state.capacity;
-            G.u.tx.outputs[G.u.tx.output_count].capacity+=G.cell_state.capacity;
+            G.u.tx.outputs[G.u.tx.output_count - 1].capacity+=G.cell_state.capacity;
         } else {
             G.u.tx.change_amount += G.cell_state.capacity;
         }
