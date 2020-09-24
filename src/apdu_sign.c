@@ -704,7 +704,11 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
             .lock = &(Script_cb) {
                 .code_hash = &(Byte32_cb) { { cell_lock_code_hash } },
                 .hash_type = &hash_type_cb,
-                .args = &(Bytes_cb) { .body_chunk = script_arg_chunk }
+                .args = &(Bytes_cb) {
+                    // don't need a `script_arg_start_output` callback here
+                    // because output_start above handles it.
+                    .body_chunk = script_arg_chunk
+                }
             },
             .type_ = &(ScriptOpt_cb) {
                 .item = &(Script_cb) {
