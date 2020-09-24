@@ -535,6 +535,9 @@ void output_start(mol_num_t index) {
 
 // Called after all transaction outputs
 void outputs_end(void) {
+    // No final processing needed for DAO transactions
+    if (G.u.tx.dao_bitmask)
+        return;
 }
 
 // Called per item (tx output in this case)
