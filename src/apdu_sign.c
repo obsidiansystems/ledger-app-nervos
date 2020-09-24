@@ -352,19 +352,9 @@ const uint8_t multisigLockScript[] = { 0x5c, 0x50, 0x69, 0xeb, 0x08, 0x57, 0xef,
                                        0x0c, 0x07, 0xdf, 0x34, 0xc3, 0x16, 0x63, 0xb3, 0x62, 0x2f, 0xd3,
                                        0x87, 0x6c, 0x87, 0x63, 0x20, 0xfc, 0x96, 0x34, 0xe2, 0xa8 };
 
-const uint8_t sudtLockScriptTestnet[] = { 0x48, 0xdb, 0xf5, 0x9b, 0x4c, 0x7e, 0xe1, 0x54, 0x72, 0x38, 0x02,
-                                          0x1b, 0x48, 0x69, 0xbc, 0xee, 0xdf, 0x4e, 0xea, 0x6b, 0x43, 0x77,
-                                          0x2e, 0x5d, 0x66, 0xef, 0x88, 0x65, 0xb6, 0xae, 0x72, 0x12 };
-const uint8_t sudtLockScriptMainnet[] = { 0x5e, 0x7a, 0x36, 0xa7, 0x7e, 0x68, 0xee, 0xcc, 0x01, 0x3d, 0xfa,
-                                          0x2f, 0xe6, 0xa2, 0x3f, 0x3b, 0x6c, 0x34, 0x4b, 0x04, 0x00, 0x58,
-                                          0x08, 0x69, 0x4a, 0xe6, 0xdd, 0x45, 0xee, 0xa4, 0xcf, 0xd5 };
-
-const uint8_t acpLockScriptTestnet[] = { 0x0f, 0xb3, 0x43, 0x95, 0x3e, 0xe7, 0x8c, 0x99, 0x86, 0xb0, 0x91,
-                                         0xde, 0xfb, 0x62, 0x52, 0x15, 0x4e, 0x0b, 0xb5, 0x10, 0x44, 0xfd,
-                                         0x28, 0x79, 0xfd, 0xe5, 0xb2, 0x73, 0x14, 0x50, 0x61, 0x11 };
-const uint8_t acpLockScriptMainnet[] = { 0x86, 0xa1, 0xc6, 0x98, 0x7a, 0x4a, 0xcb, 0xe1, 0xa8, 0x87, 0xcc,
-                                         0xa4, 0xc9, 0xdd, 0x2a, 0xc9, 0xfc, 0xb0, 0x74, 0x05, 0xbb, 0xed,
-                                         0xa5, 0x1b, 0x86, 0x1b, 0x18, 0xbb, 0xf7, 0x49, 0x2c, 0x4b };
+const uint8_t dao_type_script_hash[] = {0x82, 0xd7, 0x6d, 0x1b, 0x75, 0xfe, 0x2f, 0xd9, 0xa2, 0x7d, 0xfb,
+                                        0xaa, 0x65, 0xa0, 0x39, 0x22, 0x1a, 0x38, 0x0d, 0x76, 0xc9, 0x26,
+                                        0xf3, 0x78, 0xd3, 0xf8, 0x1c, 0xf3, 0xe7, 0xe1, 0x3f, 0x2e};
 
 void cell_lock_code_hash(uint8_t* buf, mol_num_t len) {
     (void)len;
@@ -374,18 +364,15 @@ void cell_lock_code_hash(uint8_t* buf, mol_num_t len) {
         G.cell_state.is_multisig = false;
     } else if (!memcmp(buf, multisigLockScript, 32)) {
         G.cell_state.is_multisig = true;
-    } else if (!memcmp(buf, sudtLockScriptTestnet, 32) || !memcmp(buf, sudtLockScriptMainnet, 32)) {
-        G.cell_state.is_multisig = false;
-    } else if (!memcmp(buf, acpLockScriptTestnet, 32) || !memcmp(buf, acpLockScriptMainnet, 32)) {
-        G.cell_state.is_multisig = false;
-    } else {
+    } else if (N_data.contract_data_type == DISALLOW_CONTRACT_DATA) {
         REJECT("The lock script is unsupported");
     }
 }
 
 void cell_script_hash_type(uint8_t hash_type) {
     if(!G.cell_state.active) return;
-    if (hash_type != 1) REJECT("Incorrect hash type for standard lock or dao script");
+    if (hash_type != 1 && N_data.contract_data_type == DISALLOW_CONTRACT_DATA)
+        REJECT("Incorrect hash type for standard lock or dao script");
 }
 
 void script_arg_start_input() {
@@ -447,21 +434,21 @@ void input_lock_arg_end() {
 void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
     if(!G.cell_state.active) return;
     (void) len; // Guaranteed to be 32
-    static const uint8_t dao_type_script_hash[] = {0x82, 0xd7, 0x6d, 0x1b, 0x75, 0xfe, 0x2f, 0xd9, 0xa2, 0x7d, 0xfb,
-                                                   0xaa, 0x65, 0xa0, 0x39, 0x22, 0x1a, 0x38, 0x0d, 0x76, 0xc9, 0x26,
-                                                   0xf3, 0x78, 0xd3, 0xf8, 0x1c, 0xf3, 0xe7, 0xe1, 0x3f, 0x2e};
-    if(!G.cell_state.active) return;
 
     // If this exists, we require it to be the DAO for now. Verify.
-    if(memcmp(buf, dao_type_script_hash, sizeof(dao_type_script_hash)))
+    if(!memcmp(buf, dao_type_script_hash, sizeof(dao_type_script_hash)))
+        G.cell_state.is_dao = true;
+    else if(N_data.contract_data_type == DISALLOW_CONTRACT_DATA)
         REJECT("Only the DAO type script is supported");
-    G.cell_state.is_dao = true;
 }
 
 void cell_type_arg_length(mol_num_t length) {
     if(!G.cell_state.active) return;
     // DAO is empty.
-    if(length != 4) REJECT("DAO cell has nonempty args");
+    if(length != 4 && G.cell_state.is_dao)
+        REJECT("DAO cell has nonempty args");
+    if(length != 4 && N_data.contract_data_type == DISALLOW_CONTRACT_DATA)
+        REJECT("Cannot handle cell arguments");
 }
 
 void set_cell_data_size(mol_num_t size) {
@@ -610,7 +597,7 @@ void output_end(void) {
             // Doesn't cover the case where dst is src, but different change address, which sets maybe-txn, even
             if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.u.tx.outputs[0].destination.hash, dest_to_show, 20)) {
                 // If here either, the destination is the signer, but the change address is different, or we need to reject it because of multiple output cells
-                if(dest_is_src || is_second_change) {
+                if((dest_is_src || is_second_change) && N_data.contract_data_type == DISALLOW_CONTRACT_DATA) {
                     REJECT("Can't handle self-transactions with multiple non-change destination addresses");
                 }
             } else {
