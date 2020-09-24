@@ -656,11 +656,12 @@ void finalize_raw_transaction(void) {
                 G.maybe_transaction.v.tag = G.u.tx.is_self_transfer ?
                     OPERATION_TAG_SELF_TRANSFER : OPERATION_TAG_PLAIN_TRANSFER;
             }
-            // intentional fall-through
-        // Shouldn't actually hit this case because of the handling of TAG_NOT_SET above
-        case OPERATION_TAG_SELF_TRANSFER:
             // N.B. In plain_output_amount, the change was never summed (unless
             // self-transfer, where there is no change in the end).
+            G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
+            break;
+        // Shouldn't actually hit this case because of the handling of TAG_NOT_SET above
+        case OPERATION_TAG_SELF_TRANSFER:
             G.maybe_transaction.v.amount.snd = G.u.tx.plain_output_amount;
             break;
         case OPERATION_TAG_MULTI_OUTPUT_TRANSFER:
