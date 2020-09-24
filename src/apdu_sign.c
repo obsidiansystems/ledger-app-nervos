@@ -371,20 +371,11 @@ void script_arg_chunk(uint8_t* buf, mol_num_t buflen) {
     uint32_t current_offset = G.cell_state.lock_arg_index;
     if(G.cell_state.lock_arg_index+buflen > 28) { // Unknown arg
         G.cell_state.lock_arg_nonequal |= true;
-        G.cell_state.is_change = false;
         return;
     }
 
     memcpy(((uint8_t*) &G.lock_arg_tmp) + current_offset, buf, buflen);
     G.cell_state.lock_arg_index+=buflen;
-
-    for(mol_num_t i=0;i<buflen;i++) {
-        // Change address cannot be timelock, ie more than 20 bytes long
-        if ((current_offset+i > 20) || (G.change_lock_arg[current_offset+i] != buf[i])) {
-            G.cell_state.is_change = false;
-            break;
-        }
-    }
 
     if(!G.lock_arg_cmp) {
         G.cell_state.lock_arg_nonequal=true;
@@ -540,7 +531,6 @@ void output_start(mol_num_t index) {
     explicit_bzero((void*) &G.lock_arg_tmp, sizeof(G.lock_arg_tmp));
     G.cell_state.active = true;
     G.lock_arg_cmp=G.change_lock_arg;
-    G.cell_state.is_change = true;
 }
 
 // Called after all transaction outputs
@@ -548,22 +538,22 @@ void outputs_end(void) {
 }
 
 void output_end(void) {
-    bool is_second_change = G.u.tx.processed_change_cell && G.cell_state.is_change;
+    bool is_second_change = G.u.tx.processed_change_cell && !G.cell_state.lock_arg_nonequal;
     uint64_t zero_val = 0;
-    bool dest_is_src = !G.cell_state.is_change
+    bool dest_is_src = G.cell_state.lock_arg_nonequal
         && (0 == memcmp(G.current_lock_arg, G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash)))
         && (0 == memcmp(&zero_val, G.lock_arg_tmp.lock_period, sizeof(G.lock_arg_tmp.lock_period)));
 
     G.u.tx.is_self_transfer |=  is_second_change || dest_is_src;
 
     // Have we now processed at least 1 change cell?
-    G.u.tx.processed_change_cell |= G.cell_state.is_change;
+    G.u.tx.processed_change_cell |= !G.cell_state.lock_arg_nonequal;
 
     if(G.cell_state.is_dao) {
         memcpy(&G.dao_cell_owner, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
-        if(!G.cell_state.is_change && G.cell_state.lock_arg_nonequal)
+        if(G.cell_state.lock_arg_nonequal)
             REJECT("Not allowing DAO outputs to be sent to a non-self address");
     } else {
         if(G.cell_state.is_multisig) {
