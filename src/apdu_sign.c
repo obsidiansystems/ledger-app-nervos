@@ -537,6 +537,7 @@ void output_start(mol_num_t index) {
 void outputs_end(void) {
 }
 
+// Called per item (tx output in this case)
 void output_end(void) {
     bool is_second_change = G.u.tx.processed_change_cell && !G.cell_state.lock_arg_nonequal;
     uint64_t zero_val = 0;
