@@ -130,7 +130,7 @@ static const char contract_type_not_present[] = "Not Present";
 void contract_type_to_string_indirect(char *const dest, size_t const buff_size, uint8_t const *const contract_type) {
     check_null(dest);
 
-    if (contract_type != CONTRACT_NOT_PRESENT) {
+    if (*contract_type != CONTRACT_NOT_PRESENT) {
         if (sizeof(contract_type_present) >= buff_size)
             THROW(EXC_WRONG_LENGTH);
         memcpy(dest, contract_type_present, sizeof(contract_type_present));
