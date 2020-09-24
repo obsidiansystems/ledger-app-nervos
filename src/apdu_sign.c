@@ -580,18 +580,31 @@ void output_end(void) {
                 memcpy(G.u.tx.outputs[0].destination.hash, dest_to_show, 20);
             }
         } else if(G.cell_state.lock_arg_nonequal) {
-            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.u.tx.outputs[0].destination.hash, G.lock_arg_tmp.hash, 20)) {
-                if(G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET && G.maybe_transaction.v.tag != OPERATION_TAG_MULTI_OUTPUT_TRANSFER)
+            // if the output lock arg doesn't match the change bip-32 path
+            if (!(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) ) {
+                if (G.u.tx.output_count != 0) {
+                    // Should be 0 if we haven't seent address yet
+                    THROW(EXC_MEMORY_ERROR);
+                }
+                memcpy(&G.u.tx.outputs[0].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+                G.u.tx.output_count++; // we found the first output
+            } else if(memcmp(G.u.tx.outputs[0].destination.hash, G.lock_arg_tmp.hash, 20)) {
+                // Not the same as last output, so cannot coalesce and need to
+                // make new prompt / cell in our output array.
+                if(G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET
+                   && G.maybe_transaction.v.tag != OPERATION_TAG_MULTI_OUTPUT_TRANSFER)
                     REJECT("Can't handle mixed transaction types with multiple non-change destination addresses. Tag: %d", G.maybe_transaction.v.tag);
                 G.maybe_transaction.v.tag = OPERATION_TAG_MULTI_OUTPUT_TRANSFER;
                 if(G.u.tx.output_count>=MAX_OUTPUTS) REJECT("Can't handle more than five outputs");
                 G.u.tx.output_count++;
                 memcpy(&G.u.tx.outputs[G.u.tx.output_count - 1].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
-            } else if( !(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) ) {
-                G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-                G.u.tx.output_count++;
-                memcpy(&G.u.tx.outputs[G.u.tx.output_count - 1].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+            } else {
+                // Same address as last output, can reuse promopt and so do
+                // nothing here.
             }
+            // We have either the old output array cell, because we can and did
+            // coalesce and the address is the same, or a new cell, because it
+            // wasn't.
             G.u.tx.plain_output_amount += G.cell_state.capacity;
             G.u.tx.outputs[G.u.tx.output_count - 1].capacity+=G.cell_state.capacity;
             G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
