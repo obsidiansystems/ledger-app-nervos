@@ -439,7 +439,7 @@ void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
     if(!memcmp(buf, dao_type_script_hash, sizeof(dao_type_script_hash)))
         G.cell_state.is_dao = true;
     else if(N_data.contract_data_type == DISALLOW_CONTRACT_DATA)
-        REJECT("Only the DAO type script is supported");
+        REJECT("Only the DAO type script is supported with contract data by default; allow contract data in settings to sign this");
 }
 
 void cell_type_arg_length(mol_num_t length) {
@@ -642,7 +642,7 @@ void finish_output_cell_data(void) {
         }
     } else {
         if (G.cell_state.data_size != 0 && N_data.contract_data_type == DISALLOW_CONTRACT_DATA)
-            REJECT("Data found in non-dao cell; allow contract data in settings to sign this");
+            REJECT("Data found in non-dao cell");
         if (G.cell_state.data_size > 0) // TODO: parse contract data here
             G.maybe_transaction.v.contract_type = CONTRACT_UNKNOWN;
     }
