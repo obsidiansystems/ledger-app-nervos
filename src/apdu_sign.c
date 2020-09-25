@@ -406,6 +406,7 @@ void input_lock_arg_end() {
 }
 
 void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
+    PRINTF("Checking cell code hash active=%d\n", !G.cell_state.active);
     if(!G.cell_state.active) return;
     (void) len; // Guaranteed to be 32
     static const uint8_t dao_type_script_hash[] = {0x82, 0xd7, 0x6d, 0x1b, 0x75, 0xfe, 0x2f, 0xd9, 0xa2, 0x7d, 0xfb,
@@ -417,6 +418,7 @@ void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
     if(memcmp(buf, dao_type_script_hash, sizeof(dao_type_script_hash)))
         REJECT("Only the DAO type script is supported");
     G.cell_state.is_dao = true;
+    PRINTF("SET B is_dao=%d\n", G.cell_state.is_dao);
 }
 
 void cell_type_arg_length(mol_num_t length) {
@@ -437,6 +439,7 @@ void check_cell_data_data_chunk(uint8_t *buf, mol_num_t length) {
 }
 
 void finish_input_cell_data() {
+    PRINTF("MADE IT HERE: is_dao=%d active=%d\n", G.cell_state.is_dao, G.cell_state.active);
     if(!G.cell_state.active) return;
     if(G.cell_state.is_dao) {
         memcpy(&G.dao_cell_owner, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
@@ -618,6 +621,7 @@ void output_end(void) {
 
 void validate_output_data_start(mol_num_t idx) {
     G.cell_state.is_dao = !((G.u.tx.dao_bitmask & 1<<idx) == 0);
+    PRINTF("SET A is_dao=%d\n", G.cell_state.is_dao);
 }
 
 void finish_output_cell_data(void) {
