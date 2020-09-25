@@ -642,7 +642,7 @@ void finish_output_cell_data(void) {
         }
     } else {
         if (G.cell_state.data_size != 0 && N_data.contract_data_type == DISALLOW_CONTRACT_DATA)
-            REJECT("Data found in non-dao cell");
+            REJECT("Data found in non-dao cell; allow contract data in settings to sign this");
         if (G.cell_state.data_size > 0) // TODO: parse contract data here
             G.maybe_transaction.v.contract_type = CONTRACT_UNKNOWN;
     }
