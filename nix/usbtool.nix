@@ -15,6 +15,7 @@ pkgs.stdenv.mkDerivation {
     cd examples/usbtool
     ./make-files.sh
   '';
+  makeFlags = [ "CC=${pkgs.stdenv.cc.targetPrefix}cc" ];
   nativeBuildInputs = with pkgs.buildPackages; [ pkg-config ];
   buildInputs = with pkgs; [ libusb1 ];
   installPhase = ''
