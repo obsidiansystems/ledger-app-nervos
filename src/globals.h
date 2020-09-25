@@ -52,7 +52,6 @@ typedef struct {
     uint8_t data_size : 4;
     uint8_t active : 1;
     uint8_t is_dao : 1;
-    uint8_t is_change : 1;
     uint8_t is_multisig : 1;
     uint8_t lock_arg_nonequal : 1;
 } cell_state_t;
