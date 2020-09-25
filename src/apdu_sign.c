@@ -454,9 +454,12 @@ void check_cell_data_data_chunk(uint8_t *buf, mol_num_t length) {
 }
 
 void finish_input_cell_data() {
+    PRINTF("Enter finish_input_cell_data");
     if(!G.cell_state.active) return;
     if(G.cell_state.is_dao) {
         memcpy(&G.dao_cell_owner, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
+        PRINTF("DAO input finish dao_key=%.*h\n",
+            20, &G.dao_cell_owner);
         if(G.cell_state.data_size != 8) REJECT("DAO data must be 8 bytes");
         G.dao_input_amount += G.cell_state.capacity;
         if(G.cell_state.dao_data_is_nonzero) {
@@ -555,6 +558,7 @@ void output_start(mol_num_t index) {
 // Called per item (tx output in this case)
 void output_end(void) {
     if(G.cell_state.is_dao) {
+        PRINTF("IS DAO %.*h\n", sizeof(G.lock_arg_tmp.hash), &G.lock_arg_tmp.hash);
         memcpy(&G.dao_cell_owner, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
@@ -562,6 +566,7 @@ void output_end(void) {
             REJECT("Not allowing DAO outputs to be sent to a non-self address");
         G.maybe_transaction.v.flags |= HAS_CHANGE_ADDRESS;
     } else {
+        PRINTF("NOT IS DAO\n");
         if(G.cell_state.is_multisig) {
             G.u.tx.sending_to_multisig_output = true;
         }
@@ -611,14 +616,22 @@ void outputs_end(void) {
     // Don't do any self transfer stuff if dao
     if (G.u.tx.dao_bitmask
         || G.maybe_transaction.v.tag == OPERATION_TAG_DAO_PREPARE
-        || G.maybe_transaction.v.tag == OPERATION_TAG_DAO_WITHDRAW)
+        || G.maybe_transaction.v.tag == OPERATION_TAG_DAO_WITHDRAW) {
+        PRINTF("DAO BAIL tag=%d, bitmask=%d\n",
+            G.maybe_transaction.v.tag,
+            G.u.tx.dao_bitmask);
+
+        PRINTF("DAO BAIL dao_key=%.*h\n",
+            20, &G.dao_cell_owner);
         return;
+    }
 
     G.u.tx.is_self_transfer =
         !(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS)
         && (G.maybe_transaction.v.flags & HAS_CHANGE_ADDRESS);
 
     if(G.u.tx.is_self_transfer) {
+        PRINTF("SELF SWAP\n");
         if (G.u.tx.plain_output_amount != 0) {
             // If all outputs are change, then the output amount should be 0
             THROW(EXC_WRONG_PARAM);
@@ -639,6 +652,8 @@ void outputs_end(void) {
         // Set single output prompt for the then-change-now-output
         G.u.tx.output_count = 1;
         memcpy(G.u.tx.outputs[G.u.tx.output_count - 1].destination.hash, G.change_lock_arg, 20);
+    } else {
+        PRINTF("NO SELF SWAP\n");
     }
 }
 
