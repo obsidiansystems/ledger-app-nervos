@@ -134,12 +134,10 @@ void contract_type_to_string_indirect(char *const dest, size_t const buff_size, 
         if (sizeof(contract_type_present) >= buff_size)
             THROW(EXC_WRONG_LENGTH);
         memcpy(dest, contract_type_present, sizeof(contract_type_present));
-        dest[strlen(contract_type_present)] = '\0';
     } else {
         if (sizeof(contract_type_not_present) >= buff_size)
             THROW(EXC_WRONG_LENGTH);
         memcpy(dest, contract_type_not_present, sizeof(contract_type_not_present));
-        dest[strlen(contract_type_not_present)] = '\0';
     }
 }
 
