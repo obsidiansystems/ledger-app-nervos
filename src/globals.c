@@ -49,15 +49,15 @@ nvram_data const N_data_real;
 nvram_data N_data_real;
 #endif
 
-static const char sign_hash_prompt_on[] = "On";
-static const char sign_hash_prompt_off[] = "Off";
+static const char prompt_on[] = "On";
+static const char prompt_off[] = "Off";
 static const char mainnet_prompt[] = "mainnet";
 static const char testnet_prompt[] = "testnet";
 
 void switch_network() {
     nvram_data data;
     memcpy(&data, &N_data, sizeof(nvram_data));
-    const bool isMain = data.address_type == ADDRESS_MAINNET; 
+    const bool isMain = data.address_type == ADDRESS_MAINNET;
     data.address_type = isMain ? ADDRESS_TESTNET : ADDRESS_MAINNET;
     if(isMain)
       strcpy(data.network_prompt, testnet_prompt);
@@ -72,9 +72,20 @@ void switch_sign_hash() {
     const bool isOn = data.sign_hash_type == SIGN_HASH_ON; 
     data.sign_hash_type = isOn ? SIGN_HASH_OFF : SIGN_HASH_ON;
     if(isOn)
-      strcpy(data.sign_hash_prompt, sign_hash_prompt_off);
+      strcpy(data.sign_hash_prompt, prompt_off);
     else
-      strcpy(data.sign_hash_prompt, sign_hash_prompt_on);
+      strcpy(data.sign_hash_prompt, prompt_on);
+    nvm_write((void*)&N_data, (void*)&data, sizeof(N_data));
+}
+void switch_contract_data() {
+    nvram_data data;
+    memcpy(&data, &N_data, sizeof(nvram_data));
+    const bool isOn = data.contract_data_type == ALLOW_CONTRACT_DATA;
+    data.contract_data_type = isOn ? DISALLOW_CONTRACT_DATA : ALLOW_CONTRACT_DATA;
+    if(isOn)
+      strcpy(data.contract_data_prompt, prompt_off);
+    else
+      strcpy(data.contract_data_prompt, prompt_on);
     nvm_write((void*)&N_data, (void*)&data, sizeof(N_data));
 }
 

@@ -171,6 +171,11 @@ struct output_t {
 
 #define MAX_OUTPUTS 5
 
+enum contract_type_t {
+    CONTRACT_NOT_PRESENT = 0,
+    CONTRACT_UNKNOWN = 1
+};
+
 struct parsed_transaction {
     uint64_t total_fee;
     // (input amount (total amount we are signing (change is not deducted), total of outputs (- change))
@@ -181,6 +186,7 @@ struct parsed_transaction {
     enum operation_tag tag;
     uint8_t flags;   // Interpretation depends on operation type
     uint8_t group_input_count;
+    enum contract_type_t contract_type; // 0 means no contract
 };
 
 // Maximum number of APDU instructions
@@ -225,10 +231,17 @@ typedef enum {
   SIGN_HASH_ON
 } sign_hash_type_t;
 
+typedef enum {
+    DISALLOW_CONTRACT_DATA=0,
+    ALLOW_CONTRACT_DATA
+} contract_data_type_t;
+
 typedef struct {
-	bool initialized;
-	address_type_t address_type;
-	char network_prompt[10];
-  sign_hash_type_t sign_hash_type;
-	char sign_hash_prompt[10];
+    bool initialized;
+    address_type_t address_type;
+    char network_prompt[10];
+    sign_hash_type_t sign_hash_type;
+    char sign_hash_prompt[10];
+    contract_data_type_t contract_data_type;
+    char contract_data_prompt[10];
 } nvram_data;

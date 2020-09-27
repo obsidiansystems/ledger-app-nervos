@@ -22,6 +22,9 @@ void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock
 // dest must be at least MAX_INT_DIGITS
 size_t number_to_string(char *const dest, uint64_t number);
 
+// show the contract type in a prompt
+void contract_type_to_string_indirect(char *const dest, size_t const buff_size, uint8_t const *const contract_typ);
+
 // Format a frac_ckb
 void frac_ckb_to_string_indirect(char *const dest, size_t const buff_size, uint64_t const *const number);
 
