@@ -552,55 +552,21 @@ void output_start(mol_num_t index) {
     G.lock_arg_cmp=G.change_lock_arg;
 }
 
-// Called after all transaction outputs
-void outputs_end(void) {
-}
-
 // Called per item (tx output in this case)
 void output_end(void) {
-    bool is_second_change = G.u.tx.processed_change_cell && !G.cell_state.lock_arg_nonequal;
-    uint64_t zero_val = 0;
-    bool dest_is_src = G.cell_state.lock_arg_nonequal
-        && (0 == memcmp(G.current_lock_arg, G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash)))
-        && (0 == memcmp(&zero_val, G.lock_arg_tmp.lock_period, sizeof(G.lock_arg_tmp.lock_period)));
-
-    G.u.tx.is_self_transfer |=  is_second_change || dest_is_src;
-
-    // Have we now processed at least 1 change cell?
-    G.u.tx.processed_change_cell |= !G.cell_state.lock_arg_nonequal;
-
     if(G.cell_state.is_dao) {
         memcpy(&G.dao_cell_owner, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
         G.u.tx.dao_output_amount += G.cell_state.capacity;
         G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
         if(G.cell_state.lock_arg_nonequal)
             REJECT("Not allowing DAO outputs to be sent to a non-self address");
+        G.maybe_transaction.v.flags |= HAS_CHANGE_ADDRESS;
     } else {
         if(G.cell_state.is_multisig) {
             G.u.tx.sending_to_multisig_output = true;
         }
-        if(G.u.tx.is_self_transfer) {
-            // The normal rules no longer apply
-            if(is_second_change) {
-                // It is now a self_txn so no change exists
-                G.u.tx.plain_output_amount += G.u.tx.change_amount;
-                G.u.tx.change_amount = 0;
-            }
-            G.u.tx.plain_output_amount += G.cell_state.capacity;
-            uint8_t *dest_to_show = dest_is_src ? G.lock_arg_tmp.hash : G.change_lock_arg;
-
-            // Doesn't cover the case where dst is src, but different change address, which sets maybe-txn, even
-            if((G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) && memcmp(G.u.tx.outputs[0].destination.hash, dest_to_show, 20)) {
-                // If here either, the destination is the signer, but the change address is different, or we need to reject it because of multiple output cells
-                if((dest_is_src || is_second_change) && N_data.contract_data_type == DISALLOW_CONTRACT_DATA) {
-                    REJECT("Can't handle self-transactions with multiple non-change destination addresses");
-                }
-            } else {
-                G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
-                memcpy(G.u.tx.outputs[0].destination.hash, dest_to_show, 20);
-            }
-        } else if(G.cell_state.lock_arg_nonequal) {
-            // if the output lock arg doesn't match the change bip-32 path
+        // if the output lock arg doesn't match the change bip-32 path
+        if(G.cell_state.lock_arg_nonequal) {
             if (!(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) ) {
                 if (G.u.tx.output_count != 0) {
                     // Should be 0 if we haven't seent address yet
@@ -634,6 +600,48 @@ void output_end(void) {
         }
     }
 }
+
+// Called after all transaction outputs
+void outputs_end(void) {
+    // For some reason if we don't do this `G.dao_cell_owner` will get
+    // cleared?!?!?!
+    if (G.u.tx.dao_bitmask & 1)
+        memcpy(G.u.tx.outputs[0].destination.hash, &G.dao_cell_owner, 20);
+
+    // Don't do any self transfer stuff if dao
+    if (G.u.tx.dao_bitmask
+        || G.maybe_transaction.v.tag == OPERATION_TAG_DAO_PREPARE
+        || G.maybe_transaction.v.tag == OPERATION_TAG_DAO_WITHDRAW)
+        return;
+
+    G.u.tx.is_self_transfer =
+        !(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS)
+        && (G.maybe_transaction.v.flags & HAS_CHANGE_ADDRESS);
+
+    if(G.u.tx.is_self_transfer) {
+        if (G.u.tx.plain_output_amount != 0) {
+            // If all outputs are change, then the output amount should be 0
+            THROW(EXC_WRONG_PARAM);
+        }
+        if (G.u.tx.output_count != 0) {
+            // Should be 0 if we haven't seent address yet
+            THROW(EXC_MEMORY_ERROR);
+        }
+
+        // Swap output and change, so output is change and change is 0
+        G.u.tx.plain_output_amount = G.u.tx.change_amount;
+        G.u.tx.change_amount = 0;
+
+        // Swap flags likewise
+        G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
+        G.maybe_transaction.v.flags &= !HAS_CHANGE_ADDRESS;
+
+        // Set single output prompt for the then-change-now-output
+        G.u.tx.output_count = 1;
+        memcpy(G.u.tx.outputs[G.u.tx.output_count - 1].destination.hash, G.change_lock_arg, 20);
+    }
+}
+
 
 void validate_output_data_start(mol_num_t idx) {
     G.cell_state.is_dao = !((G.u.tx.dao_bitmask & 1<<idx) == 0);
