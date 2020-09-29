@@ -10,7 +10,7 @@ describe("APDU protocol integrity generative tests", function () {
       return await fc.assert(fc.asyncProperty(fc.integer(6, 255), fc.hexaString(), async (apdu, hashHex) => {
         const body = Buffer.from(hashHex, 'hex');
         try {
-          await this.speculos.send(this.ava.CLA, apdu, 0x00, 0x00, body);
+          await this.speculos.send(this.ckb.CLA, apdu, 0x00, 0x00, body);
           throw("Expected error");
         } catch (e) {
           this.flushStderr();
@@ -23,7 +23,7 @@ describe("APDU protocol integrity generative tests", function () {
       return await fc.assert(fc.asyncProperty(fc.integer(0, 4), fc.hexaString(), fc.integer(0,255), async (apdu, hashHex, p1) => {
         const body = Buffer.from(hashHex, 'hex');
         try {
-          await this.speculos.send(this.ava.CLA, apdu, p1, 0x00, body);
+          await this.speculos.send(this.ckb.CLA, apdu, p1, 0x00, body);
           throw "Expected error";
         } catch (e) {
           this.flushStderr();

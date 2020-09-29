@@ -155,5 +155,5 @@ include $(BOLOS_SDK)/Makefile.rules
 dep/%.d: %.c Makefile
 
 .phony: test
-test: test.sh bin/app.elf
-	./test.sh
+test: tests/*.js tests/package.json bin/app.elf
+	LEDGER_APP=bin/app.elf run-ledger-tests.sh tests/

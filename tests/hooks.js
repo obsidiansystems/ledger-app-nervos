@@ -1,6 +1,6 @@
 const SpeculosTransport = require('@ledgerhq/hw-transport-node-speculos').default;
 const HidTransport = require('@ledgerhq/hw-transport-node-hid').default;
-const Avalanche = require('hw-app-avalanche').default;
+const Ckb = require('hw-app-ckb').default;
 const spawn = require('child_process').spawn;
 const fc = require('fast-check');
 const chai = require('chai');
@@ -29,11 +29,13 @@ exports.mochaHooks = {
       console.log("Speculos started");
       while (this.speculos === undefined) { // Let the test timeout handle the bad case
         try {
+          console.log("Opening transport");
           this.speculos = await SpeculosTransport.open({
             apduPort: APDU_PORT,
             buttonPort: BUTTON_PORT,
             automationPort: AUTOMATION_PORT,
           });
+          console.log("transport open");
           if (process.env.DEBUG_BUTTONS) {
             const subButton = this.speculos.button;
             this.speculos.button = btns => {
@@ -55,7 +57,7 @@ exports.mochaHooks = {
     }
     this.speculos.handlerNum=0;
     this.speculos.waitingQueue=[];
-    this.ava = new Avalanche(this.speculos, "Avalanche", _ => { return; });
+    this.ckb = new Ckb(this.speculos);
     this.flushStderr = function() {
       if (this.speculosProcess && this.speculosProcess.stdio[2]) this.speculosProcess.stdio[2].read();
     };
@@ -153,21 +155,21 @@ async function automationStart(speculos, interactionFunc) {
 
 async function syncWithLedger(speculos, source, interactionFunc) {
   let screen = await source.next();
-  // Scroll to the end; we do this because we might have seen "Avalanche" when
+  // Scroll to the end; we do this because we might have seen "Nervos" when
   // we subscribed, but needed to send a button click to make sure we reached
   // this point.
   while(screen.body != "Quit") {
     speculos.button("Rr");
     screen = await source.next();
   }
-  // Scroll back to "Avalanche", and we're ready and pretty sure we're on the
+  // Scroll back to "Nervos", and we're ready and pretty sure we're on the
   // home screen.
-  while(screen.header != "Avalanche") {
+  while(screen.header != "Nervos") {
     speculos.button("Ll");
     screen = await source.next();
   }
   // Sink some extra homescreens to make us a bit more durable to failing tests.
-  while(await source.peek().header == "Avalanche" || await source.peek().body == "Quit") {
+  while(await source.peek().header == "Nervos" || await source.peek().body == "Quit") {
     await source.next();
   }
   // And continue on to interactionFunc
@@ -243,6 +245,9 @@ const fcConfig = {
 
 fc.configureGlobal(fcConfig);
 
+global.recover = require('bcrypto/lib/secp256k1');
+global.BIPPath = require("bip32-path");
+global.expect = expect;
 global.flowAccept = flowAccept;
 global.automationStart = automationStart;
 global.acceptPrompts = acceptPrompts;

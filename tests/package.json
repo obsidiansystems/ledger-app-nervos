@@ -1,12 +1,13 @@
 {
-	"name": "avax-ledger-tests",
+	"name": "ckb-ledger-tests",
 	"version": "0.1.0",
-	"src": "hw-app-avalanche/src",
+	"src": "hw-app-ckb/src",
 	"scripts": {
 		"test": "mocha . --exit --require hooks --config .mocharc.js"
 	},
 	"bin": "run-tests.js",
 	"devDependencies": {
+    "flow-bin": "^0.109.0",
 		"babel-cli": "^6.26.0",
 		"babel-eslint": "^8.0.2",
 		"babel-preset-env": "^1.7.0",
@@ -29,9 +30,10 @@
 		"rxjs": "^6.6.0",
 		"tap": "^14.10.8",
 		"uglify-js": "^3.6.1"
+    
 	},
 	"dependencies": {
-		"hw-app-avalanche": "https://github.com/obsidiansystems/hw-app-avalanche.git#eac@verbose-signing-multi",
+		"hw-app-ckb": "https://github.com/obsidiansystems/hw-app-ckb.git",
 		"@ledgerhq/hw-transport-node-speculos": "5.19.1",
 		"@ledgerhq/hw-transport-node-hid": "5.22.0",
 		"bip32-path": "^0.4.2",
