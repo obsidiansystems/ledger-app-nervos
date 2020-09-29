@@ -84,14 +84,20 @@ according to the directions in [README.md](README.md).
 
 # Releasing #
 
-To create a new release:
+To create a new release candidate:
+
 * Choose a commit you want to release.
+* Ensure it is part of a branch `release/M.N`
+* Ensure `ChangeLog.md` describe the release
 * Make a new commit on top of it, incrementing the version numbers in the Makefile appropriately.
 * Tag the release candidate `vM.N.P-rcX`, where M, N, P, and X stand for appropriate numbers, e.g.: v0.4.1-rc2
 * Make the actual tarballs with `app.hex` files using the provided script:
+  ``` sh
+  $ nix/release.sh
+  ```
 
-``` sh
-$ nix/release.sh
-```
-* Once it has passed QA, tag `vM.N.P`, e.g. v0.4.1
+Once it has passed QA:
+
+* Tag `vM.N.P`, e.g. v0.4.1
+* Ensure `ChangeLog.md` has the right date
 * Use the md5sum/sha256 section of the output of `nix/release.sh` as part of the markdown release notes on GitHub, and post the resulting two tarballs along with the release.
