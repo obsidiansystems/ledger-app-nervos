@@ -21,3 +21,35 @@ This release has been tested with:
 - CKB-CLI: [b460c998d6681a89a47b3af203ecc5f12d7b2507](https://github.com/obsidiansystems/ckb-cli/commit/b460c998d6681a89a47b3af203ecc5f12d7b2507)
  - CKB-Plugin-Ledger: [v0.2.0 - 283065c4d13212586a0dca709540277988043395](https://github.com/obsidiansystems/ckb-plugin-ledger/commit/283065c4d13212586a0dca709540277988043395)
  - hw-app-ckb: [v0.1.0 / 9a6754bdec67aea44a6d70d62cb8c8766ae49ccc](https://github.com/obsidiansystems/hw-app-ckb/commit/9a6754bdec67aea44a6d70d62cb8c8766ae49ccc)
+
+## v0.4.0 - 2020-08-07
+
+### Release Notes
+- Increase number of supported output cells from 3 to 5
+- Memory savings for more stability
+- Improve recognition of self-transfers
+
+## v0.3.0 - 2020-07-24
+
+### Release Notes
+
+NOTE: This release has been tested with git hash `8b7bbcb437bdb99a91f19c836cd5ef60667e2718` on the `ledger-app` branch of https://github.com/obsidiansystems/ckb-cli, which is intended for testing and development purposes only. This repository comes with scripts that run this specialized fork of CBK-CLI for the user. **Do not use this release or [our fork of CKB-CLI](https://github.com/obsidiansystems/ckb-cli) in production.**
+
+v0.3.0 supports a much broader range of transaction display and signing capabilities. Specifically, new features since the last release (v0.1.0):
+* Verifying and signing transactions with multiple different input lock arg, displaying which input we are currently signing for.
+* Updated prompts for self-transfers and transactions to consolidate tokens within an account.
+* Verifying and signing transactions with multiple outputs (currently maximum of 3), displaying destination lock args for all outputs.
+* Updated prompts for verifying and signing DAO deposit, prepare, and withdraw operations.
+* Signing arbitrary messages
+  * Securely verified in text or hex form.
+  * As an advanced opt-in feature, verifying and signing hashes of arbitrary data.
+* Verifying and signing transactions with multisig and timelock inputs or outputs
+* New FLOW user interface
+
+Additional Notes:
+* Nano S SDK (1.6.0 Unified)
+* Nano X SDK (1.5)
+
+## v0.1.0 2020-04-03
+
+Initial release for Nervos CKB Ledger app
