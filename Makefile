@@ -154,6 +154,9 @@ include $(BOLOS_SDK)/Makefile.rules
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
 
-.phony: test
+.phony: test listvariants
 test: test.sh bin/app.elf
 	./test.sh
+
+listvariants:
+	@echo VARIANTS COIN CKB
