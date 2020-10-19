@@ -106,13 +106,21 @@ There are 3 ways you can install this Ledger application:
 
 Please download `nano-s-release.tar.gz` from the latest release on  the [releases](https://github.com/obsidiansystems/ledger-app-nervos/releases) page of this repo, which contains a pre-compiled app or `.hex` file ready to install on the Ledger. The following sections describe how to install it, including acquiring other tools from the Ledger project.
 
-The next two sections describe how to install tools that you will need to interact with the Ledger. On NixOS, these tools can be loaded into a nix-shell by simply running:
+The next two sections describe how to install tools that you will need to interact with the Ledger.
+
+On NixOS, these tools can be loaded into a nix-shell by simply running:
 
 ``` sh
 $ nix/env.sh s
 ```
 
-Therefore, on NixOS, this command replaces the next two sections.
+On a macOS with Nix installed, you can instead use:
+
+``` sh
+$ nix-shell -p 'python3.withPackages (p: [p.ledgerblue])' libusb
+```
+
+Otherwise, follow the next two sections.
 
 ### Installing BOLOS Python Loader (non-NixOS)
 
