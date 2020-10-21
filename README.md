@@ -399,7 +399,7 @@ More complicated transactions, such as those with multiple outputs or inputs fro
 
 When doing more complex transactions, please note: 
 - Different transaction variants may have different on-device prompts so the user can verify all the aspects of what they are signing. To see each set of prompts that can occur during a transfer, see [Prompts.md](prompts.md).
-- There are restrictions you may encounter due to device constraints. For instance, The Nano S and Nano X cannot sign transactions with more than 5 non-change outputs in a single transaction.
+- There are restrictions you may encounter due to device constraints. For instance, The Nano S and Nano X cannot sign transactions with more than 5 non-change outputs in a single transaction when sending from a standard sighash address. When sending from a multisig address, the maximum number of outputs is 4.
 
 ## Checking Chain Data ##
 
