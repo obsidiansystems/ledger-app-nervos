@@ -156,9 +156,9 @@ static size_t sign_complete(uint8_t instruction) {
                                                               PROMPT("Destination"), PROMPT("Contract"), NULL};
             REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
             //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-            register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
-            register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
             register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
+            register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+            register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
             register_ui_callback(CONTRACT_INDEX, contract_type_to_string_indirect, &G.maybe_transaction.v.contract_type);
 
             ui_prompt(transaction_prompts, ok_c, sign_reject);
@@ -167,9 +167,9 @@ static size_t sign_complete(uint8_t instruction) {
                                                               PROMPT("Destination"), NULL};
             REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Transaction");
             //register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-            register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
-            register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
             register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
+            register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+            register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
 
             ui_prompt(transaction_prompts, ok_c, sign_reject);
         }
@@ -185,9 +185,9 @@ static size_t sign_complete(uint8_t instruction) {
         static const char *const transaction_prompts[] = {PROMPT("Confirm"), PROMPT("Amount"),      PROMPT("Fee"),
                                                           PROMPT("Destination"), NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Self-Transfer");
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
-        register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.amount.snd);
+        register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
@@ -216,15 +216,13 @@ static size_t sign_complete(uint8_t instruction) {
         static const uint32_t TYPE_INDEX = 0;
         static const uint32_t AMOUNT_INDEX = 1;
         static const uint32_t FEE_INDEX = 2;
-        static const uint32_t DESTINATION_INDEX = 3;
-        static const uint32_t OWNER_INDEX = 4;
+        static const uint32_t OWNER_INDEX = 3;
         static const char *const transaction_prompts[] = {PROMPT("Confirm DAO"), PROMPT("Deposit Amount"), PROMPT("Fee"), PROMPT("Cell Owner"),
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Deposit");
         // register_ui_callback(SOURCE_INDEX, lock_arg_to_address, &G.maybe_transaction.v.source);
-        register_ui_callback(DESTINATION_INDEX, lock_arg_to_destination_address_cb, &G.u.tx.outputs[0].destination);
-        register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
+        register_ui_callback(FEE_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
         register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.dao_cell_owner);
 
         ui_prompt(transaction_prompts, ok_c, sign_reject);
@@ -261,8 +259,8 @@ static size_t sign_complete(uint8_t instruction) {
                                                           NULL};
         REGISTER_STATIC_UI_VALUE(TYPE_INDEX, "Withdrawal");
         register_ui_callback(AMOUNT_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.dao_amount);
-        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.dao_cell_owner);
         register_ui_callback(COMPENSATION_INDEX, frac_ckb_to_string_indirect, &G.maybe_transaction.v.total_fee);
+        register_ui_callback(OWNER_INDEX, lock_arg_to_sighash_address, &G.dao_cell_owner);
         ui_prompt(transaction_prompts, ok_c, sign_reject);
 
     } break;
@@ -603,11 +601,6 @@ void output_end(void) {
 
 // Called after all transaction outputs
 void outputs_end(void) {
-    // For some reason if we don't do this `G.dao_cell_owner` will get
-    // cleared?!?!?!
-    if (G.u.tx.dao_bitmask & 1)
-        memcpy(G.u.tx.outputs[0].destination.hash, &G.dao_cell_owner, 20);
-
     // Don't do any self transfer stuff if dao
     if (G.u.tx.dao_bitmask
         || G.maybe_transaction.v.tag == OPERATION_TAG_DAO_PREPARE
