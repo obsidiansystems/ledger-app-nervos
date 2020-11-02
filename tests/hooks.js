@@ -58,6 +58,7 @@ exports.mochaHooks = {
     this.speculos.handlerNum=0;
     this.speculos.waitingQueue=[];
     this.ckb = new Ckb(this.speculos);
+    this.ckb.MAGIC_SUFFIX = '9000';
     this.flushStderr = function() {
       if (this.speculosProcess && this.speculosProcess.stdio[2]) this.speculosProcess.stdio[2].read();
     };
@@ -83,6 +84,13 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
   return await automationStart(speculos, acceptPrompts(expectedPrompts, acceptPrompt));
 }
 
+// A couple of our screens use "bn" formatting for only one line of text and we
+// don't have an icon so don't want "pn"; we need to know that there isn't
+// going to be a body in those cases so we should send the screen.
+
+const headerOnlyScreens = {
+  "Configuration": 1,
+};
 
 /* State machine to read screen events and turn them into screens of prompts. */
 async function automationStart(speculos, interactionFunc) {
@@ -102,7 +110,7 @@ async function automationStart(speculos, interactionFunc) {
     await speculos.promptsEndPromise;
   }
   speculos.promptsEndPromise = promptsLock; // Set ourselves as the interaction.
-        
+
   // Make an async iterator we can push stuff into.
   let sendEvent;
   let sendPromise=new Promise(r=>{sendEvent = r;});
@@ -116,12 +124,12 @@ async function automationStart(speculos, interactionFunc) {
       return await sendPromise;
     }
   };
-  
+
   // Sync up with the ledger; wait until we're on the home screen, and do some
   // clicking back and forth to make sure we see the event.
   // Then pass screens to interactionFunc.
   let readyPromise = syncWithLedger(speculos, asyncEventIter, interactionFunc);
-  
+
   // Resolve our lock when we're done
   readyPromise.then(r=>r.promptsPromise.then(()=>{promptLockResolve(true)}));
 
@@ -131,7 +139,7 @@ async function automationStart(speculos, interactionFunc) {
   let subscript = speculos.automationEvents.subscribe({
     next: evt => {
       // Wrap up two-line prompts into one:
-      if(evt.y == 3) {
+      if(evt.y == 3 && ! headerOnlyScreens[evt.text]) {
         header = evt.text;
         return; // The top line comes out first, so now wait for the next draw.
       } else {
@@ -143,7 +151,7 @@ async function automationStart(speculos, interactionFunc) {
       body=undefined;
       header=undefined;
     }});
-  
+
   asyncEventIter.unsubscribe = () => { subscript.unsubscribe(); };
 
   // Send a rightward-click to make sure we get _an_ event and our state
@@ -169,7 +177,7 @@ async function syncWithLedger(speculos, source, interactionFunc) {
     screen = await source.next();
   }
   // Sink some extra homescreens to make us a bit more durable to failing tests.
-  while(await source.peek().header == "Nervos" || await source.peek().body == "Quit") {
+  while(await source.peek().header == "Nervos" || await source.peek().header == "Configuration" || await source.peek().body == "Quit") {
     await source.next();
   }
   // And continue on to interactionFunc
