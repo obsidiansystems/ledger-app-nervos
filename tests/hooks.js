@@ -58,7 +58,7 @@ exports.mochaHooks = {
     this.speculos.handlerNum=0;
     this.speculos.waitingQueue=[];
     this.ckb = new Ckb(this.speculos);
-    this.ckb.MAGIC_SUFFIX = '9000';
+    this.ckb.MAGIC_9K = '9000';
     this.flushStderr = function() {
       if (this.speculosProcess && this.speculosProcess.stdio[2]) this.speculosProcess.stdio[2].read();
     };

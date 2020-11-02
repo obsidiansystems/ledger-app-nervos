@@ -14,7 +14,7 @@ describe("APDU protocol integrity generative tests", function () {
           throw("Expected error");
         } catch (e) {
           this.flushStderr();
-          expect(e).has.property('statusCode', 0x6D00); // INS_NOT_SUPPORTED
+          expect(e).has.property('statusCode', 0x6e00); // INS_NOT_SUPPORTED
         }
       }), { examples: [[9, '']] });
     });
@@ -35,7 +35,7 @@ describe("APDU protocol integrity generative tests", function () {
       return await fc.assert(fc.asyncProperty(fc.hexaString(2, 512), async hashHex => {
         const body = Buffer.from(hashHex, 'hex');
         const rv = await this.speculos.exchange(body);
-        expect(rv).to.not.equalBytes("9000");
+        expect(rv).to.not.equalBytes(this.ckb.MAGIC_9K);
         this.flushStderr();
       }));
     });
@@ -43,14 +43,14 @@ describe("APDU protocol integrity generative tests", function () {
     it('rejects short garbage dumped straight to the device', async function () {
       return await fc.assert(fc.asyncProperty(fc.hexaString(10, 64), async hashHex => {
         const body = Buffer.from(hashHex, 'hex');
-        let rv = Buffer.from("9000", "hex");
+        let rv = Buffer.from(this.ckb.MAGIC_9K, "hex");
         try {
           rv = await this.speculos.exchange(body);
         } catch(e) {
           return; // Errors that get here are probably from the transport, not from the ledger.
         }
 
-        expect(rv).to.not.equalBytes("9000");
+        expect(rv).to.not.equalBytes(this.ckb.MAGIC_9K);
         this.flushStderr();
       }));
     });
