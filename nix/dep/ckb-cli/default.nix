@@ -19,7 +19,7 @@
 , rustPackages ? rustOverlay.rustChannelOf {
     date = "2020-05-04";
     rustToolchain = (import ./ckb-cli-src/thunk.nix) + "/rust-toolchain";
-    sha256 = "0yvh2ck2vqas164yh01ggj4ckznx04blz3jgbkickfgjm18y269j";
+    sha256="07mp7n4n3cmm37mv152frv7p9q58ahjw5k8gcq48vfczrgm5qgiy";
     # sha256 = "sha256-Pj5c6sufuY0IZg/NwiVUqOB0z85OlLDrGbWyYYk9tx4=";
   }
 
@@ -41,5 +41,5 @@ in rustPlatform.buildRustPackage {
   verifyCargoDeps = true;
 
   # Cargo hash must be updated when Cargo.lock file changes.
-  cargoSha256 = "1wb8bqrhm14dzz8f2hkhjmc9bd4gzb80hnjgfbgsfh7n0gn0zfpa";
+  cargoSha256 = "039bvmi7ai5zd3k46jfr1r82sfn84x4hg7c34sxsncwifd8p5yc6";
 }
