@@ -13,7 +13,7 @@ describe("Basic Tests", () => {
     });
     it('returns the expected wallet ID', async function () {
       const id = await this.ckb.getWalletId();
-      expect(id).to.equalBytes('9c6e60f3e812ef5c859bbc900f427bffe63294c5490f93e4e50beb688c0798bfcbb8470fd1a53405f606cc1cb88ee0ac32880effa2df595dd7c5ff239dabf9e3');
+      expect(id).to.equal('9c6e60f3e812ef5c859bbc900f427bffe63294c5490f93e4e50beb688c0798bf');
     });
   });
 });

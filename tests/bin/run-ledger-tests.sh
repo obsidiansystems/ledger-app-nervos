@@ -8,9 +8,9 @@ MY_NODE_MODULES=$MY_DIR/node_modules
 suite="${1:-$MY_DIR}"
 shift
 
-if [[ ! ($suite == /nix/*) && -f $suite/hw-app-avalanche/src/Avalanche.js ]]; then
+if [[ ! ($suite == /nix/*) && -f $suite/hw-app-ckb/src/Ckb.js ]]; then
   pushd $suite
-  nix-shell -A 'passthru.deps."hw-app-avalanche@0.1.0"' --run "pushd hw-app-avalanche; node \$nodeModules/.bin/babel --source-maps -d lib src; popd"
+  nix-shell -A 'passthru.deps."hw-app-ckb@5.9.0"' --run "pushd hw-app-ckb; node \$nodeModules/.bin/babel --source-maps -d lib src; popd"
   popd
 fi
 
