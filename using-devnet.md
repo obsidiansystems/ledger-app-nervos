@@ -29,30 +29,14 @@ From within this repository, we will first make [CKB](https://github.com/nervosn
 $ nix run -f nix/dep/ckb # make ckb available
 $ mkdir devnet # create a folder for the devnet
 $ cd devnet # enter the devnet folder
-$ ckb init --chain dev # initialize the devnet
+$ ckb init --chain dev --ba-message 0x --ba-arg <your-lock-arg> # initialize the devnet
 ```
 
-`ckb init --chain dev` creates files we'll use to configure our network for development.
+`ckb init ...` creates the files we'll use to configure our network for development.
 
 ### Modifications: ckb-miner.toml
 
 The `value` in this file determines the mining interval in milliseconds. The default value is 5000, which means a new block can be created every 5 seconds. We recommend adjusting this to a smaller value such as 20 so epochs are quick.
-
-### Modifications: ckb.toml
-
-Uncomment the the last 5 lines of `ckb.toml` by removing the `#` at the beginning of them. This section sets configurations for the 'Block Assembler', which is the address that receives block rewards for miniing. We'll then change two of the values:
-- set `args` to the address you'd like to receive mining rewards. This can be your Ledger address, but otherwise it can be any other valid Nervos lock-arg
-- set `message` to `0x`
-
-When you're done, the section should look something like this:
-
-```toml
-[block_assembler]
-code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8" # Do not change this.
-args = "<lock-arg>" # Set this to the lock-arg which should receive block rewards
-hash_type = "type" # Do not change this.
-message = "A 0x-prefixed hex string" # Change this to "0x" to supply an empty message
-```
 
 ### Modifications: specs/dev.toml
 
