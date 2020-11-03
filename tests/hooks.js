@@ -90,6 +90,7 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
 
 const headerOnlyScreens = {
   "Configuration": 1,
+  "Main menu": 1
 };
 
 /* State machine to read screen events and turn them into screens of prompts. */
