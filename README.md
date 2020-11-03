@@ -636,12 +636,12 @@ Starting in version 0.5.0, it is possible to allow signing
 transactions with contract data. "Contract Data" is the part of a
 Nervos transaction which contains extra, unstructured data that is
 used by the Nervos-VM. It is also referred to as a "Custom Script",
-and is required for transactions using any lockscripts such as those
+and is required for transactions using custom tokens such as those
 involving [Simple User Defined
 Token](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0025-simple-udt/0025-simple-udt.md)
 (sUDT), [Anyone Can
 Pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md)
-(ACP), as well as many others. "Contract Data" is determined by a
+(ACP) and many other custom dApps. "Contract Data" is determined by a
 non-empty ["cell data" field
 ](https://docs.nervos.org/docs/reference/cell#cell-data) in a Nervos
 transaction.
