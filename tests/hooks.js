@@ -146,7 +146,7 @@ async function automationStart(speculos, interactionFunc) {
         body = evt.text;
       }
       screen = { ...(header && {header}), body };
-      // console.log("SCREEN (" + subNum + "): " + JSON.stringify(screen));
+      if(process.env.DEBUG_SCREENS) console.log("SCREEN (" + subNum + "): " + JSON.stringify(screen));
       sendEvent(screen);
       body=undefined;
       header=undefined;
