@@ -632,27 +632,30 @@ This means your prepared cell is not yet available to withdraw. You'll need to w
 
 ## Allowing Contract Data ##
 
-Starting in version 0.5.0, it is possible to allow signing
+Starting in version 0.5.0, the Nervos Ledger App can sign
 transactions with contract data. "Contract Data" is the part of a
 Nervos transaction which contains extra, unstructured data that is
-used by the Nervos-VM. It is also referred to as a "Custom Script",
+used by the Nervos-VM. It is also referred to as a "Custom Script,"
 and is required for transactions using custom tokens such as those
 involving [Simple User Defined
 Token](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0025-simple-udt/0025-simple-udt.md)
 (sUDT), [Anyone Can
 Pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md)
-(ACP) and many other custom dApps. "Contract Data" is determined by a
+(ACP) and many other custom scripts. "Contract Data" is determined by a
 non-empty ["cell data" field
 ](https://docs.nervos.org/docs/reference/cell#cell-data) in a Nervos
 transaction.
 
-By default, "contract data" is rejected by the Nervos Ledger App due
-to security concerns. Contract data can be enabled through the
-"Settings" menu and toggling "Allow Contract Data" from "off" to "on".
+By default, "Contract Data" is rejected by the Nervos Ledger App due
+to security concerns. Because this data is unstructured and diverse, 
+the application cannot parse it into a verifiable prompts for the user to confirm.
+
+Contract data can be enabled through the
+"Settings" menu and toggling "Allow Contract Data" from "off" to "on."
 You can verify your transaction has contract data by the "Contract
-Data: Present" prompt in "Confirm Transaction". Since this data cannot
+Data: Present" prompt at the end of "Confirm Transaction". Since this data cannot
 be shown by the Nervos Ledger App beyond noting that it is either
-present or not present, you should enable the setting with caution,
+present or absent, you should enable the setting with caution,
 and attempt to verify the transaction cells elsewhere if possible.
 
 # Troubleshooting #
