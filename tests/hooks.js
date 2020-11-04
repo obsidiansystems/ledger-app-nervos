@@ -90,6 +90,7 @@ async function flowAccept(speculos, expectedPrompts, acceptPrompt="Accept") {
 
 const headerOnlyScreens = {
   "Configuration": 1,
+  "Main menu": 1
 };
 
 /* State machine to read screen events and turn them into screens of prompts. */
@@ -146,7 +147,7 @@ async function automationStart(speculos, interactionFunc) {
         body = evt.text;
       }
       screen = { ...(header && {header}), body };
-      // console.log("SCREEN (" + subNum + "): " + JSON.stringify(screen));
+      if(process.env.DEBUG_SCREENS) console.log("SCREEN (" + subNum + "): " + JSON.stringify(screen));
       sendEvent(screen);
       body=undefined;
       header=undefined;

@@ -156,4 +156,4 @@ dep/%.d: %.c Makefile
 
 .phony: test
 test: tests/*.js tests/package.json bin/app.elf
-	LEDGER_APP=bin/app.elf run-ledger-tests.sh tests/
+	env LEDGER_APP=./bin/app.elf COMMIT=$(COMMIT) run-ledger-tests.sh ./tests/

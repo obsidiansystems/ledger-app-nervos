@@ -7,9 +7,9 @@ describe("Basic Tests", () => {
     it('can fetch the version of the app', async function () {
       const cfg = await this.ckb.getAppConfiguration();
       expect(cfg).to.be.a('object');
-      // Restore these to check that the version and hash actually match.
-      expect(cfg).to.have.property("version");
-      expect(cfg).to.have.property("hash");
+      expect(cfg).to.have.property("version", "0.5.0");
+      if (process.env.COMMIT && process.env.COMMIT != "TEST*")
+        expect(cfg).to.have.property("hash", process.env.COMMIT);
     });
     it('returns the expected wallet ID', async function () {
       const id = await this.ckb.getWalletId();
