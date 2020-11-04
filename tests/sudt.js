@@ -61,7 +61,7 @@ const createSudtTx = {
           ],
           "outputs": [
             {
-              "capacity": "14d0a4380a000000",
+              "capacity": "0000000a3814d0a4",
               "lock": {
                 "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
                 "hash_type": 1,
@@ -70,7 +70,7 @@ const createSudtTx = {
               "type_": null
             },
             {
-              "capacity": "009d966b01000000",
+              "capacity": "000000016b969d00",
               "lock": {
                 "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
                 "hash_type": 1,
@@ -116,7 +116,7 @@ const createSudtTx = {
           ],
           "outputs": [
             {
-              "capacity": "009d966b01000000",
+              "capacity": "000000016b009d96",
               "lock": {
                 "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
                 "hash_type": 1,
@@ -125,7 +125,7 @@ const createSudtTx = {
               "type_": null
             },
             {
-              "capacity": "30e9bbfe72000000",
+              "capacity": "00000072febbe930",
               "lock": {
                 "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
                 "hash_type": 1,
@@ -143,7 +143,7 @@ const createSudtTx = {
     ],
     "outputs": [
       {
-        "capacity": "00ce624e03000000",
+        "capacity": "000000034e62ce00",
         "lock": {
           "code_hash": "86a1c6987a4acbe1a887cca4c9dd2ac9fcb07405bbeda51b861b18bbf7492c4b",
           "hash_type": 1,
@@ -152,7 +152,7 @@ const createSudtTx = {
         "type_": null
       },
       {
-        "capacity": "14b3ef1b71000000",
+        "capacity": "000000711b14b3ef",
         "lock": {
           "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
           "hash_type": 1,
@@ -207,8 +207,8 @@ describe("sUDT operations", () => {
     // might have gotten screwed up in the conversion to JSON.
     const flow = await flowAccept(this.speculos, [
       {header:"Confirm", body:"Transaction"},
-      {header:"Amount", body:"15498907351.28444928"},
-      {header:"Fee", body:"20190211074.40386048"},
+      {header:"Amount", body:"4999.85646063"},
+      {header:"Fee", body:"0.14353473"},
       {header:"Destination", body:"ckb1qyqxxtzygxvjwhgqklqlkedlqqwhp0rqjkvsqltkvh"},
       {header:"Contract", body:"Present"},
     ]);
