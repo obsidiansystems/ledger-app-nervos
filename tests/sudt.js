@@ -203,8 +203,6 @@ describe("sUDT operations", () => {
 
     await (await flipContractDataPolicy("On")).promptsPromise;
 
-    // FIXME: Fee & Amount are bigger than originally used. Something
-    // might have gotten screwed up in the conversion to JSON.
     const flow = await flowAccept(this.speculos, [
       {header:"Confirm", body:"Transaction"},
       {header:"Amount", body:"4999.85646063"},
@@ -219,4 +217,4 @@ describe("sUDT operations", () => {
 
     await (await flipContractDataPolicy("Off")).promptsPromise;
   });
-2});
+});
