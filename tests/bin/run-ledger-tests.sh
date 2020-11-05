@@ -10,7 +10,7 @@ shift
 
 if [[ ! ($suite == /nix/*) && -f $suite/hw-app-ckb/src/Ckb.js ]]; then
   pushd $suite
-  nix-shell -A 'passthru.deps."hw-app-ckb@5.9.0"' --run "pushd hw-app-ckb; node \$nodeModules/.bin/babel --source-maps -d lib src; popd"
+  nix-shell -A 'passthru.deps."hw-app-ckb@0.1.0"' --run "pushd hw-app-ckb; node \$nodeModules/.bin/babel --source-maps -d lib src; popd"
   popd
 fi
 

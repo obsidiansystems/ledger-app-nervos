@@ -29,8 +29,8 @@
 		"prettier": "^1.18.2",
 		"rxjs": "^6.6.0",
 		"tap": "^14.10.8",
-		"uglify-js": "^3.6.1"
-    
+		"uglify-js": "^3.6.1",
+		"blake2b-wasm": "^2.1.0"
 	},
 	"dependencies": {
 		"hw-app-ckb": "https://github.com/obsidiansystems/hw-app-ckb.git",

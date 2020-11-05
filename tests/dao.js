@@ -1,5 +1,5 @@
 describe("DAO operations", () => {
-  it("Signing with strict checking and a DAO deposit passes", async function() {
+  it.only("Signing with strict checking and a DAO deposit passes", async function() {
     const flow = await flowAccept(this.speculos, [
       {header:"Confirm DAO", body:"Deposit"},
       {header:"Deposit Amount", body:"1000"},
@@ -7,14 +7,15 @@ describe("DAO operations", () => {
       {header:"Cell Owner", body:"ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7sugcvv9"},
     ]);
 
-    await this.ckb.signAnnotatedTransaction({
-      "signPath": [
+    signPath = [
         2147483692,
         2147483957,
         2147483648,
         0,
         0
-      ],
+    ];
+    let txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -207,7 +208,11 @@ describe("DAO operations", () => {
         "",
         ""
       ]
-    });
+    };
+    sig = await this.ckb.signAnnotatedTransaction(txn);
+    key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });

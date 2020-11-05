@@ -5,6 +5,9 @@ const spawn = require('child_process').spawn;
 const fc = require('fast-check');
 const chai = require('chai');
 const { expect } = chai.use(require('chai-bytes'));
+const blake2b = require("blake2b-wasm");
+const blockchain = require("hw-app-ckb/lib/annotated.js");
+const recover = require('bcrypto/lib/secp256k1').recover;
 
 const APDU_PORT = 9999;
 const BUTTON_PORT = 8888;
@@ -62,6 +65,7 @@ exports.mochaHooks = {
     this.flushStderr = function() {
       if (this.speculosProcess && this.speculosProcess.stdio[2]) this.speculosProcess.stdio[2].read();
     };
+    await blake2b.ready();
   },
   afterAll: async function () {
     if (this.speculosProcess) {
@@ -246,6 +250,70 @@ function acceptPrompts(expectedPrompts, selectPrompt) {
   }
 }
 
+function hashRawTransaction(transaction) {
+  const rawTransactionBinary = Buffer.from(blockchain.SerializeRawTransaction(transaction));
+  const txnID = blake2b(32, null, null, hashPersonalization).update(rawTransactionBinary).digest();
+  return txnID;
+}
+
+function validateInput(input, source) {
+  let tx_hash_bytes = hashRawTransaction(source);
+  let tx_hash = Buffer.from(tx_hash_bytes).toString('hex');
+  let since = input.since;
+  let index = input.previous_output.index;
+  // Disabled until the test cases can be fixed or we decide what to do here.
+  // expect(tx_hash_hex).to.equal(input.previous_output.tx_hash)
+  return {since, previous_output: { index, tx_hash } };
+}
+
+function annotatedRawTransactionToRawTransaction(art) {
+  let {inputs, ... remainder} = art;
+  return {
+    inputs: inputs.map(({input, source},idx)=>validateInput(input, source)),
+    ... remainder
+  };
+}
+
+const hashPersonalization = Uint8Array.from([99, 107, 98, 45, 100, 101, 102, 97, 117, 108, 116, 45, 104, 97, 115, 104]);
+
+function checkSignature(annotated, signature, key) {
+  const rawTransaction = annotatedRawTransactionToRawTransaction(annotated.raw);
+  const txnID = hashRawTransaction(rawTransaction);
+  let toSignHash = blake2b(32, null, null, hashPersonalization);
+  toSignHash.update(txnID);
+  witnesses = [... annotated.witnesses];
+  if(witnesses.length == 0 || !witnesses[0] || witnesses[0].length == 0) {
+    // Defaulting to the most basic single-signer WitnessArgs if it's not specified.
+    witnesses[0] = "55000000100000005500000055000000410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+  }
+  let witnessLenBuf=Buffer.alloc(8);
+  for ( witness of witnesses ) {
+    binaryWitness = Buffer.from(witness, 'hex');
+    // Witnesses being bigger than a 32-bit length field can hold would be very surprising, so leave the high bits as zero.
+    witnessLenBuf.writeUInt32LE(binaryWitness.length);
+    toSignHash.update(witnessLenBuf);
+    toSignHash.update(binaryWitness);
+  }
+  finalHash = Buffer.from(toSignHash.digest());
+  sigBytes = Buffer.from(signature, 'hex');
+  let recovered = recover(finalHash, sigBytes.slice(0,64), sigBytes[64], false);
+  expect(recovered).to.equalBytes(key);
+}
+
+async function getKeyFromLedgerCached(this_, path) {
+  if(!this_.address_cache) this_.address_cache={};
+  const cache=this_.address_cache;
+  if( typeof path !== 'string' ) {
+    path=BIPPath.fromPathArray(path).toString();
+  }
+  if(!cache[path]) {
+    const flow = await flowAccept(this_.speculos);
+    const key = await this_.ckb.getWalletPublicKey(path);
+    cache[path]=key.publicKey;
+  }
+  return cache[path];
+}
+
 const fcConfig = {
   interruptAfterTimeLimit: parseInt(process.env.GEN_TIME_LIMIT || 1000),
   markInterruptAsFailure: false,
@@ -254,12 +322,14 @@ const fcConfig = {
 
 fc.configureGlobal(fcConfig);
 
-global.recover = require('bcrypto/lib/secp256k1');
+global.recover = recover; 
 global.BIPPath = require("bip32-path");
 global.expect = expect;
 global.flowAccept = flowAccept;
 global.automationStart = automationStart;
 global.acceptPrompts = acceptPrompts;
+global.checkSignature = checkSignature;
+global.getKeyFromLedgerCached = getKeyFromLedgerCached;
 global.signHashPrompts = (hash, pathPrefix) => {
   return [
     {header:"Sign",body:"Hash"},
