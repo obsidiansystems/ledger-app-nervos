@@ -1,5 +1,5 @@
 describe("DAO operations", () => {
-  it.only("Signing with strict checking and a DAO deposit passes", async function() {
+  it("Signing with strict checking and a DAO deposit passes", async function() {
     const flow = await flowAccept(this.speculos, [
       {header:"Confirm DAO", body:"Deposit"},
       {header:"Deposit Amount", body:"1000"},
