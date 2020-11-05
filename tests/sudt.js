@@ -211,7 +211,9 @@ describe("sUDT operations", () => {
       {header:"Contract", body:"Present"},
     ]);
 
-    await this.ckb.signAnnotatedTransaction(createSudtTx);
+    const signature = await this.ckb.signAnnotatedTransaction(createSudtTx);
+
+    expect(signature).to.equal("7c6e6ef70ad925d12575e15477921cad60958affe72b716f4bc94f431e1190bb08532d332839031386b039a56d5cc7b0b80fa68422a75f700a88e27c54b20aec01");
 
     await flow.promptsPromise;
 
