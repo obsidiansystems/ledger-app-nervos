@@ -7,14 +7,14 @@ describe("DAO operations", () => {
       {header:"Cell Owner", body:"ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7sugcvv9"},
     ]);
 
-    signPath = [
+    const signPath = [
         2147483692,
         2147483957,
         2147483648,
         0,
         0
     ];
-    let txn = {
+    const txn = {
       signPath,
       "changePath": [
         2147483692,
@@ -209,8 +209,9 @@ describe("DAO operations", () => {
         ""
       ]
     };
-    sig = await this.ckb.signAnnotatedTransaction(txn);
-    key = await getKeyFromLedgerCached(this, signPath);
+
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
 
     checkSignature(txn, sig, key);
 

@@ -7,14 +7,16 @@ describe("Signing transactions", () => {
       {header:"Destination", body:"ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7sugcvv9"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction({
-      "signPath": [
-        2147483692,
-        2147483957,
-        2147483648,
-        0,
-        0
-      ],
+    const signPath = [
+      2147483692,
+      2147483957,
+      2147483648,
+      0,
+      0
+    ];
+
+    let txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -203,9 +205,12 @@ describe("Signing transactions", () => {
         "",
         ""
       ]
-    });
+    };
 
-    expect(signature).to.equal("d5624f95e1ea563fe4e02751806e7f8fa48cb9e761720061889f8587246b2baa6e45384471f53ee76145112fc158dd99ca29d184a28ba3f87d32ac1cc890e0d200");
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });
@@ -217,14 +222,15 @@ describe("Signing transactions", () => {
       {header:"Destination", body:"ckb1qyq0js0a0d04aumk2cdr95x9kza3e5gcqttq46cate"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction({
-      "signPath": [
-        2147483692,
-        2147483957,
-        2147483648,
-        1,
-        1
-      ],
+    const signPath = [
+      2147483692,
+      2147483957,
+      2147483648,
+      0,
+      0
+    ];
+    const txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -330,9 +336,12 @@ describe("Signing transactions", () => {
       "witnesses": [
         ""
       ]
-    });
+    };
 
-    expect(signature).to.equal("469b74c4927b197ae270f68553dec8b900ff400498b78d697b2f94ab8e90a60e1a3182a3ece72f14c9838dd36a98a8871b600a8a5bc3c4ae73ed6cb0c03d1e2700");
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });
@@ -344,14 +353,16 @@ describe("Signing transactions", () => {
       {header:"Destination", body:"ckb1qyqqtw74sngmqqqzauwulk6e3rc0l46gmuxquwdcdl"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction({
-      "signPath": [
-        2147483692,
-        2147483957,
-        2147483648,
-        0,
-        3
-      ],
+    const signPath = [
+      2147483692,
+      2147483957,
+      2147483648,
+      0,
+      3
+    ];
+
+    const txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -457,9 +468,12 @@ describe("Signing transactions", () => {
       "witnesses": [
         ""
       ]
-    });
+    };
 
-    expect(signature).to.equal("323da15393fc3aaf7be44436fbad50d1b663d99d4f387e61eec7054828aab2b272664dab2b9cbaf07dbeccf38746669ae8d27a3a8ffc60e3d891366ffeee218901");
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });
@@ -471,14 +485,16 @@ describe("Signing transactions", () => {
       {header:"Destination", body:"ckb1qyq2yksyd5g6jkumltkrx35qvz6hdlypatlslmrhdc"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction({
-      "signPath": [
+    const signPath = [
         2147483692,
         2147483957,
         2147483648,
         0,
         2
-      ],
+    ];
+
+    const txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -584,9 +600,12 @@ describe("Signing transactions", () => {
       "witnesses": [
         ""
       ]
-    });
+    };
 
-    expect(signature).to.equal("b8f6b3ba613906b354dafa9423af8c534141c20fa343e3ef3c7054729b7b14ff4b2510b774d9ededc299e5181b5ff8acf8bc6c874c99b544ca513b52b87d5f7400");
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });
@@ -598,14 +617,16 @@ describe("Signing transactions", () => {
       {header:"Destination", body:"ckb1qyq8rzpfgmy86chektett03mu66uyuz0a3vstntx4r"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction({
-      "signPath": [
+    const signPath = [
         2147483692,
         2147483957,
         2147483648,
         0,
         4
-      ],
+    ];
+
+    const txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -711,9 +732,12 @@ describe("Signing transactions", () => {
       "witnesses": [
         ""
       ]
-    });
+    };
 
-    expect(signature).to.equal("97e3118c185ead9ca04f85380fba25b796ef849a01a321a13e921c725a85b8e772eab6ce0ab4982b38a895026ed09a2f634c4aca3849e288099921b72566657e01");
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });
@@ -725,12 +749,14 @@ describe("Signing transactions", () => {
       {header:"Destination", body:"ckb1qyqljq0w3nk3gyu0xmztt9c4f02rtqujt3ts069qc6"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction({
-      "signPath": [
-        2147483692,
-        2147483957,
-        2147483648
-      ],
+    const signPath = [
+      2147483692,
+      2147483957,
+      2147483648
+    ];
+
+    const txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -890,9 +916,12 @@ describe("Signing transactions", () => {
         "",
         ""
       ]
-    });
+    };
 
-    expect(signature).to.equal("40c58c35091b5e9d713f2a556834438a34d210fa7dea14a16543ff2cee086dd34202c60b7d7ea7b0a76512440f05c3a293467261a3b26a5927ce2813e011049701");
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });
@@ -904,12 +933,14 @@ describe("Signing transactions", () => {
       {header:"Destination", body:"ckb1q3w9q60tppt7l3j7r09qcp7lxnp3vcanvgha8pmvsa3jplykxn323x9vd6ppzz5775yjxd6mlh977m7e0xu2ccqqqquqgzq8yqvzdv4v"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction({
-      "signPath": [
+    const signPath = [
         2147483692,
         2147483957,
         2147483648
-      ],
+    ];
+
+    const txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -1076,9 +1107,12 @@ describe("Signing transactions", () => {
         "",
         ""
       ]
-    });
+    };
 
-    expect(signature).to.equal("ad2eee29bd91556d68b6313ea8957cf2ae3eb8266241897147486f4a6464171615855e59af5a763a82296886d3c22628fc1aed94e55b1ee050661618c588144c00");
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });
@@ -1090,12 +1124,14 @@ describe("Signing transactions", () => {
       {header:"Destination", body:"ckb1qyqvph9q9t9643hufg56y0dxls75z4j4c4ws0enyar"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction({
-      "signPath": [
-        2147483692,
-        2147483957,
-        2147483648
-      ],
+    const signPath = [
+      2147483692,
+      2147483957,
+      2147483648
+    ];
+
+    const txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -1189,9 +1225,12 @@ describe("Signing transactions", () => {
       "witnesses": [
         "c200000010000000c2000000c2000000ae000000000002028d5520741f06a062543cdea9a21fc20d07ee29b0e421a57de6ed580189463131ccb6d5843dab975d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
       ]
-    });
+    };
 
-    expect(signature).to.equal("2dd9804f3c2e24bddcd0b634e926931f695f7102d5332b5f3c4cfbd946805c347d8089c8dad1a360ace2d35cc722ce485e7d6319edbb6176194313fe208da60400");
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });
@@ -1203,12 +1242,14 @@ describe("Signing transactions", () => {
       {header:"Destination", body:"ckb1qyqvcnnchptm36j8wvzfykkq7eahxj9cvassyxfpys"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction({
-      "signPath": [
-        2147483692,
-        2147483957,
-        2147483648
-      ],
+    const signPath = [
+      2147483692,
+      2147483957,
+      2147483648
+    ];
+
+    const txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -1302,9 +1343,12 @@ describe("Signing transactions", () => {
       "witnesses": [
         "9e010000100000009e0100009e0100008a0100000000020d8d5520741f06a062543cdea9a21fc20d07ee29b0e421a57de6ed580189463131ccb6d5843dab975dcc4e78b857b8ea477304925ac0f67b7348b867619c8ce01eaf3910b8b18c32a4fec37f3d35f84041e5260d839a786ac2a909181df9a423f1efbe863da25a046d11a95b9bfaec33468060b576fc81eaff83462eafd93f0a598ab26597e5cda6523b2fc15371882946c87d62f9b2f2b5be3be6b5c2704fec5965c634f3e742961c8a4e71191138a71ee5ef95910320d01cac0c3ca512069f6909196675cd4deab905bbd584d1b00002ef1dcfdb5988f0ffd748df0c4c73d21a2cd6501255bf410dcab0265c2ee1fdcb622f480dff8731d15c832d2234ee4eded0cfe39800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
       ]
-    });
+    };
 
-    expect(signature).to.equal("b10c4a2a3835d34d1c7c141eea6d9bb924b7d58edcd7059e3499a4aaf951ada85cc0813178f9ed4faa29c3b36e6e31db917705323b55e144c02a8584fe1eb41100");
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });
@@ -1523,14 +1567,16 @@ describe("Signing transactions", () => {
       {header:"Destination", body:"ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7sugcvv9"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction({
-      "signPath": [
-        2147483692,
-        2147483957,
-        2147483648,
-        0,
-        0
-      ],
+    const signPath = [
+      2147483692,
+      2147483957,
+      2147483648,
+      0,
+      0
+    ];
+
+    const txn = {
+      signPath,
       "changePath": [
         2147483692,
         2147483957,
@@ -1718,9 +1764,12 @@ describe("Signing transactions", () => {
         "",
         ""
       ]
-    });
+    };
 
-    expect(signature).to.equal("5cc004332d558da376c0fe5035640fea9a48a9474b69f4ec9aaf5c2e6725d6e36719e8560b58cfecd344d73d459a1e259c6caeb4769cb7b631b85885e64559b001");
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
 
     await flow.promptsPromise;
   });

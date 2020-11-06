@@ -1,9 +1,12 @@
+const signPath = [
+  2147483692,
+  2147483957,
+  2147483648
+];
+
+
 const createSudtTx = {
-  "signPath": [
-    2147483692,
-    2147483957,
-    2147483648
-  ],
+  signPath,
   "changePath": [
     2147483692,
     2147483957,
@@ -211,9 +214,10 @@ describe("sUDT operations", () => {
       {header:"Contract", body:"Present"},
     ]);
 
-    const signature = await this.ckb.signAnnotatedTransaction(createSudtTx);
+    const sig = await this.ckb.signAnnotatedTransaction(createSudtTx);
+    const key = await getKeyFromLedgerCached(this, signPath);
 
-    expect(signature).to.equal("7c6e6ef70ad925d12575e15477921cad60958affe72b716f4bc94f431e1190bb08532d332839031386b039a56d5cc7b0b80fa68422a75f700a88e27c54b20aec01");
+    checkSignature(createSudtTx, sig, key);
 
     await flow.promptsPromise;
 
