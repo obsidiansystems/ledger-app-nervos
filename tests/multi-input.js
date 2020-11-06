@@ -66,7 +66,6 @@ context('Signing multi-input transactions', function() {
               ],
               "outputs": [
                 {
-                  // "capacity": "00ac23fc06000000",
                   "capacity": "00000006fc23ac00",
                   "lock": {
                     "code_hash": "5c5069eb0857efc65e1bca0c07df34c31663b3622fd3876c876320fc9634e2a8",
@@ -76,7 +75,6 @@ context('Signing multi-input transactions', function() {
                   "type_": null
                 },
                 {
-                  // "capacity": "207066f414000000",
                   "capacity": "00000014f4667020",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -123,7 +121,6 @@ context('Signing multi-input transactions', function() {
               ],
               "outputs": [
                 {
-                  // "capacity": "00e8764817000000",
                   "capacity": "000000174876e800",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -133,7 +130,6 @@ context('Signing multi-input transactions', function() {
                   "type_": null
                 },
                 {
-                  // "capacity": "40bf094de86bc11b",
                   "capacity": "1bc16be84d09bf40",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -152,7 +148,6 @@ context('Signing multi-input transactions', function() {
         ],
         "outputs": [
           {
-            // "capacity": "005cb2ec22000000",
             "capacity": "00000022ecb25c00",
             "lock": {
               "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -162,7 +157,6 @@ context('Signing multi-input transactions', function() {
             "type_": null
           },
           {
-            // "capacity": "10d52a5009000000",
             "capacity": "00000009502ad510",
             "lock": {
               "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -278,7 +272,6 @@ context('Signing multi-input transactions', function() {
               ],
               "outputs": [
                 {
-                  // "capacity": "00 ac 23 fc 06 00 00 00",
                   "capacity":"00000006fc23ac00",
                   "lock": {
                     "code_hash": "5c5069eb0857efc65e1bca0c07df34c31663b3622fd3876c876320fc9634e2a8",
@@ -335,7 +328,6 @@ context('Signing multi-input transactions', function() {
               ],
               "outputs": [
                 {
-                  // "capacity": "00 e8 76 48 17 00 00 00",
                   "capacity":"000000174876e800",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -345,7 +337,6 @@ context('Signing multi-input transactions', function() {
                   "type_": null
                 },
                 {
-                  // "capacity": "40 bf 09 4d e8 6b c1 1b",
                   "capacity":"1bc16be84d09bf40",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -364,15 +355,6 @@ context('Signing multi-input transactions', function() {
         ],
         "outputs": [
           {
-            // 00 00
-            // 5c 00
-            // b2 00
-            // ec 22
-            // 22 ec
-            // 00 b2
-            // 00 5c
-            // 00 00
-            // "capacity": "005cb2ec22000000",
             "capacity": "0x00000022ecb25c00",
             "lock": {
               "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -382,7 +364,6 @@ context('Signing multi-input transactions', function() {
             "type_": null
           },
           {
-            // "capacity": "10d52a5009000000",
             "capacity": "0x00000009502ad510",
             "lock": {
               "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -398,8 +379,8 @@ context('Signing multi-input transactions', function() {
         ]
       },
       "witnesses": [
-        "0x5500000010000000550000005500000041000000456049d307a11353d7520d1756c38ef6bcb20b00cc90536420768cb6e08916475ceed3b38f8f05481f2d2b7deba4fd3335e22495c00a8d7f8715a4258378cdfe00",
-        "0x55000000100000005500000055000000410000007766519eed01f9534e44b03b0fcc0bcd7bbc1d96f7fb9373707e260df27739f15c07811508ef5b460f5e09773c62436ea0ccff4c564aff3d561c7a097e1a186901"
+        "",
+        ""
       ]
     };
 
@@ -415,8 +396,7 @@ context('Signing multi-input transactions', function() {
     const signature = await this.ckb.signAnnotatedTransaction(createMultiInputTx2);
     const key = await getKeyFromLedgerCached(this, signPath);
 
-    // FIXME: This one is surprisingly failing
-    // checkSignature(createMultiInputTx2, signature, key);
+    checkSignature(createMultiInputTx2, signature, key);
 
     await flow.promptsPromise;
   });
@@ -507,7 +487,6 @@ context('Signing multi-input transactions', function() {
               ],
               "outputs": [
                 {
-                  // "capacity": "004429353a000000",
                   "capacity": "0000003a35294400",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -517,7 +496,6 @@ context('Signing multi-input transactions', function() {
                   "type_": null
                 },
                 {
-                  // "capacity": "604116a804000000",
                   "capacity": "00000004a8164160",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -564,7 +542,6 @@ context('Signing multi-input transactions', function() {
               ],
               "outputs": [
                 {
-                  // "capacity": "0018535224000000",
                   "capacity": "0000002452531800",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -574,7 +551,6 @@ context('Signing multi-input transactions', function() {
                   "type_": null
                 },
                 {
-                  // "capacity": "6031993e0a000000",
                   "capacity": "0000000a3e993160",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -628,7 +604,6 @@ context('Signing multi-input transactions', function() {
               ],
               "outputs": [
                 {
-                  // "capacity": "002ca07d51000000",
                   "capacity": "000000517da02c00",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -638,7 +613,6 @@ context('Signing multi-input transactions', function() {
                   "type_": null
                 },
                 {
-                  // "capacity": "60ed39a40b000000",
                   "capacity": "0000000ba439ed60",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -657,7 +631,6 @@ context('Signing multi-input transactions', function() {
         ],
         "outputs": [
           {
-            // "capacity": "00807c814a000000",
             "capacity": "0000004a817c8000",
             "lock": {
               "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -667,7 +640,6 @@ context('Signing multi-input transactions', function() {
             "type_": null
           },
           {
-            // "capacity": "50fae56f4b000000",
             "capacity": "0000004b6fe5fa50",
             "lock": {
               "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -764,7 +736,6 @@ context('Signing multi-input transactions', function() {
               ],
               "outputs": [
                 {
-                  // "capacity": "004429353a000000",
                   "capacity": "0000003a35294400",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -774,7 +745,6 @@ context('Signing multi-input transactions', function() {
                   "type_": null
                 },
                 {
-                  // "capacity": "604116a804000000",
                   "capacity": "00000004a8164160",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -821,7 +791,6 @@ context('Signing multi-input transactions', function() {
               ],
               "outputs": [
                 {
-                  // "capacity": "0018535224000000",
                   "capacity": "0000002452531800",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -831,7 +800,6 @@ context('Signing multi-input transactions', function() {
                   "type_": null
                 },
                 {
-                  // "capacity": "6031993e0a000000",
                   "capacity": "0000000a3e993160",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -885,7 +853,6 @@ context('Signing multi-input transactions', function() {
               ],
               "outputs": [
                 {
-                  // "capacity": "002ca07d51000000",
                   "capacity": "000000517da02c00",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
@@ -895,7 +862,6 @@ context('Signing multi-input transactions', function() {
                   "type_": null
                 },
                 {
-                  // "capacity": "60ed39a40b000000",
                   "capacity": "0000000ba439ed60",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
