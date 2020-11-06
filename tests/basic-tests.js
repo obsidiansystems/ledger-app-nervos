@@ -17,17 +17,3 @@ describe("Basic Tests", () => {
     });
   });
 });
-
-async function flowMultiPrompt(speculos, prompts, nextPrompt="Next", finalPrompt="Accept") {
-  return await automationStart(speculos, async (speculos, screens) => {
-    for (p of prompts.slice(0,-1)) {
-      const rp = (await acceptPrompts(undefined, nextPrompt)(speculos, screens)).promptList;
-      // Only looking at the last prompt, because we bounce off the home screen sometimes during this process:
-      expect([ rp[rp.length-1] ]).to.deep.equal(p);
-    }
-    const rp = (await acceptPrompts(undefined, finalPrompt)(speculos, screens)).promptList;
-    expect([ rp[rp.length-1] ]).to.deep.equal(prompts[prompts.length-1]);
-    return true;
-  });
-}
-
