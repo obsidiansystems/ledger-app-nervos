@@ -52,10 +52,11 @@ let
     };
 
   src = let glyphsFilter = (p: _: let p' = baseNameOf p; in p' != "glyphs.c" && p' != "glyphs.h");
-      in (pkgs.lib.sources.sourceFilesBySuffices 
-          (pkgs.lib.sources.cleanSourceWith { src = ./.; filter = glyphsFilter; }) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".der"]);
+      in (pkgs.lib.sources.sourceFilesBySuffices
+          (pkgs.lib.sources.cleanSourceWith { src = ./.; filter = glyphsFilter; }) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".js" ".bats" ".txt" ".der"]);
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
+  tests = import ./tests { inherit pkgs; };
 
   build = bolos:
     let
@@ -69,12 +70,16 @@ let
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
           pkgs.jq
           speculos.speculos
-          pkgs.bats
-          pkgs.xxd
-          pkgs.openssl
-          blake2_simd
           usbtool
           bolos.env.clang
+
+          # Test harness
+          tests
+          pkgs.nodejs
+          pkgs.gdb
+          pkgs.python2
+          pkgs.entr
+          pkgs.yarn
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;

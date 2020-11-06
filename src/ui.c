@@ -285,17 +285,11 @@ __attribute__((noreturn)) void ui_prompt_with_cb(void (*switch_screen_cb)(uint32
     G.switch_screen=switch_screen_cb;
     G.prompt.offset=MAX_SCREEN_COUNT-screen_count;
 
+    ui_prompt_debug(screen_count);
+
     G.ok_callback = ok_c;
     G.cxl_callback = cxl_c;
     ux_flow_init(0, &ux_prompts_flow[G.prompt.offset], NULL);
-
-#ifdef NERVOS_DEBUG
-    ui_prompt_debug(screen_count);
-    // In debug mode, the THROW below produces a PRINTF statement in an invalid position and causes the screen to blank,
-    // so instead we just directly call the equivalent longjmp for debug only.
-    longjmp(try_context_get()->jmp_buf, ASYNC_EXCEPTION);
-#else
     THROW(ASYNC_EXCEPTION);
-#endif
 }
 

@@ -154,6 +154,10 @@ include $(BOLOS_SDK)/Makefile.rules
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
 
-.phony: test
-test: test.sh bin/app.elf
-	./test.sh
+.phony: test watch
+
+watch:
+	ls src/*.c src/*.h tests/*.js tests/hw-app-ckb/src/*.js | entr make test
+
+test: tests/*.js tests/package.json bin/app.elf
+	env LEDGER_APP=./bin/app.elf COMMIT=$(COMMIT) run-ledger-tests.sh ./tests/
