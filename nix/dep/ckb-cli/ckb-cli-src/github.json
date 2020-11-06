@@ -1,7 +1,8 @@
 {
   "owner": "nervosnetwork",
   "repo": "ckb-cli",
+  "branch": "ledger-support",
   "private": false,
-  "rev": "38750864b0c99d45b6ed282c891258e45293a993",
-  "sha256": "1f7smsl0bcr1hv5w4h3m5ivvsgsidfd3s604hsbcr1mh7jq6nidk"
+  "rev": "babc52ae593474f7fddb80f7c229374203310d6a",
+  "sha256": "0zqiffx5dpz1g8yzxickc3j3bv8avvrizsrasd5dhkix5sxj6d78"
 }
