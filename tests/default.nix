@@ -60,6 +60,18 @@ let
           });
         };
 
+        "node-hid@1.3.1" = {
+          key = super."node-hid@1.3.1".key;
+          drv = super."node-hid@1.3.1".drv.overrideAttrs (attrs: {
+            nativeBuildInputs = [ pkgs.python pkgs.systemd pkgs.v8_5_x pkgs.nodejs pkgs.libusb1 pkgs.pkg-config ];
+            dontBuild = false;
+            buildPhase = ''
+              ln -s ${nixLib.linkNodeDeps { name=attrs.name; dependencies=attrs.passthru.nodeBuildInputs; }} node_modules
+              ${pkgs.nodePackages.node-gyp}/bin/node-gyp rebuild --nodedir=${pkgs.lib.getDev pkgs.nodejs} # /include/node
+            '';
+          });
+        };
+
         "hw-app-ckb@0.1.0" = super._buildNodePackage rec {
           key = "hw-app-ckb";
           version = "0.1.0";
