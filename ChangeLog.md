@@ -3,7 +3,7 @@
 This project's release branch is `master`.
 This log is written from the perspective of the release branch: when changes hit `master`, they are considered released.
 
-## v0.5.1 - 2020-10-26
+## v0.5.1 - 2020-11-09
 
 This release is primarily focused on bugfixes and improving the documentation.
 
@@ -14,6 +14,7 @@ This release is primarily focused on bugfixes and improving the documentation.
 - Fixed signature corruption due to improper variable initialization.
 - Simplified instructions for initializing a devnet.
 - Fixed wording of version test.
+- Overhauled test-suite: replaced BATS with MochaJS
 
 ## v0.5.0 - 2020-09-30
 
