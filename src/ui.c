@@ -173,6 +173,7 @@ PROMPT_SCREEN_TPL(3);
 PROMPT_SCREEN_TPL(4);
 PROMPT_SCREEN_TPL(5);
 PROMPT_SCREEN_TPL(6);
+PROMPT_SCREEN_TPL(7);
 
 static void prompt_response(bool const accepted) {
     ui_initial_screen();
@@ -209,6 +210,7 @@ UX_FLOW(ux_prompts_flow,
     &PROMPT_SCREEN_NAME(4),
     &PROMPT_SCREEN_NAME(5),
     &PROMPT_SCREEN_NAME(6),
+    &PROMPT_SCREEN_NAME(7),
     &ux_prompt_flow_reject_step,
     &ux_prompt_flow_accept_step
 );
@@ -281,6 +283,7 @@ void ui_prompt(const char *const *labels, ui_callback_t ok_c, ui_callback_t cxl_
 
 __attribute__((noreturn)) void ui_prompt_with_cb(void (*switch_screen_cb)(uint32_t), size_t screen_count, ui_callback_t ok_c, ui_callback_t cxl_c) {
     check_null(switch_screen_cb);
+    if(screen_count>MAX_SCREEN_COUNT) THROW(EXC_MEMORY_ERROR);
 
     G.switch_screen=switch_screen_cb;
     G.prompt.offset=MAX_SCREEN_COUNT-screen_count;
