@@ -92,7 +92,6 @@ typedef struct {
             uint8_t first_witness_done : 1;
             uint8_t is_self_transfer : 1;
             uint8_t processed_change_cell : 1; // Has at least one change-address been processed?
-            uint8_t sending_to_multisig_output : 1;
         } tx;
     } u;
 
