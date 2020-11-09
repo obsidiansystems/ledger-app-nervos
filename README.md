@@ -630,6 +630,34 @@ JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c7
 ```
 This means your prepared cell is not yet available to withdraw. You'll need to wait for the conclusion of your current deposit period before withdrawing.
 
+## Allowing Contract Data ##
+
+Starting in version 0.5.0, the Nervos Ledger App can sign
+transactions with contract data. "Contract Data" is the part of a
+Nervos transaction which contains extra, unstructured data that is
+used by the Nervos-VM. It is also referred to as a "Custom Script,"
+and is required for transactions using custom tokens such as those
+involving [Simple User Defined
+Token](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0025-simple-udt/0025-simple-udt.md)
+(sUDT), [Anyone Can
+Pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md)
+(ACP) and many other custom scripts. "Contract Data" is determined by a
+non-empty ["cell data" field
+](https://docs.nervos.org/docs/reference/cell#cell-data) in a Nervos
+transaction.
+
+By default, "Contract Data" is rejected by the Nervos Ledger App due
+to security concerns. Because this data is unstructured and diverse, 
+the application cannot parse it into a verifiable prompts for the user to confirm.
+
+Contract data can be enabled through the
+"Settings" menu and toggling "Allow Contract Data" from "off" to "on."
+You can verify your transaction has contract data by the "Contract
+Data: Present" prompt at the end of "Confirm Transaction". Since this data cannot
+be shown by the Nervos Ledger App beyond noting that it is either
+present or absent, you should enable the setting with caution,
+and attempt to verify the transaction cells elsewhere if possible.
+
 # Troubleshooting #
 
 ## Application Build Failure ##

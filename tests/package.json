@@ -1,0 +1,42 @@
+{
+	"name": "ckb-ledger-tests",
+	"version": "0.1.0",
+	"src": "hw-app-ckb/src",
+	"scripts": {
+		"test": "mocha . --exit --require hooks --config .mocharc.js"
+	},
+	"bin": "run-tests.js",
+	"devDependencies": {
+    "flow-bin": "^0.109.0",
+		"babel-cli": "^6.26.0",
+		"babel-eslint": "^8.0.2",
+		"babel-preset-env": "^1.7.0",
+		"babel-preset-flow": "^6.23.0",
+		"babel-preset-react": "^6.24.1",
+		"babel-preset-stage-0": "^6.24.1",
+		"bcrypto": "^5.3.0",
+		"bip32-path": "0.4.2",
+		"chai-bytes": "^0.1.2",
+		"chai": "^4.2.0",
+		"child_process": "",
+		"fast-check": "^2.2.0",
+		"flow-bin": "^0.109.0",
+		"flow-copy-source": "^2.0.8",
+		"flow-mono-cli": "^1.5.0",
+		"flow-typed": "^2.6.1",
+		"gdb-js": "^1.3.0",
+		"mocha": "^8.1.1",
+		"prettier": "^1.18.2",
+		"rxjs": "^6.6.0",
+		"tap": "^14.10.8",
+		"uglify-js": "^3.6.1",
+		"blake2b-wasm": "^2.1.0"
+	},
+	"dependencies": {
+		"hw-app-ckb": "https://github.com/obsidiansystems/hw-app-ckb.git",
+		"@ledgerhq/hw-transport-node-speculos": "5.19.1",
+		"@ledgerhq/hw-transport-node-hid": "5.22.0",
+		"bip32-path": "^0.4.2",
+		"create-hash": "1.2.0"
+	}
+}

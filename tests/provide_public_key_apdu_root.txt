@@ -1,3 +1,0 @@
-=> b'8002000009028000002c80000135'
-<= b'41047fba43fe55f433b7a1d806a8432679aebaa652738dae4afe6b8161257e6a96d39519312488d0dc92aca92b80ee970f856f72177cbc5bf1332df4d1bb8fa328fd'9000
-<= Clear bytearray(b'A\x04\x7f\xbaC\xfeU\xf43\xb7\xa1\xd8\x06\xa8C&y\xae\xba\xa6Rs\x8d\xaeJ\xfek\x81a%~j\x96\xd3\x95\x191$\x88\xd0\xdc\x92\xac\xa9+\x80\xee\x97\x0f\x85or\x17|\xbc[\xf13-\xf4\xd1\xbb\x8f\xa3(\xfd')

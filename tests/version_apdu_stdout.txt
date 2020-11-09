@@ -1,3 +1,0 @@
-=> b'8000000000'
-<= b'VERSION'9000
-<= Clear bytearray(b'\xAPP_VM\xAPP_VN\xAPP_VP')

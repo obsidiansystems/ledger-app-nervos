@@ -1,6 +1,0 @@
-Prompt 0:
-Provide
-Public Key
-Prompt 1:
-Address
-ckb1qyqtdy8k8dhu574l7a79tzll5aqpa3qdedfquq4vvy
