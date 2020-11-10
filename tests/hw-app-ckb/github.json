@@ -1,8 +1,8 @@
 {
   "owner": "obsidiansystems",
   "repo": "hw-app-ckb",
-  "branch": "develop",
+  "branch": "jg-app-configuration-hash",
   "private": false,
-  "rev": "205fb6c25eb28c8a216fba09cfb37ee37a1c7587",
-  "sha256": "19k1c7n0yy6z7vw8zanpmsssg6sssm8gf8m21mdwdfcaqid5nrlj"
+  "rev": "edfdd0f34d044a997b7e79c676687190b9a5a033",
+  "sha256": "0md3fhz9ll6l1fnrldvzbb0blgsm0npk0h17v30lh8r8f149bwlq"
 }
