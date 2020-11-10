@@ -29,14 +29,16 @@
 		"prettier": "^1.18.2",
 		"rxjs": "^6.6.0",
 		"tap": "^14.10.8",
-		"uglify-js": "^3.6.1",
-		"blake2b-wasm": "^2.1.0"
+		"uglify-js": "^3.6.1"
 	},
 	"dependencies": {
 		"hw-app-ckb": "https://github.com/obsidiansystems/hw-app-ckb.git",
+    "@ledgerhq/hw-transport": "^5.9.0",
+    "bech32": "1.1.4",
 		"@ledgerhq/hw-transport-node-speculos": "5.19.1",
 		"@ledgerhq/hw-transport-node-hid": "5.22.0",
 		"bip32-path": "^0.4.2",
+		"blake2b-wasm": "^2.1.0",
 		"create-hash": "1.2.0"
 	}
 }
