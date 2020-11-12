@@ -972,7 +972,7 @@ static size_t handle_apdu(uint8_t const instruction) {
             // NO BREAK
         case P1_NEXT:
             if(G.maybe_transaction.hard_reject) THROW(EXC_PARSE_ERROR);
-            PRINTF("Calling parser\n");
+            PRINTF("Calling parser on chunk: %.*h\n", buff_size, buff);
             rv = MolReader_AnnotatedTransaction_parse((struct AnnotatedTransaction_state*) &G.transaction_stack, &chunk, &annotatedTransaction_callbacks, MOL_NUM_MAX);
 
             if(last) {
