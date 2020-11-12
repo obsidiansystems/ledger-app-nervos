@@ -10,16 +10,15 @@ In cases where you need to debug Ledger communication, you may need:
 
 ### Installing Debug Ledger Firmware
 
-todo
+To get the `ledgerblue` python module into scope, run `nix/env.sh s`. From there, you can follow along with [Ledger's installation instructions](https://ledger.readthedocs.io/en/latest/userspace/debugging.html).
 
 ### Logging Communication with usbtool
 
-Simply run `nix/env.sh s` to load debug logging tools.
-
+In a separate terminal, run `nix/env.sh s` to load debug logging tools. You can then log communication with the command `usbtool -v 0x2c97 log`.
 
 ### Installing the Debug Nervos Ledger App
 
-Simply run `NIX_BUILD_ARGS="--arg debug true" nix/install.sh -t s`
+From within this repo, run `NIX_BUILD_ARGS="--arg debug true" nix/install.sh -t s` to install the debug Ledger app.
 
 
 ## Debugging on Mac
