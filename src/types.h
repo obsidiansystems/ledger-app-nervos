@@ -169,7 +169,7 @@ struct output_t {
 // Have we found an output cell which does...ditto
 #define HAS_CHANGE_ADDRESS      0x02
 
-#define MAX_OUTPUTS 5
+#define MAX_OUTPUTS 4
 
 enum contract_type_t {
     CONTRACT_NOT_PRESENT = 0,
