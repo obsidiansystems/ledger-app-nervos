@@ -1,6 +1,13 @@
 #! /usr/bin/env nix-shell
 #! nix-shell -i bash -A wallet.s
-source tests/lib.sh
+
+apdu() {
+  python -m ledgerblue.runScript --apdu
+}
+
+apdu_fixed () {
+  echo "$*" | apdu | sed 's/HID //'
+}
 
 #echo Installed version:
 #apdu_fixed "8000000000"
