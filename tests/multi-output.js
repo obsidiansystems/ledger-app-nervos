@@ -714,9 +714,19 @@ describe("Multi-output transaction signing", () => {
               "args": "e5260d839a786ac2a909181df9a423f1efbe863e"
             },
             "type_": null
-          }
+          },
+          {
+            "capacity": "00000004a817c800",
+            "lock": {
+              "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+              "hash_type": 1,
+              "args": "e5260d839a786ac2a909181df9a423f1efbe863f"
+            },
+            "type_": null
+          },
         ],
         "outputs_data": [
+          "",
           "",
           "",
           "",
@@ -728,14 +738,16 @@ describe("Multi-output transaction signing", () => {
       ]
     };
 
+
     const flow = await flowAccept(this.speculos, [
       {header:"Confirm", body:"Transaction"},
       {header:"Amount", body:"800"},
       {header:"Fee", body:"207.2535178"},
-      {header:"Output 1/4", body:"200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7scaqc8pnyu"},
-      {header:"Output 2/4", body:"200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7scasdxft30"},
-      {header:"Output 3/4", body:"200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7qffs5ek"},
-      {header:"Output 4/4", body:"200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sclqx5lwjs"},
+      {header:"Output 1/5", body:"200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7scaqc8pnyu"},
+      {header:"Output 2/5", body:"200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7scasdxft30"},
+      {header:"Output 3/5", body:"200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sc7qffs5ek"},
+      {header:"Output 4/5", body:"200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sclqx5lwjs"},
+      {header:"Output 5/5", body:"200 CKB -> ckb1qyqw2fsdswd8s6kz4yy3s80e5s3lrma7sclqx5lwjs"},
     ]);
 
     const sig = await this.ckb.signAnnotatedTransaction(txn);
