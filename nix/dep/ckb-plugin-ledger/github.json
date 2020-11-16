@@ -1,8 +1,8 @@
 {
   "owner": "obsidiansystems",
   "repo": "ckb-plugin-ledger",
-  "branch": "develop",
+  "branch": "release/0.2.1",
   "private": false,
-  "rev": "467ebcc554ba7ae6fc809e54a7e2a787578f863c",
-  "sha256": "0daik39hcqwxh3q3kkng4lcvf6x55ky153r0gj0r0is0w8r2w1rg"
+  "rev": "e19c17ed44e084353cfa3c6685f9e32b1e9e73f7",
+  "sha256": "0kd1ziki8fdvna1nz4fibg1f0z32s5h6hq9zcskrzg3wk4pdl29d"
 }
