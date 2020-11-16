@@ -3,6 +3,19 @@
 This project's release branch is `master`.
 This log is written from the perspective of the release branch: when changes hit `master`, they are considered released.
 
+## v0.5.1 - 2020-11-09
+
+This release is primarily focused on bugfixes and improving the documentation.
+
+- Updated installation instructions and references to LedgerJS in the README.
+- Fixed DAO deposit prompt.
+- Fixed ordering of UI prompt assignment.
+- Fixed `release.sh` tag matching.
+- Fixed signature corruption due to improper variable initialization.
+- Simplified instructions for initializing a devnet.
+- Fixed wording of version test.
+- Overhauled test-suite: replaced BATS with MochaJS
+
 ## v0.5.0 - 2020-09-30
 
 ### Release Notes
