@@ -3,7 +3,9 @@
 This project's release branch is `master`.
 This log is written from the perspective of the release branch: when changes hit `master`, they are considered released.
 
-## v0.5.1 - 2020-11-09
+## v0.5.1 - 2020-11-18
+
+### Release Notes
 
 This release is primarily focused on bugfixes and improving the documentation.
 
@@ -15,6 +17,11 @@ This release is primarily focused on bugfixes and improving the documentation.
 - Simplified instructions for initializing a devnet.
 - Fixed wording of version test.
 - Overhauled test-suite: replaced BATS with MochaJS
+
+This release has been tested with:
+- CKB-CLI: [babc52ae593474f7fddb80f7c229374203310d6a](https://github.com/nervosnetwork/ckb-cli/tree/ledger-support)
+- CKB-Plugin-Ledger: [v0.2.1 - d606892e1adf65b650dc3e686b2f6db332175f06](https://github.com/obsidiansystems/ckb-plugin-ledger/releases/tag/v0.2.1)
+- hw-app-ckb: [v0.1.2 - a7211be8f024749323580491896ea50ca4bb6cac](https://github.com/obsidiansystems/hw-app-ckb/releases/tag/v0.1.2)
 
 ## v0.5.0 - 2020-09-30
 
