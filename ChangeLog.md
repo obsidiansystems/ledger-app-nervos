@@ -20,7 +20,7 @@ This release is primarily focused on bugfixes and improving the documentation.
 
 This release has been tested with:
 - CKB-CLI: [babc52ae593474f7fddb80f7c229374203310d6a](https://github.com/nervosnetwork/ckb-cli/tree/ledger-support)
-- CKB-Plugin-Ledger: [v0.2.1 - ee1097c4c76dedc22d482ce7c38c1a17f251e2f5](https://github.com/obsidiansystems/ckb-plugin-ledger/releases/tag/v0.2.1)
+- CKB-Plugin-Ledger: [v0.2.1 - f03d7f3a2d696d3a48b8be78211452b5679165cb](https://github.com/obsidiansystems/ckb-plugin-ledger/releases/tag/v0.2.1)
 - hw-app-ckb: [v0.1.2 - d348841af4e2a023f760356e98059a45b1d6d6b7](https://github.com/obsidiansystems/hw-app-ckb/releases/tag/v0.1.2)
 
 ## v0.5.0 - 2020-09-30
