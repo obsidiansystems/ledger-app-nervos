@@ -27,7 +27,7 @@ checkTagAgainstAppVersion() {
   local APP_VP=$(cat Makefile | sed -n -e 's/^.*APPVERSION_P=//p' | head -n 1)
   local tag=$(git tag --points-at HEAD)
   local expectedTag="v$APP_VM.$APP_VN.$APP_VP"
-  if [[ tag != expectedTag ]]
+  if [[ "$tag" != "$expectedTag" ]]
   then
     echo "To proceed, HEAD must contain a tag matching the current application version: $expectedTag"
     echo "To disable this check, pass '-t'"

@@ -2,7 +2,7 @@
 
 This repository contains the Nervos BOLOS application for the Ledger Nano S and Ledger Nano X and tools for testing the application. While this app is currently under development, we do not recommend using it with mainnet CKB. 
 
-These applications has been developed against our forks of [CKB-CLI](https://github.com/obsidiansystems/ckb-cli) and [CKB](https://github.com/obsidiansystems/ckb). Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS. Application and wallet developers who would like to support Ledger can do so with [LedgerJS](https://github.com/obsidiansystems/ledgerjs/tree/nervos).
+These applications has been developed against our forks of [CKB-CLI](https://github.com/obsidiansystems/ckb-cli) and [CKB](https://github.com/obsidiansystems/ckb). Most instructions assume you have the [Nix](https://nixos.org/nix/) Package Manager, which you can install on any Linux distribution or MacOS. Application and wallet developers who would like to support Ledger can do so with [Nervos' LedgerJS package - hw-app-ckb](https://github.com/obsidiansystems/hw-app-ckb), which can also be found on [NPM](https://www.npmjs.com/package/hw-app-ckb).
 
 # System Requirements
 
@@ -106,13 +106,21 @@ There are 3 ways you can install this Ledger application:
 
 Please download `nano-s-release.tar.gz` from the latest release on  the [releases](https://github.com/obsidiansystems/ledger-app-nervos/releases) page of this repo, which contains a pre-compiled app or `.hex` file ready to install on the Ledger. The following sections describe how to install it, including acquiring other tools from the Ledger project.
 
-The next two sections describe how to install tools that you will need to interact with the Ledger. On NixOS, these tools can be loaded into a nix-shell by simply running:
+The next two sections describe how to install tools that you will need to interact with the Ledger.
+
+On NixOS, these tools can be loaded into a nix-shell by simply running:
 
 ``` sh
 $ nix/env.sh s
 ```
 
-Therefore, on NixOS, this command replaces the next two sections.
+On a macOS with Nix installed, you can instead use:
+
+``` sh
+$ nix-shell -p 'python3.withPackages (p: [p.ledgerblue])' libusb
+```
+
+Otherwise, follow the next two sections.
 
 ### Installing BOLOS Python Loader (non-NixOS)
 
@@ -621,6 +629,34 @@ or
 JSON-RPC 2.0 Error: Server error (OutPoint: ImmatureHeader(Byte32(0xd7de1ffd49c71b5dc71fcbf1638bb72c8fb16f8fffdfd5172456a56167fea0a3)))
 ```
 This means your prepared cell is not yet available to withdraw. You'll need to wait for the conclusion of your current deposit period before withdrawing.
+
+## Allowing Contract Data ##
+
+Starting in version 0.5.0, the Nervos Ledger App can sign
+transactions with contract data. "Contract Data" is the part of a
+Nervos transaction which contains extra, unstructured data that is
+used by the Nervos-VM. It is also referred to as a "Custom Script,"
+and is required for transactions using custom tokens such as those
+involving [Simple User Defined
+Token](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0025-simple-udt/0025-simple-udt.md)
+(sUDT), [Anyone Can
+Pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md)
+(ACP) and many other custom scripts. "Contract Data" is determined by a
+non-empty ["cell data" field
+](https://docs.nervos.org/docs/reference/cell#cell-data) in a Nervos
+transaction.
+
+By default, "Contract Data" is rejected by the Nervos Ledger App due
+to security concerns. Because this data is unstructured and diverse, 
+the application cannot parse it into a verifiable prompts for the user to confirm.
+
+Contract data can be enabled through the
+"Settings" menu and toggling "Allow Contract Data" from "off" to "on."
+You can verify your transaction has contract data by the "Contract
+Data: Present" prompt at the end of "Confirm Transaction". Since this data cannot
+be shown by the Nervos Ledger App beyond noting that it is either
+present or absent, you should enable the setting with caution,
+and attempt to verify the transaction cells elsewhere if possible.
 
 # Troubleshooting #
 

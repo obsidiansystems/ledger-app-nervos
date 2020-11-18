@@ -52,29 +52,28 @@ Ledger key information is stored locally in `~/.ckb-cli/ledger-keystore/` and so
 
 ## Automated Testing ##
 
-You can run automated tests through speculos via the ./test.sh script. Just run
-this:
+You can run automated tests through speculos via the `Makefile`. Just run this:
 
 ``` sh
 $ nix-shell -A wallet.s --run 'make SHELL=sh test'
 ```
 
-Running the same test suite on a live ledger currently requires that the ledger
-be configured with the recovery phrase
+Running the same test suite on a live ledger currently requires that the ledger be configured with
+the recovery phrase
 
 ```
 glory promote mansion idle axis finger extra february uncover one trip resource
 lawn turtle enact monster seven myth punch hobby comfort wild raise skin
 ```
 
-and then you can (with the ledger connected) run
+and then you can (with the ledger connected) run:
 
 ```
-nix-shell -A wallet.s --run 'make; ./test.sh -h'
+nix-shell -A wallet.s --run 'make && LEDGER_LIVE_HARDWARE=1 make test'
 ```
 
-The test suite currently does not test any rejections, so just accept every
-prompt that happens.
+You must manually accept each prompt on the device. Also as the test suite currently does not test
+any rejections you must accept every prompt that happens.
 
 ## Manual Testing ##
 
