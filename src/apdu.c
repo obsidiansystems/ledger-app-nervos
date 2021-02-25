@@ -18,6 +18,20 @@ size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *cons
     return finalize_successful_send(tx);
 }
 
+size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const *const ext_pubkey) {
+    check_null(io_buffer);
+    check_null(ext_pubkey);
+    size_t tx = 0;
+    size_t keySize = ext_pubkey->public_key.W_len;
+    io_buffer[tx++] = keySize;
+    memmove(io_buffer + tx, ext_pubkey->public_key.W, keySize);
+    tx += keySize;
+    io_buffer[tx++] = CHAIN_CODE_DATA_SIZE;
+    memmove(io_buffer + tx, ext_pubkey->chain_code, CHAIN_CODE_DATA_SIZE);
+    tx += CHAIN_CODE_DATA_SIZE;
+    return finalize_successful_send(tx);
+}
+
 size_t handle_apdu_error(uint8_t __attribute__((unused)) instruction) {
     THROW(EXC_INVALID_INS);
 }
@@ -64,6 +78,25 @@ size_t handle_apdu_get_wallet_id(uint8_t __attribute__((unused)) instruction) {
     return finalize_successful_send(rv);
 }
 
+#ifdef STACK_MEASURE
+__attribute__((noinline)) void stack_sentry_fill() {
+  uint32_t* p;
+  volatile int top;
+  top=5;
+  memset((void*)(&app_stack_canary+1), 42, ((uint8_t*)(&top-10))-((uint8_t*)&app_stack_canary));
+}
+
+void measure_stack_max() {
+  uint32_t* p;
+  volatile int top;
+  for(p=&app_stack_canary+1; p<((&top)-10); p++)
+    if(*p != 0x2a2a2a2a) {
+	    PRINTF("Free space between globals and maximum stack: %d\n", 4*(p-&app_stack_canary));
+	    return;
+    }
+}
+#endif
+
 #define CLA 0x80
 
 __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, size_t const handlers_size) {
@@ -71,6 +104,7 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
     while (true) {
         BEGIN_TRY {
             TRY {
+                app_stack_canary=0xdeadbeef;
                 // Process APDU of size rx
 
                 if (rx == 0) {
@@ -90,13 +124,32 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     THROW(EXC_WRONG_LENGTH);
                 }
 
+#ifdef STACK_MEASURE
+                stack_sentry_fill();
+#endif
+
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
+
                 apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
 
+		PRINTF("SIZOF1: %d SIZEOF2: %d\n", sizeof(G_ux), sizeof(G_ux_params));
+		PRINTF("Calling handler\n");
                 size_t const tx = cb(instruction);
+		PRINTF("Normal return\n");
+
+                if(0xdeadbeef != app_stack_canary) {
+                    THROW(EXC_STACK_ERROR);
+                }
+#ifdef STACK_MEASURE
+		measure_stack_max();
+#endif
+
                 rx = io_exchange(CHANNEL_APDU, tx);
             }
             CATCH(ASYNC_EXCEPTION) {
+#ifdef STACK_MEASURE
+		measure_stack_max();
+#endif
                 rx = io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, 0);
             }
             CATCH(EXCEPTION_IO_RESET) {
@@ -120,6 +173,14 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     rx = io_exchange(CHANNEL_APDU, tx);
                     break;
                 }
+                case 0xA000 ... 0xAFFF: {
+                    PRINTF("Other error: %x\n", sw);
+                    size_t tx = 0;
+                    G_io_apdu_buffer[tx++] = sw >> 8;
+                    G_io_apdu_buffer[tx++] = sw;
+                    rx = io_exchange(CHANNEL_APDU, tx);
+                    break;
+					}
                 }
             }
             FINALLY {}

@@ -1,15 +1,11 @@
 { pkgsFunc ? import ./nix/dep/nixpkgs
 , gitDescribe ? "TEST-dirty"
-, nanoXSdk ? null
-, debug ? false, ...
+, debug ? false
+, runTest ? true
+, ...
 }:
 
 let
-  pkgsBoot = pkgsFunc {
-    config = {};
-    overlays = [];
-  };
-
   pkgs = pkgsFunc {
     config = {};
     overlays = [
@@ -37,23 +33,36 @@ let
     ];
   };
 
+  # TODO: Replace this with hackGet for added safety checking once hackGet is separated from reflex-platform
   fetchThunk = p:
-    if builtins.pathExists (p + /git.json)
-      then pkgsBoot.fetchgit { inherit (builtins.fromJSON (builtins.readFile (p + /git.json))) url rev sha256; }
-    else if builtins.pathExists (p + /github.json)
-      then pkgsBoot.fetchFromGitHub { inherit (builtins.fromJSON (builtins.readFile (p + /github.json))) owner repo rev sha256; }
+    if builtins.pathExists (p + /thunk.nix)
+      then (import (p + /thunk.nix))
     else p;
 
   blake2_simd = import ./nix/dep/b2sum.nix { };
 
+  usbtool = import ./nix/usbtool.nix { };
+
+  patchSDKBinBash = name: sdk: pkgs.stdenv.mkDerivation {
+    # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
+    name =  name + "_patched_bin_bash";
+    src = sdk;
+    dontBuild = true;
+    installPhase = ''
+      mkdir -p $out
+      cp -a $src/. $out
+      substituteInPlace $out/Makefile.rules_generic --replace /bin/bash /bin/sh
+    '';
+  };
   targets =
     {
       s = rec {
         name = "s";
-        sdk = fetchThunk ./nix/dep/nanos-secure-sdk;
+        sdk = patchSDKBinBash "nanos-secure-sdk" (fetchThunk ./nix/dep/nanos-secure-sdk);
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 4; };
         target = "TARGET_NANOS";
         targetId = "0x31100004";
+        test = true;
         iconHex = pkgs.runCommand "nano-s-icon-hex" {
           nativeBuildInputs = [ (pkgs.python.withPackages (ps: [ps.pillow])) ];
         } ''
@@ -62,12 +71,11 @@ let
       };
       x = rec {
         name = "x";
-        sdk = if nanoXSdk == null
-          then throw "No NanoX SDK"
-          else assert builtins.typeOf nanoXSdk == "path"; nanoXSdk;
+        sdk = patchSDKBinBash "ledger-nanox-sdk" (fetchThunk ./nix/dep/ledger-nanox-sdk);
         env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 7; };
         target = "TARGET_NANOX";
         targetId = "0x33000004";
+        test = false;
         iconHex = pkgs.runCommand "${name}-icon-hex" {
           nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ps.pillow])) ];
         } ''
@@ -83,10 +91,11 @@ let
   gitIgnoredSrc = gitignoreSource ./.;
 
   src = pkgs.lib.sources.sourceFilesBySuffices gitIgnoredSrc [
-    ".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".pem"
+    ".c" ".h" ".gif" "Makefile" ".sh" ".json" ".js" ".bats" ".txt" ".der"
   ];
 
   speculos = pkgs.callPackage ./nix/dep/speculos { };
+  tests = import ./tests { inherit pkgs; };
 
   rust-bindgen = (ledgerPkgs.buildPackages.rust-bindgen.override {
     inherit rustPlatform;
@@ -157,10 +166,16 @@ let
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
           pkgs.jq
           speculos.speculos
-          pkgs.bats
-          pkgs.xxd
-          pkgs.openssl
-          blake2_simd
+          usbtool
+          bolos.env.clang
+
+          # Test harness
+          tests
+          pkgs.nodejs
+          pkgs.gdb
+          pkgs.python2
+          pkgs.entr
+          pkgs.yarn
         ];
         buildInputs = [
           rustBits
@@ -171,7 +186,7 @@ let
         GIT_DESCRIBE = gitDescribe;
         BOLOS_SDK = bolos.sdk;
         BOLOS_ENV = bolos.env;
-        DEBUG=debug;
+        DEBUG=if debug then "1" else "0";
         installPhase = ''
           mkdir -p $out
           cp -R bin $out
@@ -182,14 +197,24 @@ let
           size $out/bin/app.elf
         '';
 
-        doCheck = true;
+        doCheck = if runTest then bolos.test else false;
         checkTarget = "test";
       };
-      nvramDataSize = appDir: pkgs.runCommand "nvram-data-size" {} ''
-        envram_data="$(grep _envram_data '${appDir + /debug/app.map}' | tr -s ' ' | cut -f2 -d' ')"
-        nvram_data="$(grep _nvram_data '${appDir + /debug/app.map}' | tr -s ' ' | cut -f2 -d' ')"
-        echo "$(($envram_data - $nvram_data))" > "$out"
-      '';
+      ## Note: This has been known to change between sdk upgrades. Make sure to consult
+      ## the $COMMON_LOAD_PARAMS in the Makefile.defines of both SDKs
+        nvramDataSize = appDir: deviceName:
+          let mapPath = appDir + /debug/app.map;
+          in pkgs.runCommand "nvram-data-size" {} ''
+            nvram_data=0x${ if deviceName == "s"
+              then "$(grep _nvram_data "+ mapPath + " | tr -s ' ' | cut -f2 -d' ' | cut -f2 -d'x')"
+              else "$(grep _nvram_data "+ mapPath + " | cut -f1 -d' ')"
+            }
+            envram_data=0x${ if deviceName == "s"
+              then "$(grep _envram_data "+ mapPath + " | tr -s ' ' | cut -f2 -d' '| cut -f2 -d'x')"
+              else "$(grep _envram_data "+ mapPath + " | cut -f1 -d' ')"
+            }
+            echo "$(($envram_data - $nvram_data))" > "$out"
+          '';
       mkRelease = short_name: name: appDir: pkgs.runCommand "${short_name}-nano-${bolos.name}-release-dir" {} ''
         mkdir -p "$out"
 
@@ -197,7 +222,7 @@ let
 
         cat > "$out/app.manifest" <<EOF
         name='${name}'
-        nvram_size=$(cat '${nvramDataSize appDir}')
+        nvram_size=$(cat '${nvramDataSize appDir bolos.name}')
         target='nano_${bolos.name}'
         target_id=${bolos.targetId}
         version=$(echo '${gitDescribe}' | cut -f1 -d- | cut -f2 -dv)
@@ -214,13 +239,13 @@ let
       };
 
       release = rec {
-        app = mkRelease "nervos_wallet" "Nervos Wallet" ledgerApp;
+        app = mkRelease "nervos" "Nervos" ledgerApp;
         all = pkgs.runCommand "ledger-app-nervos-${bolos.name}.tar.gz" {} ''
           mkdir ledger-app-nervos-${bolos.name}
 
           cp -r ${app} ledger-app-nervos-${bolos.name}/app
 
-          install -m a=rx ${./release-installer.sh} ledger-app-nervos-${bolos.name}/install.sh
+          install -m a=rx ${./nix/app-installer-impl.sh} ledger-app-nervos-${bolos.name}/install.sh
 
           tar czf $out ledger-app-nervos-${bolos.name}/*
         '';
@@ -287,7 +312,7 @@ let
        installPhase = ''
         {
           echo "<html><title>Analyzer Report</title><body><h1>Clang Static Analyzer Results</h1>"
-          printf "<p>App: <code>"nervos_wallet"</code></p>"
+          printf "<p>App: <code>"nervos"</code></p>"
           printf "<h2>File-results:</h2>"
           for html in "$out"/report*.html ; do
             echo "<p>"

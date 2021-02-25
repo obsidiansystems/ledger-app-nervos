@@ -47,13 +47,13 @@ size_t read_bip32_path(bip32_path_t *const out, uint8_t const *const in, size_t 
     return ix;
 }
 
-key_pair_t *generate_key_pair_return_global(bip32_path_t const *const bip32_path) {
+key_pair_t *generate_extended_key_pair_return_global(bip32_path_t const *const bip32_path, uint8_t *const chain_code /* optional */) {
     check_null(bip32_path);
     struct priv_generate_key_pair *const priv = &global.apdu.priv.generate_key_pair;
 
     cx_curve_t const cx_curve = CX_CURVE_SECP256K1;
 
-    os_perso_derive_node_bip32(cx_curve, bip32_path->components, bip32_path->length, priv->private_key_data, NULL);
+    os_perso_derive_node_bip32(cx_curve, bip32_path->components, bip32_path->length, priv->private_key_data, chain_code);
 
     BEGIN_TRY {
         TRY {
@@ -75,11 +75,9 @@ key_pair_t *generate_key_pair_return_global(bip32_path_t const *const bip32_path
     return &priv->res;
 }
 
-cx_ecfp_public_key_t const *generate_public_key_return_global(bip32_path_t const *const bip32_path) {
-    check_null(bip32_path);
-    key_pair_t *const pair = generate_key_pair_return_global(bip32_path);
-    explicit_bzero(&pair->private_key, sizeof(pair->private_key));
-    return &pair->public_key;
+key_pair_t *generate_key_pair_return_global(bip32_path_t const *const bip32_path) {
+    key_pair_t *const result = generate_extended_key_pair_return_global(bip32_path, NULL);
+    return result;
 }
 
 size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const pair, uint8_t const *const in,
@@ -88,24 +86,30 @@ size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const p
     check_null(pair);
     check_null(in);
 
+    static size_t const OUT_SIZE = 65;
+
+    if (out_size < OUT_SIZE)
+        THROW(EXC_WRONG_LENGTH);
+
+    explicit_bzero(out, OUT_SIZE);
+
     static size_t const SIG_SIZE = 100;
     uint8_t sig[SIG_SIZE];
+    explicit_bzero(sig, sizeof(sig));
 
-    if (out_size < 65)
-        THROW(EXC_WRONG_LENGTH);
-    unsigned int info;
+    unsigned int info = 0;
 
     cx_ecdsa_sign(&pair->private_key, CX_LAST | CX_RND_RFC6979,
                   CX_SHA256, // historical reasons...semantically CX_NONE
-                  (uint8_t const *)PIC(in), in_size, sig, SIG_SIZE, &info);
+                  (uint8_t const *const)PIC(in), in_size, sig, SIG_SIZE, &info);
 
     // Converting to compressed format
-    int r_size = sig[3];
-    int r_size_sat = (r_size > 32) ? 32 : r_size;
-    uint8_t *r = sig + 4 + (r_size > 32 ? 1 : 0);
-    int s_size = sig[3 + r_size + 2];
-    int s_size_sat = (s_size > 32) ? 32 : s_size;
-    uint8_t *s = sig + 4 + r_size + 2 + (s_size > 32 ? 1 : 0);
+    int const r_size = sig[3];
+    int const r_size_sat = (r_size > 32) ? 32 : r_size;
+    uint8_t const *const r = sig + 4 + (r_size > 32 ? 1 : 0);
+    int const s_size = sig[3 + r_size + 2];
+    int const s_size_sat = (s_size > 32) ? 32 : s_size;
+    uint8_t const *const s = sig + 4 + r_size + 2 + (s_size > 32 ? 1 : 0);
 
     os_memmove(out + 32 - r_size_sat, r, r_size_sat);
     os_memmove(out + 64 - s_size_sat, s, s_size_sat);
@@ -118,7 +122,7 @@ size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const p
         out[64] |= 0x02;
     }
 
-    return 65;
+    return OUT_SIZE;
 }
 
 void generate_lock_arg_for_pubkey(const cx_ecfp_public_key_t *const key, standard_lock_arg_t *const dest) {
@@ -140,3 +144,4 @@ void generate_lock_arg_for_pubkey(const cx_ecfp_public_key_t *const key, standar
     memcpy(dest, temp_hash, sizeof(standard_lock_arg_t));
 
 }
+

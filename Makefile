@@ -3,7 +3,7 @@ $(error Environment variable BOLOS_SDK is not set)
 endif
 include $(BOLOS_SDK)/Makefile.defines
 
-APPNAME = "Nervos Wallet"
+APPNAME = "Nervos"
 
 APP_LOAD_PARAMS= --appFlags 0 --curve secp256k1 --path "44'/309'" $(COMMON_LOAD_PARAMS)
 
@@ -11,8 +11,8 @@ GIT_DESCRIBE ?= $(shell git describe --tags --abbrev=8 --always --long --dirty 2
 
 VERSION_TAG ?= $(shell echo "$(GIT_DESCRIBE)" | cut -f1 -d-)
 APPVERSION_M=0
-APPVERSION_N=1
-APPVERSION_P=0
+APPVERSION_N=5
+APPVERSION_P=1
 APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
 
 # Only warn about version tags if specified/inferred
@@ -77,6 +77,8 @@ SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 SDK_SOURCE_PATH  += lib_ux
 else
 DEFINES   += IO_SEPROXYHAL_BUFFER_SIZE_B=128
+DEFINES   += HAVE_UX_FLOW
+SDK_SOURCE_PATH  += lib_ux
 endif
 
 # Enabling debug PRINTF
@@ -84,6 +86,7 @@ DEBUG ?= 0
 ifneq ($(DEBUG),0)
 
         DEFINES += NERVOS_DEBUG
+        DEFINES += STACK_MEASURE
 
         ifeq ($(TARGET_NAME),TARGET_NANOX)
                 DEFINES   += HAVE_PRINTF PRINTF=mcu_usb_printf
@@ -140,7 +143,7 @@ SDK_SOURCE_PATH  += lib_u2f lib_stusb_impl
 
 DEFINES   += USB_SEGMENT_SIZE=64
 
-DEFINES   += U2F_PROXY_MAGIC=\"XTZ\"
+DEFINES   += U2F_PROXY_MAGIC=\"CKB\"
 DEFINES   += HAVE_IO_U2F HAVE_U2F
 
 load: all
@@ -155,6 +158,10 @@ include $(BOLOS_SDK)/Makefile.rules
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
 
-.phony: test
-test: test.sh bin/app.elf
-	./test.sh
+.phony: test watch
+
+watch:
+	ls src/*.c src/*.h tests/*.js tests/hw-app-ckb/src/*.js | entr make test
+
+test: tests/*.js tests/package.json bin/app.elf
+	env LEDGER_APP=./bin/app.elf COMMIT=$(COMMIT) run-ledger-tests.sh ./tests/

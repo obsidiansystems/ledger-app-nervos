@@ -1,7 +1,6 @@
 #pragma once
 
 #include "types.h"
-
 #include "bolos_target.h"
 
 // Zeros out all globals that can keep track of APDU instruction state.
@@ -27,72 +26,125 @@ struct priv_generate_key_pair {
 
 typedef struct {
     cx_blake2b_t state;
-    bool initialized;
+    uint8_t initialized;
 } blake2b_hash_state_t;
 
 struct maybe_transaction {
-    bool is_valid;
-    bool parse_failed;
+    uint8_t is_valid : 1;
+    uint8_t unsafe : 1;
+    uint8_t hard_reject : 1;
     struct parsed_transaction v;
-    uint16_t input_count;
 };
 
 #define OUTPUT_FLAGS_KNOWN_LOCK     0x01
 #define OUTPUT_FLAGS_IS_DAO         0x02
 #define OUTPUT_FLAGS_IS_DAO_DEPOSIT 0x04
 
-struct tx_output {
-    uint64_t amount;
-    uint8_t lock_arg[20];
-    uint8_t flags;
-};
-
-struct tx_context {
-    uint8_t hash[32];
-    uint8_t num_outputs;
-    struct tx_output outputs[3];
-};
-
-#define MAX_TOSIGN_PARSED 600
-#define MAX_CONTEXT_TRANSACTIONS 3
+typedef struct {
+    uint32_t index;
+    blake2b_hash_state_t hash_state;
+} input_state_t;
 
 typedef struct {
-    bip32_path_t key;
+    uint64_t capacity;
+    uint8_t dao_data_is_nonzero;
+    uint8_t lock_arg_index : 5;
+    uint8_t data_size : 4;
+    uint8_t active : 1;
+    uint8_t is_dao : 1;
+    uint8_t is_multisig : 1;
+    uint8_t lock_arg_nonequal : 1;
+} cell_state_t;
+
+typedef struct {
+    union {
+        bip32_path_t temp_key;
+        struct {
+            input_state_t input_state;
+            standard_lock_arg_t last_input_lock_arg;
+        } inp;
+
+        // Things we need exclusively after doing finish_inputs
+        struct {
+            uint32_t witness_multisig_lock_arg_consumed;
+            _Alignas(uint32_t) uint8_t witness_stack[40];
+            uint32_t current_output_index;
+
+            uint8_t transaction_hash[SIGN_HASH_SIZE];
+            uint8_t final_hash[SIGN_HASH_SIZE];
+
+            struct output_t outputs[MAX_OUTPUTS];
+
+            uint64_t dao_bitmask;
+            uint64_t change_amount;
+            uint64_t plain_output_amount;
+            uint64_t dao_output_amount;
+            // threshold and pubkey_cnt are actually uint32_t
+            // but here we save space as we expect them to be < 256
+            uint8_t witness_multisig_threshold;
+            uint8_t witness_multisig_pubkeys_cnt;
+            // Counting just outputs which we deem "non-change" outputs because
+            // they don't match the change bip32 path given as part of the
+            // transaction annotations.
+            uint8_t output_count;
+            uint8_t is_first_witness : 1;
+            uint8_t hash_only : 1;
+            uint8_t first_witness_done : 1;
+            uint8_t is_self_transfer : 1;
+            uint8_t processed_change_cell : 1; // Has at least one change-address been processed?
+        } tx;
+    } u;
+
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
-
-    uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
-
-    uint8_t to_parse[MAX_TOSIGN_PARSED];
-    uint16_t to_parse_fill_idx;
-
-    struct tx_context context_transactions[MAX_CONTEXT_TRANSACTIONS];
-    uint8_t context_transactions_fill_idx;
+    standard_lock_arg_t dao_cell_owner;
 
     struct maybe_transaction maybe_transaction;
 
-    // uint8_t message_data[NERVOS_BUFSIZE];
-    // uint32_t message_data_length;
-    buffer_t message_data_as_buffer;
-
     blake2b_hash_state_t hash_state;
-    uint8_t final_hash[SIGN_HASH_SIZE];
 
-    bool hash_only;
+    uint32_t input_count;
+    uint32_t distinct_input_sources; // distinct input lock_args
+
+    cell_state_t cell_state;
+
+    _Alignas(uint32_t) uint8_t transaction_stack[240];
+    // struct AnnotatedTransaction_state transaction_stack; - not just replacing because the "headers" are badly formed.
+
+    uint64_t dao_input_amount;
+    uint64_tuple_t input_amount;
+
+    uint8_t *lock_arg_cmp;
+    lock_arg_t lock_arg_tmp;
+
+    uint32_t key_path_components[3];
+    uint8_t key_length;
+
+    uint8_t signing_multisig_input;
 } apdu_sign_state_t;
 
 typedef struct {
+    buffer_t display_as_buffer;
     bip32_path_t key;
-    cx_ecfp_public_key_t public_key;
+    blake2b_hash_state_t hash_state;
+    uint8_t packet_index; // 0-index is the initial setup packet, 1 is first packet to hash, etc.
+    uint8_t display_as_hex;
+    uint8_t display[64];
+    uint8_t final_hash[SIGN_HASH_SIZE];
+} apdu_sign_message_state_t;
+
+typedef struct {
+    bip32_path_t key;
+    buffer_t display_as_buffer;
+    uint8_t hash_to_sign[64];  // Max message hash size we accept = 64 bytes
+    uint8_t hash_to_sign_size;
+} apdu_sign_message_hash_state_t;
+
+typedef struct {
+    bip32_path_t key;
+    extended_public_key_t ext_public_key;
     cx_blake2b_t hash_state;
-    union {
-        uint8_t entire[2 + sizeof(standard_lock_arg_t)];
-        struct {
-            uint8_t address_type_is_short;
-            uint8_t key_hash_type_is_sighash;
-            standard_lock_arg_t hash;
-        };
-    } prefixed_public_key_hash;
+    standard_lock_arg_t render_address_lock_arg;
 } apdu_pubkey_state_t;
 
 typedef struct {
@@ -103,29 +155,22 @@ typedef struct {
         ui_callback_t ok_callback;
         ui_callback_t cxl_callback;
 
-#ifndef TARGET_NANOX
         uint32_t ux_step;
         uint32_t ux_step_count;
 
         uint32_t timeout_cycle_count;
-#endif
+        void (*switch_screen)(uint32_t which);
 
         struct {
             string_generation_callback callbacks[MAX_SCREEN_COUNT];
             const void *callback_data[MAX_SCREEN_COUNT];
 
-#ifdef TARGET_NANOX
-            struct {
-                char prompt[PROMPT_WIDTH + 1];
-                char value[VALUE_WIDTH + 1];
-            } screen[MAX_SCREEN_COUNT];
-#else
             char active_prompt[PROMPT_WIDTH + 1];
             char active_value[VALUE_WIDTH + 1];
 
             // This will and must always be static memory full of constants
             const char *const *prompts;
-#endif
+	    size_t offset;
         } prompt;
     } ui;
 
@@ -133,19 +178,25 @@ typedef struct {
         union {
             apdu_pubkey_state_t pubkey;
             apdu_sign_state_t sign;
+            apdu_sign_message_state_t sign_msg;
+            apdu_sign_message_hash_state_t sign_msg_hash;
         } u;
 
         struct {
             struct priv_generate_key_pair generate_key_pair;
         } priv;
     } apdu;
+    nvram_data new_data;
 } globals_t;
 
 extern globals_t global;
 
+extern const uint8_t defaultLockScript[];
+extern const uint8_t multisigLockScript[];
+
 extern const uint8_t blake2b_personalization[17];
 
-extern unsigned int app_stack_canary; // From SDK
+extern unsigned int volatile app_stack_canary; // From SDK
 
 // Used by macros that we don't control.
 #ifdef TARGET_NANOX
@@ -166,18 +217,29 @@ static inline void throw_stack_size() {
 void calculate_baking_idle_screens_data(void);
 void update_baking_idle_screens(void);
 
+#ifdef TARGET_NANOX
+    extern nvram_data const N_data_real;
+#   define N_data (*(volatile nvram_data *)PIC(&N_data_real))
+#else
+    extern nvram_data N_data_real;
+#   define N_data (*(nvram_data*)PIC(&N_data_real))
+#endif
+
+
 // Properly updates NVRAM data to prevent any clobbering of data.
 // 'out_param' defines the name of a pointer to the nvram_data struct
 // that 'body' can change to apply updates.
 #define UPDATE_NVRAM(out_name, body)                                                                                   \
     ({                                                                                                                 \
-        nvram_data *const out_name = &global.apdu.baking_auth.new_data;                                                \
-        memcpy(&global.apdu.baking_auth.new_data, (nvram_data const *const) & N_data,                                  \
-               sizeof(global.apdu.baking_auth.new_data));                                                              \
+        nvram_data *const out_name = &global.new_data;                                                \
+        memcpy(&global.new_data, (nvram_data const *const) & N_data,                                  \
+               sizeof(global.new_data));                                                              \
         body;                                                                                                          \
-        nvm_write((void *)&N_data, &global.apdu.baking_auth.new_data, sizeof(N_data));                                 \
-        update_baking_idle_screens();                                                                                  \
+        nvm_write((void *)&N_data, &global.new_data, sizeof(N_data));                                 \
     })
+
+void switch_network();
+void switch_sign_hash();
 
 #ifdef NERVOS_DEBUG
 // Aid for tracking down app crashes

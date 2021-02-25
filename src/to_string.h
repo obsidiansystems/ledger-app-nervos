@@ -15,13 +15,20 @@ void protocol_hash_to_string(char *const buff, size_t const buff_size, uint8_t c
 void parsed_contract_to_string(char *const buff, size_t const buff_size, public_key_hash_t const *const contract);
 void lookup_parsed_contract_name(char *const buff, size_t const buff_size, public_key_hash_t const *const contract);
 
-void lock_arg_to_string(char *const buff, size_t const buff_size, uint8_t const *const contract);
+/* void lock_arg_to_string(char *const buff, size_t const buff_size, uint8_t const *const contract); */
+void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_arg_t const *const lockarg);
+void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lockarg);
 
 // dest must be at least MAX_INT_DIGITS
 size_t number_to_string(char *const dest, uint64_t number);
 
+// show the contract type in a prompt
+void contract_type_to_string_indirect(char *const dest, size_t const buff_size, uint8_t const *const contract_typ);
+
 // Format a frac_ckb
 void frac_ckb_to_string_indirect(char *const dest, size_t const buff_size, uint64_t const *const number);
+
+void frac_ckb_tuple_to_string_indirect(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple);
 
 // These take their number parameter through a pointer and take a length
 void number_to_string_indirect64(char *const dest, size_t const buff_size, uint64_t const *const number);
@@ -43,3 +50,5 @@ void bin_to_base58(char *const out, size_t const out_size, uint8_t const *const 
 // Wrapper around `bin_to_base58` that works on `buffer_t`.
 // `in` may be unrelocated pointer to rodata.
 void buffer_to_base58(char *const out, size_t const out_size, buffer_t const *const in);
+
+void uint64_tuple_to_string(char *const out, size_t const out_size, uint64_tuple_t const *const tuple);
