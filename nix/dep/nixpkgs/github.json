@@ -1,8 +1,8 @@
 {
-  "owner": "obsidiansystems",
+  "owner": "NixOS",
   "repo": "nixpkgs",
-  "branch": "armv6-embedded",
+  "branch": "nixos-20.03",
   "private": false,
-  "rev": "0c73297c075cf4fd87922f621fc2358c65b659f3",
-  "sha256": "1hzhgrd1crry3311ck5bpwy6bd1vdnk204vbhrf181675rkrjffq"
+  "rev": "faf5bdea5d9f0f9de26deaa7e864cdcd3b15b4e8",
+  "sha256": "1sgfyxi4wckivnbniwmg4l6n9v5z6v53c5467d7k7pr2h6nwssfn"
 }

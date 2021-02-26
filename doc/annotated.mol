@@ -1,0 +1,29 @@
+import blockchain;
+
+
+table AnnotatedCellInput {
+    input: CellInput,
+    source: RawTransaction,
+}
+
+vector AnnotatedCellInputVec <AnnotatedCellInput>;
+
+table AnnotatedRawTransaction {
+    version:        Uint32,
+    cell_deps:      CellDepVec,
+    header_deps:    Byte32Vec,
+    inputs:         AnnotatedCellInputVec,
+    outputs:        CellOutputVec,
+    outputs_data:   BytesVec,
+}
+
+vector Bip32 <Uint32>;
+
+table AnnotatedTransaction {
+    signPath:       Bip32,
+    changePath:     Bip32,
+    inputCount:     Uint32,
+    raw:            AnnotatedRawTransaction,
+    witnesses:      BytesVec,
+}
+

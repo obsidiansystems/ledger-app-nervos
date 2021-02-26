@@ -18,6 +18,20 @@ size_t provide_pubkey(uint8_t *const io_buffer, cx_ecfp_public_key_t const *cons
     return finalize_successful_send(tx);
 }
 
+size_t provide_ext_pubkey(uint8_t *const io_buffer, extended_public_key_t const *const ext_pubkey) {
+    check_null(io_buffer);
+    check_null(ext_pubkey);
+    size_t tx = 0;
+    size_t keySize = ext_pubkey->public_key.W_len;
+    io_buffer[tx++] = keySize;
+    memmove(io_buffer + tx, ext_pubkey->public_key.W, keySize);
+    tx += keySize;
+    io_buffer[tx++] = CHAIN_CODE_DATA_SIZE;
+    memmove(io_buffer + tx, ext_pubkey->chain_code, CHAIN_CODE_DATA_SIZE);
+    tx += CHAIN_CODE_DATA_SIZE;
+    return finalize_successful_send(tx);
+}
+
 size_t handle_apdu_error(uint8_t __attribute__((unused)) instruction) {
     THROW(EXC_INVALID_INS);
 }
@@ -31,19 +45,14 @@ size_t handle_apdu_git(uint8_t __attribute__((unused)) instruction) {
 
 size_t handle_apdu_get_wallet_id(uint8_t __attribute__((unused)) instruction) {
     // blake2b hash of "nervos-ledger-id"
-    static const uint8_t test[] = "nervos-ledger-id";
     static const uint8_t _U_ token[] = {0xc1, 0x30, 0xae, 0x5b, 0xf2, 0xfb, 0x61, 0xe3, 0x9e, 0x41, 0x9d, 0xc5, 0x8a,
                                         0x45, 0x4f, 0x4a, 0xb4, 0xb6, 0xe4, 0xb6, 0xdb, 0x0b, 0x4b, 0x34, 0x60, 0xc3,
                                         0xed, 0x12, 0x8e, 0xd5, 0x5f, 0xd2, 0x3d, 0x0a, 0x37, 0xc3, 0x75, 0x0b, 0xb2,
                                         0xb4, 0xd8, 0x0a, 0x74, 0x11, 0xe3, 0x68, 0x3b, 0x91, 0x80, 0x62, 0xab, 0x98,
                                         0xfd, 0x4d, 0x2c, 0x6d, 0x05, 0x95, 0xbb, 0x03, 0x30, 0x81, 0x78, 0xb6};
-    uint8_t signedToken[100];
     // uint32_t id_path[] = {0x8000002C, 0x80000135};
     bip32_path_t id_path = {2, {0x8000002C, 0x80000135}};
 
-    uint8_t key_data[32];
-    cx_ecfp_public_key_t pubkey;
-    cx_ecfp_private_key_t key;
     int rv = 0;
     cx_blake2b_t hashState;
     cx_blake2b_init(&hashState, 512);
@@ -63,6 +72,25 @@ size_t handle_apdu_get_wallet_id(uint8_t __attribute__((unused)) instruction) {
     return finalize_successful_send(rv);
 }
 
+#ifdef STACK_MEASURE
+__attribute__((noinline)) void stack_sentry_fill() {
+  uint32_t* p;
+  volatile int top;
+  top=5;
+  memset((void*)(&app_stack_canary+1), 42, ((uint8_t*)(&top-10))-((uint8_t*)&app_stack_canary));
+}
+
+void measure_stack_max() {
+  uint32_t* p;
+  volatile int top;
+  for(p=&app_stack_canary+1; p<((&top)-10); p++)
+    if(*p != 0x2a2a2a2a) {
+	    PRINTF("Free space between globals and maximum stack: %d\n", 4*(p-&app_stack_canary));
+	    return;
+    }
+}
+#endif
+
 #define CLA 0x80
 
 __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, size_t const handlers_size) {
@@ -70,6 +98,7 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
     while (true) {
         BEGIN_TRY {
             TRY {
+                app_stack_canary=0xdeadbeef;
                 // Process APDU of size rx
 
                 if (rx == 0) {
@@ -89,13 +118,32 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     THROW(EXC_WRONG_LENGTH);
                 }
 
+#ifdef STACK_MEASURE
+                stack_sentry_fill();
+#endif
+
                 uint8_t const instruction = G_io_apdu_buffer[OFFSET_INS];
+
                 apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
 
+		PRINTF("SIZOF1: %d SIZEOF2: %d\n", sizeof(G_ux), sizeof(G_ux_params));
+		PRINTF("Calling handler\n");
                 size_t const tx = cb(instruction);
+		PRINTF("Normal return\n");
+
+                if(0xdeadbeef != app_stack_canary) {
+                    THROW(EXC_STACK_ERROR);
+                }
+#ifdef STACK_MEASURE
+		measure_stack_max();
+#endif
+
                 rx = io_exchange(CHANNEL_APDU, tx);
             }
             CATCH(ASYNC_EXCEPTION) {
+#ifdef STACK_MEASURE
+		measure_stack_max();
+#endif
                 rx = io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, 0);
             }
             CATCH(EXCEPTION_IO_RESET) {
@@ -119,6 +167,14 @@ __attribute__((noreturn)) void main_loop(apdu_handler const *const handlers, siz
                     rx = io_exchange(CHANNEL_APDU, tx);
                     break;
                 }
+                case 0xA000 ... 0xAFFF: {
+                    PRINTF("Other error: %x\n", sw);
+                    size_t tx = 0;
+                    G_io_apdu_buffer[tx++] = sw >> 8;
+                    G_io_apdu_buffer[tx++] = sw;
+                    rx = io_exchange(CHANNEL_APDU, tx);
+                    break;
+					}
                 }
             }
             FINALLY {}

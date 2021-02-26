@@ -2,6 +2,7 @@
 
 #include "apdu.h"
 #include "keys.h"
+#include "globals.h"
 
 #include <string.h>
 
@@ -96,6 +97,19 @@ void frac_ckb_to_string_indirect(char *const dest, size_t const buff_size, uint6
     frac_ckb_to_string(dest, *number);
 }
 
+// (x, y) -> "x of y"
+void frac_ckb_tuple_to_string_indirect(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple) {
+    check_null(dest);
+    check_null(tuple);
+    char const of_str[] = " of ";
+    if (buff_size < (2 * MAX_INT_DIGITS) + strlen(of_str) + 1)
+        THROW(EXC_WRONG_LENGTH);
+    size_t out_len = 0;
+    out_len += frac_ckb_to_string(dest + out_len, tuple->fst);
+    strcpy(dest + out_len, of_str);
+    out_len += strlen(of_str);
+    frac_ckb_to_string(dest + out_len, tuple->snd);
+}
 
 
 size_t number_to_string(char *const dest, uint64_t number) {
@@ -108,6 +122,23 @@ size_t number_to_string(char *const dest, uint64_t number) {
     memcpy(dest, tmp + off, length);
     dest[length] = '\0';
     return length;
+}
+
+static const char contract_type_present[] = "Present";
+static const char contract_type_not_present[] = "Not Present";
+
+void contract_type_to_string_indirect(char *const dest, size_t const buff_size, uint8_t const *const contract_type) {
+    check_null(dest);
+
+    if (*contract_type != CONTRACT_NOT_PRESENT) {
+        if (sizeof(contract_type_present) >= buff_size)
+            THROW(EXC_WRONG_LENGTH);
+        memcpy(dest, contract_type_present, sizeof(contract_type_present));
+    } else {
+        if (sizeof(contract_type_not_present) >= buff_size)
+            THROW(EXC_WRONG_LENGTH);
+        memcpy(dest, contract_type_not_present, sizeof(contract_type_not_present));
+    }
 }
 
 // frac_ckb are in hundred-millionths
@@ -144,9 +175,9 @@ size_t frac_ckb_to_string(char *const dest, uint64_t number) {
     return off;
 }
 
-void lock_arg_to_string(char *const dest, size_t const buff_size, uint8_t const *const lockarg) {
-    bin_to_hex(dest, buff_size, lockarg, 20);
-}
+/* void lock_arg_to_string(char *const dest, size_t const buff_size, uint8_t const *const lockarg) { */
+/*     bin_to_hex(dest, buff_size, lockarg, 20); */
+/* } */
 
 void copy_string(char *const dest, size_t const buff_size, char const *const src) {
     check_null(dest);
@@ -179,4 +210,49 @@ void buffer_to_hex(char *const out, size_t const out_size, buffer_t const *const
     check_null(in);
     buffer_t const *const src = (buffer_t const *)PIC(in);
     bin_to_hex(out, out_size, src->bytes, src->length);
+}
+
+void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
+    render_address_payload_t render_address_payload;
+    render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
+    render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_SIGHASH;
+
+    memcpy(&render_address_payload.s.hash, lock_arg->hash, sizeof(render_address_payload.s.hash));
+    render_pkh(dest, buff_size, &render_address_payload);
+}
+
+void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
+    render_address_payload_t render_address_payload;
+    bool has_timelock = false;
+    for (int i = 0; i < 8; i++) {
+        if (lock_arg->lock_period[i] != 0) {
+            has_timelock = true;
+            break;
+        }
+    }
+    if (has_timelock) {
+        render_address_payload.f.address_format_type = ADDRESS_FORMAT_TYPE_FULL_TYPE;
+        memcpy(&render_address_payload.f.code_hash, multisigLockScript,
+               sizeof(render_address_payload.f.code_hash));
+        memcpy(&render_address_payload.f.lock_arg, lock_arg, sizeof(render_address_payload.f.lock_arg));
+    } else {
+        render_address_payload.s.address_format_type = ADDRESS_FORMAT_TYPE_SHORT;
+        render_address_payload.s.code_hash_index = ADDRESS_CODE_HASH_TYPE_MULTISIG;
+        memcpy(&render_address_payload.s.hash, lock_arg->hash,
+               sizeof(render_address_payload.s.hash));
+    }
+
+    render_pkh(dest, buff_size, &render_address_payload);
+}
+
+// (x, h) -> "x of y"
+void uint64_tuple_to_string(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple) {
+    check_null(dest);
+    check_null(tuple);
+    size_t out_len = 0;
+    out_len += number_to_string(dest + out_len, tuple->fst);
+    char const of_str[] = " of ";
+    strcpy(dest + out_len, of_str);
+    out_len += strlen(of_str);
+    number_to_string(dest + out_len, tuple->snd);
 }
