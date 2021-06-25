@@ -1,14 +1,18 @@
-{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", debug?false, runTest?true, ... }:
+{ ledger-platform ? import ./nix/dep/ledger-platform {}
+, gitDescribe ? "TEST-dirty", debug?false, runTest?true
+, ...
+}:
+
 let
-  # TODO: Replace this with hackGet for added safety checking once hackGet is separated from reflex-platform
-  fetchThunk = p:
-    if builtins.pathExists (p + /thunk.nix)
-      then (import (p + /thunk.nix))
-    else p;
+  # TODO: Rename
+  fetchThunk = ledger-platform.thunkSource;
+
+  inherit (ledger-platform)
+    pkgs
+    usbtool
+    speculos;
 
   blake2_simd = import ./nix/dep/b2sum.nix { };
-
-  usbtool = import ./nix/usbtool.nix { };
 
   patchSDKBinBash = name: sdk: pkgs.stdenv.mkDerivation {
     # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
@@ -55,7 +59,6 @@ let
       in (pkgs.lib.sources.sourceFilesBySuffices
           (pkgs.lib.sources.cleanSourceWith { src = ./.; filter = glyphsFilter; }) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".js" ".bats" ".txt" ".der"]);
 
-  speculos = pkgs.callPackage ./nix/dep/speculos { };
   tests = import ./tests { inherit pkgs; };
 
   build = bolos:
@@ -230,7 +233,9 @@ let
     x = mk targets.x;
   };
 in rec {
-  inherit pkgs;
+  inherit
+    pkgs
+    usbtool;
 
   nano = mkTargets build;
 
