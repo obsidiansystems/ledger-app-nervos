@@ -31,7 +31,7 @@ let
         targetId = "0x31100004";
         test = true;
         iconHex = pkgs.runCommand "nano-s-icon-hex" {
-          nativeBuildInputs = [ (pkgs.python.withPackages (ps: [ps.pillow])) ];
+          nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ps.pillow])) ];
         } ''
           python ${sdk + /icon.py} '${icons/nano-s-nervos.gif}' hexbitmaponly > "$out"
         '';
@@ -77,7 +77,6 @@ let
           tests
           pkgs.nodejs
           pkgs.gdb
-          pkgs.python2
           pkgs.entr
           pkgs.yarn
         ];
@@ -152,7 +151,7 @@ let
   # So this script reproduces what it does with fewer magic attempts:
   # * It prepares the SDK like for a normal build.
   # * It intercepts the calls to the compiler with the `CC` make-variable
-  #   (pointing at `.../libexec/scan-build/ccc-analyzer`).
+  #   (pointing at `.../libexec/ccc-analyzer`).
   # * The `CCC_*` variables are used to configure `ccc-analyzer`: output directory
   #   and which *real* compiler to call after doing the analysis.
   # * After the build an `index.html` file is created to point to the individual
@@ -203,7 +202,7 @@ let
          mkdir -p $out
        '';
        makeFlags = old.makeFlags or []
-         ++ [ "CC=${pkgs.clangAnalyzer}/libexec/scan-build/ccc-analyzer" ];
+         ++ [ "CC=${pkgs.clangAnalyzer}/libexec/ccc-analyzer" ];
        installPhase = ''
         {
           echo "<html><title>Analyzer Report</title><body><h1>Clang Static Analyzer Results</h1>"
