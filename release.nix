@@ -8,5 +8,5 @@ in {
   ckb-cli = import ./nix/dep/ckb-cli {};
   ckb-plugin-ledger = import ./nix/dep/ckb-plugin-ledger {};
   ckb = import ./nix/dep/ckb {};
-  usbtool = import ./nix/usbtool.nix {};
+  inherit (ledger-app-nervos) usbtool;
 }
