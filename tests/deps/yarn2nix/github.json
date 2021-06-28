@@ -1,8 +1,8 @@
 {
-  "owner": "jonored",
-  "repo": "yarn2nix",
-  "branch": "master",
+  "owner": "obsidiansystems",
+  "repo": "yarn2nix-profpatsch",
+  "branch": "jg-at-fix",
   "private": false,
-  "rev": "a7b2ef42f65903eaf591854ddf01b2ababf00177",
-  "sha256": "1aih5ys8iz012f2bwgnlvsx99m8xpbsm59w7rpn7xwc9mrj0dlq1"
+  "rev": "a1ca1cd5ccf425ec25c4a73ac11aa33e9c7b0263",
+  "sha256": "0xzf5i226r6942ji1gjhlbavaalzxmxwfrvmrnp2z8zjjgpxy34r"
 }

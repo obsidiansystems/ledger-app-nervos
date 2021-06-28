@@ -1,4 +1,4 @@
-{ pkgsFunc ? import ./nix/dep/nixpkgs
+{ ledger-platform ? import ./nix/dep/ledger-platform {}
 , gitDescribe ? "TEST-dirty"
 , debug ? false
 , runTest ? true
@@ -6,42 +6,19 @@
 }:
 
 let
-  pkgs = pkgsFunc {
-    config = {};
-    overlays = [
-      (import "${fetchThunk ./nix/dep/nixpkgs-mozilla}/rust-overlay.nix")
-    ];
-  };
+  # TODO: Rename
+  fetchThunk = ledger-platform.thunkSource;
 
-  ledgerPkgs = pkgsFunc {
-    crossSystem = {
-      config = "armv6l-unknown-none-eabi";
-      #useLLVM = true;
-      platform = {
-        gcc = {
-          arch = "armv6t2";
-          fpu = "vfpv2";
-        };
-        rustc = {
-          arch = "thumbv6m";
-          config = "thumbv6m-none-eabi";
-        };
-      };
-    };
-    overlays = [
-      (import "${fetchThunk ./nix/dep/nixpkgs-mozilla}/rust-overlay.nix")
-    ];
-  };
+  inherit (ledger-platform)
+    pkgs ledgerPkgs
+    gitignoreNix gitignoreSource
+    rustPackages rustc rustPlatform ledgerRustPlatform
+    usbtool
+    speculos;
 
-  # TODO: Replace this with hackGet for added safety checking once hackGet is separated from reflex-platform
-  fetchThunk = p:
-    if builtins.pathExists (p + /thunk.nix)
-      then (import (p + /thunk.nix))
-    else p;
+  inherit (pkgs) lib;
 
   blake2_simd = import ./nix/dep/b2sum.nix { };
-
-  usbtool = import ./nix/usbtool.nix { };
 
   patchSDKBinBash = name: sdk: pkgs.stdenv.mkDerivation {
     # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
@@ -64,7 +41,7 @@ let
         targetId = "0x31100004";
         test = true;
         iconHex = pkgs.runCommand "nano-s-icon-hex" {
-          nativeBuildInputs = [ (pkgs.python.withPackages (ps: [ps.pillow])) ];
+          nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ps.pillow])) ];
         } ''
           python ${sdk + /icon.py} '${icons/nano-s-nervos.gif}' hexbitmaponly > "$out"
         '';
@@ -84,17 +61,25 @@ let
       };
     };
 
-  gitignoreNix = import (fetchThunk ./nix/dep/gitignore.nix) { inherit (pkgs) lib; };
-
-  inherit (gitignoreNix) gitignoreSource;
-
   gitIgnoredSrc = gitignoreSource ./.;
 
-  src = pkgs.lib.sources.sourceFilesBySuffices gitIgnoredSrc [
+  src0 = lib.sources.cleanSourceWith {
+    src = gitIgnoredSrc;
+    filter = p: _: let
+      p' = baseNameOf p;
+      srcStr = builtins.toString ./.;
+    in p' != "glyphs.c" && p' != "glyphs.h"
+      && (p == (srcStr + "/Makefile")
+          || lib.hasPrefix (srcStr + "/src") p
+          || lib.hasPrefix (srcStr + "/glyphs") p
+          || lib.hasPrefix (srcStr + "/tests") p
+         );
+  };
+
+  src = lib.sources.sourceFilesBySuffices src0 [
     ".c" ".h" ".gif" "Makefile" ".sh" ".json" ".js" ".bats" ".txt" ".der"
   ];
 
-  speculos = pkgs.callPackage ./nix/dep/speculos { };
   tests = import ./tests { inherit pkgs; };
 
   rust-bindgen = (ledgerPkgs.buildPackages.rust-bindgen.override {
@@ -105,7 +90,7 @@ let
 
   rust-sdk-bindings-src = gitignoreSource ./rust-sdk-bindings;
 
-  build = bolos:
+  build = bolos: cargoSha256:
     let
       rust-bindings = ledgerPkgs.runCommand "${bolos.name}-rust-bindings" {
         nativeBuildInputs = [
@@ -144,8 +129,7 @@ let
         verifyCargoDeps = true;
         target = "thumbv6m-none-eabi";
 
-        # Cargo hash must be updated when Cargo.lock file changes.
-        cargoSha256 = "1kdg77ijbq0y1cwrivsrnb9mm4y5vlj7hxn39fq1dqlrppr6fdrr";
+        inherit cargoSha256;
 
         # It is more reliable to trick a stable rustc into doing unstable features
         # than use an unstable nightly rustc. Just because we want unstable
@@ -173,7 +157,6 @@ let
           tests
           pkgs.nodejs
           pkgs.gdb
-          pkgs.python2
           pkgs.entr
           pkgs.yarn
         ];
@@ -257,7 +240,7 @@ let
   # So this script reproduces what it does with fewer magic attempts:
   # * It prepares the SDK like for a normal build.
   # * It intercepts the calls to the compiler with the `CC` make-variable
-  #   (pointing at `.../libexec/scan-build/ccc-analyzer`).
+  #   (pointing at `.../libexec/ccc-analyzer`).
   # * The `CCC_*` variables are used to configure `ccc-analyzer`: output directory
   #   and which *real* compiler to call after doing the analysis.
   # * After the build an `index.html` file is created to point to the individual
@@ -298,7 +281,7 @@ let
              " "
              (x: "-analyzer-checker " + x)
              interestingExtrasAnalyzers;
-     in bolos: ((build bolos).app).overrideAttrs (old: {
+     in bolos: cargoSha256: ((build bolos cargoSha256).app).overrideAttrs (old: {
        CCC_ANALYZER_HTML = "${placeholder "out"}";
        CCC_ANALYZER_OUTPUT_FORMAT = "html";
        CCC_ANALYZER_ANALYSIS = analysisOptions;
@@ -308,7 +291,7 @@ let
          mkdir -p $out
        '';
        makeFlags = old.makeFlags or []
-         ++ [ "CC=${pkgs.clangAnalyzer}/libexec/scan-build/ccc-analyzer" ];
+         ++ [ "CC=${pkgs.clangAnalyzer}/libexec/ccc-analyzer" ];
        installPhase = ''
         {
           echo "<html><title>Analyzer Report</title><body><h1>Clang Static Analyzer Results</h1>"
@@ -331,34 +314,16 @@ let
       '';
      });
 
-  rustPackages = pkgs.rustChannelOf {
-    date = "2020-01-30"; # 1.41
-    channel = "stable";
-    sha256 = "07mp7n4n3cmm37mv152frv7p9q58ahjw5k8gcq48vfczrgm5qgiy";
-  };
-
-  rustc = rustPackages.rust.override {
-    targets = [
-      "thumbv6m-none-eabi"
-    ];
-  };
-
-  rustPlatform = pkgs.makeRustPlatform {
-    inherit (rustPackages) cargo;
-    inherit rustc;
-  };
-
-  ledgerRustPlatform = ledgerPkgs.makeRustPlatform {
-    inherit (rustPackages) cargo;
-    inherit rustc;
-  };
-
   mkTargets = mk: {
-    s = mk targets.s;
-    x = mk targets.x;
+    # Cargo hash must be updated when Cargo.lock file changes.
+    s = mk targets.s "1apn4gvxpzkadzc2qcp5bnx1gzc3xmpy7q65flyv06awpbw4iyhq";
+    x = mk targets.x "1l975708ij9ha2lgh7ggvqyr6hsxgb2fml0gn0bkrw570r72qb4x";
   };
 in rec {
-  inherit pkgs ledgerPkgs;
+  inherit
+    pkgs ledgerPkgs
+    src
+    usbtool;
 
   nano = mkTargets build;
 
@@ -367,11 +332,11 @@ in rec {
     x = nano.x;
   };
 
-  clangAnalysis = mkTargets (bolos: {
-    wallet = runClangStaticAnalyzer bolos;
+  clangAnalysis = mkTargets (bolos: cargoSha256: {
+    wallet = runClangStaticAnalyzer bolos cargoSha256;
   });
 
-  env = mkTargets (bolos: {
+  env = mkTargets (bolos: _: {
     ide = {
       config = {
         vscode = pkgs.writeText "vscode-nano-${bolos.name}.code-workspace" (builtins.toJSON {
