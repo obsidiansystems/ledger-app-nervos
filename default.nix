@@ -1,5 +1,7 @@
 { ledger-platform ? import ./nix/dep/ledger-platform {}
-, gitDescribe ? "TEST-dirty", debug?false, runTest?true
+, gitDescribe ? "TEST-dirty"
+, debug ? false
+, runTest ? true
 , ...
 }:
 
@@ -9,8 +11,11 @@ let
 
   inherit (ledger-platform)
     pkgs
+    gitignoreNix gitignoreSource
     usbtool
     speculos;
+
+  inherit (pkgs) lib;
 
   blake2_simd = import ./nix/dep/b2sum.nix { };
 
@@ -55,9 +60,24 @@ let
       };
     };
 
-  src = let glyphsFilter = (p: _: let p' = baseNameOf p; in p' != "glyphs.c" && p' != "glyphs.h");
-      in (pkgs.lib.sources.sourceFilesBySuffices
-          (pkgs.lib.sources.cleanSourceWith { src = ./.; filter = glyphsFilter; }) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".js" ".bats" ".txt" ".der"]);
+  gitIgnoredSrc = gitignoreSource ./.;
+
+  src0 = lib.sources.cleanSourceWith {
+    src = gitIgnoredSrc;
+    filter = p: _: let
+      p' = baseNameOf p;
+      srcStr = builtins.toString ./.;
+    in p' != "glyphs.c" && p' != "glyphs.h"
+      && (p == (srcStr + "/Makefile")
+          || lib.hasPrefix (srcStr + "/src") p
+          || lib.hasPrefix (srcStr + "/glyphs") p
+          || lib.hasPrefix (srcStr + "/tests") p
+         );
+  };
+
+  src = lib.sources.sourceFilesBySuffices src0 [
+    ".c" ".h" ".gif" "Makefile" ".sh" ".json" ".js" ".bats" ".txt" ".der"
+  ];
 
   tests = import ./tests { inherit pkgs; };
 
