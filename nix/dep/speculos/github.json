@@ -1,8 +1,0 @@
-{
-  "owner": "obsidiansystems",
-  "repo": "speculos",
-  "branch": "jg-with-nix-build-newer-speculos",
-  "private": false,
-  "rev": "7875e4345e32270456034a844200d9759b105ca3",
-  "sha256": "0vg8csir4vralbb6f1szwdifl5r97wfsmnsijn3fxx84dkpc0ysj"
-}
