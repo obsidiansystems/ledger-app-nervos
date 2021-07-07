@@ -5,7 +5,8 @@ include $(BOLOS_SDK)/Makefile.defines
 
 APPNAME = "Nervos"
 
-APP_LOAD_PARAMS= --appFlags 0 --curve secp256k1 --path "44'/309'" $(COMMON_LOAD_PARAMS)
+APP_LOAD_PARAMS= --appFlags 0 --curve secp256k1 --path "44'/309'" $(COMMON_LOAD_PARAMS) --tlvraw 9F:01
+DEFINES += HAVE_PENDING_REVIEW_SCREEN
 
 GIT_DESCRIBE ?= $(shell git describe --tags --abbrev=8 --always --long --dirty 2>/dev/null)
 
@@ -154,10 +155,14 @@ include $(BOLOS_SDK)/Makefile.rules
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
 
-.phony: test watch
-
+.phony: watch
 watch:
 	ls src/*.c src/*.h tests/*.js tests/hw-app-ckb/src/*.js | entr make test
 
+.phony: test
 test: tests/*.js tests/package.json bin/app.elf
 	env LEDGER_APP=./bin/app.elf COMMIT=$(COMMIT) run-ledger-tests.sh ./tests/
+
+.phony: listvariants
+listvariants:
+	@echo VARIANTS COIN CKB
