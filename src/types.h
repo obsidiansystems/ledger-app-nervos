@@ -2,6 +2,8 @@
 
 #include "exception.h"
 #include "os.h"
+#include "cx.h"
+#include "ux.h"
 #include "os_io_seproxyhal.h"
 
 #include <stdbool.h>
