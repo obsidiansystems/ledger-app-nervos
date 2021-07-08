@@ -1,4 +1,4 @@
-{ pkgs ? import ../nix/dep/nixpkgs {} }:
+{ pkgs ? import (import ../nix/dep/ledger-platform/thunk.nix + "/dep/nixpkgs") {} }:
 let
   yarn2nix = import deps/yarn2nix { inherit pkgs; };
   getThunkSrc = (import ./deps/reflex-platform { }).hackGet;
