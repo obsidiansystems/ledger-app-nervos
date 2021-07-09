@@ -3,6 +3,20 @@
 This project's release branch is `master`.
 This log is written from the perspective of the release branch: when changes hit `master`, they are considered released.
 
+## v0.5.2 - 2020-11-18
+
+### Release Notes
+
+This release is primary focused on dev workflow changes that are not user visible.
+However, we did make one quite noticeable change:
+
+- Updated app icons
+
+This release has been tested with:
+- CKB-CLI: [babc52ae593474f7fddb80f7c229374203310d6a](https://github.com/nervosnetwork/ckb-cli/tree/ledger-support)
+- CKB-Plugin-Ledger: [v0.2.1 - f03d7f3a2d696d3a48b8be78211452b5679165cb](https://github.com/obsidiansystems/ckb-plugin-ledger/releases/tag/v0.2.1)
+- hw-app-ckb: [v0.1.2 - d348841af4e2a023f760356e98059a45b1d6d6b7](https://github.com/obsidiansystems/hw-app-ckb/releases/tag/v0.1.2)
+
 ## v0.5.1 - 2020-11-18
 
 ### Release Notes
@@ -39,8 +53,8 @@ This release has been tested with:
 
 This release has been tested with:
 - CKB-CLI: [b460c998d6681a89a47b3af203ecc5f12d7b2507](https://github.com/obsidiansystems/ckb-cli/commit/b460c998d6681a89a47b3af203ecc5f12d7b2507)
- - CKB-Plugin-Ledger: [v0.2.0 - 283065c4d13212586a0dca709540277988043395](https://github.com/obsidiansystems/ckb-plugin-ledger/commit/283065c4d13212586a0dca709540277988043395)
- - hw-app-ckb: [v0.1.0 / 9a6754bdec67aea44a6d70d62cb8c8766ae49ccc](https://github.com/obsidiansystems/hw-app-ckb/commit/9a6754bdec67aea44a6d70d62cb8c8766ae49ccc)
+- CKB-Plugin-Ledger: [v0.2.0 - 283065c4d13212586a0dca709540277988043395](https://github.com/obsidiansystems/ckb-plugin-ledger/commit/283065c4d13212586a0dca709540277988043395)
+- hw-app-ckb: [v0.1.0 / 9a6754bdec67aea44a6d70d62cb8c8766ae49ccc](https://github.com/obsidiansystems/hw-app-ckb/commit/9a6754bdec67aea44a6d70d62cb8c8766ae49ccc)
 
 ## v0.4.0 - 2020-08-07
 
