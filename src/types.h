@@ -88,7 +88,7 @@ static inline bool bip32_paths_eq(bip32_path_t volatile const *const a, bip32_pa
 #define PKH_STRING_SIZE                  40 // includes null byte // TODO: use sizeof for this.
 #define PROTOCOL_HASH_BASE58_STRING_SIZE sizeof("ProtoBetaBetaBetaBetaBetaBetaBetaBetaBet11111a5ug96")
 
-#define MAX_SCREEN_COUNT 7 // Current maximum usage
+#define MAX_SCREEN_COUNT 8 // Current maximum usage
 #define PROMPT_WIDTH     16
 #define VALUE_WIDTH      128 // Needs to hold a 32 bytes of hash in hex.
 
@@ -163,6 +163,7 @@ typedef union {
 struct output_t {
 	uint64_t capacity;
 	lock_arg_t destination;
+  uint8_t is_multisig : 1;
 };
 
 // Have we found an output cell which doesn't correspond to the change

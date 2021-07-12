@@ -1,14 +1,23 @@
-{ pkgs ? import ./nix/dep/nixpkgs {}, gitDescribe ? "TEST-dirty", debug?false, runTest?true, ... }:
+{ ledger-platform ? import ./nix/dep/ledger-platform {}
+, gitDescribe ? "TEST-dirty"
+, debug ? false
+, runTest ? true
+, ...
+}:
+
 let
-  # TODO: Replace this with hackGet for added safety checking once hackGet is separated from reflex-platform
-  fetchThunk = p:
-    if builtins.pathExists (p + /thunk.nix)
-      then (import (p + /thunk.nix))
-    else p;
+  # TODO: Rename
+  fetchThunk = ledger-platform.thunkSource;
+
+  inherit (ledger-platform)
+    pkgs
+    gitignoreNix gitignoreSource
+    usbtool
+    speculos;
+
+  inherit (pkgs) lib;
 
   blake2_simd = import ./nix/dep/b2sum.nix { };
-
-  usbtool = import ./nix/usbtool.nix { };
 
   patchSDKBinBash = name: sdk: pkgs.stdenv.mkDerivation {
     # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
@@ -31,7 +40,7 @@ let
         targetId = "0x31100004";
         test = true;
         iconHex = pkgs.runCommand "nano-s-icon-hex" {
-          nativeBuildInputs = [ (pkgs.python.withPackages (ps: [ps.pillow])) ];
+          nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ps.pillow])) ];
         } ''
           python ${sdk + /icon.py} '${icons/nano-s-nervos.gif}' hexbitmaponly > "$out"
         '';
@@ -51,11 +60,26 @@ let
       };
     };
 
-  src = let glyphsFilter = (p: _: let p' = baseNameOf p; in p' != "glyphs.c" && p' != "glyphs.h");
-      in (pkgs.lib.sources.sourceFilesBySuffices 
-          (pkgs.lib.sources.cleanSourceWith { src = ./.; filter = glyphsFilter; }) [".c" ".h" ".gif" "Makefile" ".sh" ".json" ".bats" ".txt" ".der"]);
+  gitIgnoredSrc = gitignoreSource ./.;
 
-  speculos = pkgs.callPackage ./nix/dep/speculos { };
+  src0 = lib.sources.cleanSourceWith {
+    src = gitIgnoredSrc;
+    filter = p: _: let
+      p' = baseNameOf p;
+      srcStr = builtins.toString ./.;
+    in p' != "glyphs.c" && p' != "glyphs.h"
+      && (p == (srcStr + "/Makefile")
+          || lib.hasPrefix (srcStr + "/src") p
+          || lib.hasPrefix (srcStr + "/glyphs") p
+          || lib.hasPrefix (srcStr + "/tests") p
+         );
+  };
+
+  src = lib.sources.sourceFilesBySuffices src0 [
+    ".c" ".h" ".gif" "Makefile" ".sh" ".json" ".js" ".bats" ".txt" ".der"
+  ];
+
+  tests = import ./tests { inherit pkgs; };
 
   build = bolos:
     let
@@ -69,12 +93,15 @@ let
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
           pkgs.jq
           speculos.speculos
-          pkgs.bats
-          pkgs.xxd
-          pkgs.openssl
-          blake2_simd
           usbtool
           bolos.env.clang
+
+          # Test harness
+          tests
+          pkgs.nodejs
+          pkgs.gdb
+          pkgs.entr
+          pkgs.yarn
         ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
@@ -147,7 +174,7 @@ let
   # So this script reproduces what it does with fewer magic attempts:
   # * It prepares the SDK like for a normal build.
   # * It intercepts the calls to the compiler with the `CC` make-variable
-  #   (pointing at `.../libexec/scan-build/ccc-analyzer`).
+  #   (pointing at `.../libexec/ccc-analyzer`).
   # * The `CCC_*` variables are used to configure `ccc-analyzer`: output directory
   #   and which *real* compiler to call after doing the analysis.
   # * After the build an `index.html` file is created to point to the individual
@@ -198,7 +225,7 @@ let
          mkdir -p $out
        '';
        makeFlags = old.makeFlags or []
-         ++ [ "CC=${pkgs.clangAnalyzer}/libexec/scan-build/ccc-analyzer" ];
+         ++ [ "CC=${pkgs.clangAnalyzer}/libexec/ccc-analyzer" ];
        installPhase = ''
         {
           echo "<html><title>Analyzer Report</title><body><h1>Clang Static Analyzer Results</h1>"
@@ -226,7 +253,9 @@ let
     x = mk targets.x;
   };
 in rec {
-  inherit pkgs;
+  inherit
+    pkgs
+    usbtool;
 
   nano = mkTargets build;
 

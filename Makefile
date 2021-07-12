@@ -13,7 +13,7 @@ GIT_DESCRIBE ?= $(shell git describe --tags --abbrev=8 --always --long --dirty 2
 VERSION_TAG ?= $(shell echo "$(GIT_DESCRIBE)" | cut -f1 -d-)
 APPVERSION_M=0
 APPVERSION_N=5
-APPVERSION_P=1
+APPVERSION_P=2
 APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
 
 # Only warn about version tags if specified/inferred
@@ -155,9 +155,14 @@ include $(BOLOS_SDK)/Makefile.rules
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
 
-.phony: test listvariants
-test: test.sh bin/app.elf
-	./test.sh
+.phony: watch
+watch:
+	ls src/*.c src/*.h tests/*.js tests/hw-app-ckb/src/*.js | entr make test
 
+.phony: test
+test: tests/*.js tests/package.json bin/app.elf
+	env LEDGER_APP=./bin/app.elf COMMIT=$(COMMIT) run-ledger-tests.sh ./tests/
+
+.phony: listvariants
 listvariants:
 	@echo VARIANTS COIN CKB
