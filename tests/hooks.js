@@ -24,6 +24,7 @@ exports.mochaHooks = {
       const speculosProcessOptions = process.env.SPECULOS_DEBUG ? {stdio:"inherit"} : {};
       this.speculosProcess = spawn('speculos', [
         process.env.LEDGER_APP,
+        '--sdk', '1.6', // TODO keep in sync
         '--display', 'headless',
         '--button-port', '' + BUTTON_PORT,
         '--automation-port', '' + AUTOMATION_PORT,
