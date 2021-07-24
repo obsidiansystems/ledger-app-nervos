@@ -1,8 +1,8 @@
 {
   "owner": "obsidiansystems",
   "repo": "ledger-platform",
-  "branch": "bump-speculos",
+  "branch": "develop",
   "private": false,
-  "rev": "9eb4936f7d0d0eea2b5c7a9d3ece18cc4fcdbcb5",
-  "sha256": "1mybk35p0llyrak8ilijinzj53nr39h0r01k5ln497474ai8x5j4"
+  "rev": "5394a588e518d2fb2df1a0bcb8cfc848368f42e1",
+  "sha256": "1sb838gy5lwfmrr3cryy9pvimrqy7fsi9cd2lszm8vpx7296cimm"
 }
