@@ -120,6 +120,7 @@ let
 
         doCheck = if runTest then bolos.test else false;
         checkTarget = "test";
+        enableParallelBuilding = true;
       };
       ## Note: This has been known to change between sdk upgrades. Make sure to consult
       ## the $COMMON_LOAD_PARAMS in the Makefile.defines of both SDKs
