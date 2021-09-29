@@ -79,16 +79,9 @@ let
 
   tests = import ./tests { inherit pkgs; };
 
-  lldClangStdenv = ledgerPkgs.clangStdenv.override (old: {
-    cc = old.cc.override (old: {
-      # Default version of 11 segfaulted
-      inherit (ledgerPkgs.buildPackages.llvmPackages_12) bintools;
-    });
-  });
-
   build = bolos:
     let
-      app = lldClangStdenv.mkDerivation {
+      app = ledgerPkgs.lldClangStdenv.mkDerivation {
         name = "ledger-app-nervos-nano-${bolos.name}";
         inherit src;
         postConfigure = ''
@@ -113,7 +106,7 @@ let
         GIT_DESCRIBE = gitDescribe;
         BOLOS_SDK = bolos.sdk;
         # note trailing slash
-        CLANGPATH = "${lldClangStdenv.cc}/bin/";
+        CLANGPATH = "${ledgerPkgs.lldClangStdenv.cc}/bin/";
         GCCPATH = "${ledgerPkgs.stdenv.cc}/bin/";
         DEBUG=if debug then "1" else "0";
         installPhase = ''
