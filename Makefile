@@ -103,29 +103,16 @@ endif
 ##############
 # Compiler #
 ##############
-ifneq ($(BOLOS_ENV),)
-$(info BOLOS_ENV=$(BOLOS_ENV))
-CLANGPATH := $(BOLOS_ENV)/clang-arm-fropi/bin/
-GCCPATH := $(BOLOS_ENV)/gcc-arm-none-eabi-5_3-2016q1/bin/
-CFLAGS += -idirafter $(BOLOS_ENV)/gcc-arm-none-eabi-5_3-2016q1/arm-none-eabi/include
-else
-$(info BOLOS_ENV is not set: falling back to CLANGPATH and GCCPATH)
-endif
-ifeq ($(CLANGPATH),)
-$(info CLANGPATH is not set: clang will be used from PATH)
-endif
-ifeq ($(GCCPATH),)
-$(info GCCPATH is not set: arm-none-eabi-* will be used from PATH)
-endif
 
-CC       := $(CLANGPATH)clang
+# empty on purpose
+USE_SYSROOT =
 
-CFLAGS   += -O3 -Os -Wall -Wextra
+TOOL_PREFIX = armv6m-unknown-none-eabi-
 
-AS     := $(GCCPATH)arm-none-eabi-gcc
+CFLAGS   += -O3 -Os -Wall -Wextra -mcpu=sc000
 
-LD       := $(GCCPATH)arm-none-eabi-gcc
-LDFLAGS  += -O3 -Os
+LD       := $(GCCPATH)$(TOOL_PREFIX)gcc
+LDFLAGS  += -O3 -Os -mcpu=sc000
 LDLIBS   += -lm -lgcc -lc
 
 # import rules to compile glyphs(/pone)
