@@ -138,7 +138,10 @@ CFLAGS   += -mcpu=sc000
 endif
 
 LD       := $(GCCPATH)$(TOOL_PREFIX)gcc
-LDFLAGS  += -O3 -Os -mcpu=sc000
+LDFLAGS  += -O3 -Os
+ifneq ($(USE_NIX),)
+LDFLAGS  += -mcpu=sc000
+endif
 LDLIBS   += -lm -lgcc -lc
 
 # import rules to compile glyphs(/pone)
