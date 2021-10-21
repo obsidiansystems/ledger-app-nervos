@@ -125,6 +125,10 @@ ifeq ($(GCCPATH),)
 $(info GCCPATH is not set: $(TOOL_PREFIX)* will be used from PATH)
 endif
 
+# In case not provided from env vars, e.g. in legerhq's docker image.
+CC       ?= $(CLANGPATH)clang
+AS       ?= $(GCCPATH)$(TOOL_PREFIX)gcc
+
 CFLAGS   += -O3 -Os -Wall -Wextra -mcpu=sc000
 
 LD       := $(GCCPATH)$(TOOL_PREFIX)gcc
