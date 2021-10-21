@@ -127,6 +127,8 @@ TOOL_PREFIX = armv6m-unknown-none-eabi-
 # no sysroots with Nix, empty on purpose
 USE_SYSROOT =
 else
+# Will not be defined if using SDK without our PR.
+TOOL_PREFIX ?= arm-none-eabi-
 # Need to override defaults harder, ?= will not work here.
 CC       := $(CLANGPATH)clang
 AS       := $(GCCPATH)$(TOOL_PREFIX)gcc
