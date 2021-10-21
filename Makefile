@@ -111,11 +111,6 @@ GCCPATH := $(BOLOS_ENV)/gcc-arm-none-eabi-5_3-2016q1/bin/
 CFLAGS += -idirafter $(BOLOS_ENV)/gcc-arm-none-eabi-5_3-2016q1/arm-none-eabi/include
 else
 $(info BOLOS_ENV is not set: falling back to CLANGPATH and GCCPATH)
-## asssume Nix toolchain for now
-# More specific toolchain prefix
-TOOL_PREFIX = armv6m-unknown-none-eabi-
-# no sysroots with Nix, empty on purpose
-USE_SYSROOT =
 endif
 
 ifeq ($(CLANGPATH),)
@@ -125,9 +120,17 @@ ifeq ($(GCCPATH),)
 $(info GCCPATH is not set: $(TOOL_PREFIX)* will be used from PATH)
 endif
 
-# In case not provided from env vars, e.g. in legerhq's docker image.
-CC       ?= $(CLANGPATH)clang
-AS       ?= $(GCCPATH)$(TOOL_PREFIX)gcc
+ifneq ($(USE_NIX),)
+## asssume Nix toolchain for now
+# More specific toolchain prefix
+TOOL_PREFIX = armv6m-unknown-none-eabi-
+# no sysroots with Nix, empty on purpose
+USE_SYSROOT =
+else
+# Need to override defaults harder, ?= will not work here.
+CC       := $(CLANGPATH)clang
+AS       := $(GCCPATH)$(TOOL_PREFIX)gcc
+endif
 
 CFLAGS   += -O3 -Os -Wall -Wextra -mcpu=sc000
 
