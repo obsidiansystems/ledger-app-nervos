@@ -85,8 +85,8 @@ let
           passthru = { inherit nodeModules; };
           NODE_PATH = nodeModules;
           nodeBuildInputs = [
-            (s."@ledgerhq/hw-transport@^5.9.0")
-            (s."bip32-path@0.4.2")
+            (s."@ledgerhq/hw-transport@^6.11.2")
+            (s."bip32-path@^0.4.2")
             (s."bech32@1.1.4")
             (s."blake2b-wasm@2.1.0")
             (s."flow-bin@^0.109.0")
@@ -96,7 +96,7 @@ let
             (s."babel-preset-flow@^6.23.0")
             (s."babel-preset-react@^6.24.1")
             (s."babel-preset-stage-0@^6.24.1")
-            (s."flow-copy-source@^2.0.8")
+            (s."flow-copy-source@^2.0.9")
             (s."flow-typed@^2.6.1")
           ];
         };
