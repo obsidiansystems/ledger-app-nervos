@@ -1,3 +1,6 @@
+/* This is a *minimized* spec for just what the ledger app currently needs.
+   From the git history the original version can be gotten. */
+
 /* Basic Types */
 
 array Uint32 [byte; 4];
@@ -14,22 +17,13 @@ vector Byte32Vec <Byte32>;
 
 /* Types for Chain */
 
-option ScriptOpt (Script);
-
-array ProposalShortId [byte; 10];
-
-vector UncleBlockVec <UncleBlock>;
-vector TransactionVec <Transaction>;
-vector ProposalShortIdVec <ProposalShortId>;
-vector CellDepVec <CellDep>;
-vector CellInputVec <CellInput>;
-vector CellOutputVec <CellOutput>;
-
 table Script {
     code_hash:      Byte32,
     hash_type:      byte,
     args:           Bytes,
 }
+
+option ScriptOpt (Script);
 
 struct OutPoint {
     tx_hash:        Byte32,
@@ -41,16 +35,22 @@ struct CellInput {
     previous_output: OutPoint,
 }
 
+vector CellInputVec <CellInput>;
+
 table CellOutput {
     capacity:       Uint64,
     lock:           Script,
     type_:          ScriptOpt,
 }
 
+vector CellOutputVec <CellOutput>;
+
 struct CellDep {
     out_point:      OutPoint,
     dep_type:       byte,
 }
+
+vector CellDepVec <CellDep>;
 
 table RawTransaction {
     version:        Uint32,
@@ -64,41 +64,6 @@ table RawTransaction {
 table Transaction {
     raw:            RawTransaction,
     witnesses:      BytesVec,
-}
-
-struct RawHeader {
-    version:                Uint32,
-    compact_target:         Uint32,
-    timestamp:              Uint64,
-    number:                 Uint64,
-    epoch:                  Uint64,
-    parent_hash:            Byte32,
-    transactions_root:      Byte32,
-    proposals_hash:         Byte32,
-    uncles_hash:            Byte32,
-    dao:                    Byte32,
-}
-
-struct Header {
-    raw:                    RawHeader,
-    nonce:                  Uint128,
-}
-
-table UncleBlock {
-    header:                 Header,
-    proposals:              ProposalShortIdVec,
-}
-
-table Block {
-    header:                 Header,
-    uncles:                 UncleBlockVec,
-    transactions:           TransactionVec,
-    proposals:              ProposalShortIdVec,
-}
-
-table CellbaseWitness {
-    lock:    Script,
-    message: Bytes,
 }
 
 table WitnessArgs {
