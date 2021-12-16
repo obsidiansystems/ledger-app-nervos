@@ -9,7 +9,7 @@
 #include "protocol.h"
 #include "ui.h"
 
-#define MOL_PIC(x) ((void (*)()) PIC(x))
+#define MOL_PIC(x) ((typeof(x)) PIC(x))
 #define MOL_PIC_STRUCT(t,x) (x?((t*) PIC(x)):NULL)
 #define mol_printf(...) PRINTF(__VA_ARGS__)
 #define mol_emerg_reject THROW(EXC_MEMORY_ERROR)
@@ -313,7 +313,7 @@ void finish_context_txn(void) {
     uint8_t tx_hash[32];
     blake2b_finish_hash(tx_hash, 32, &G.u.inp.input_state.hash_state);
     blake2b_chunk(tx_hash, 32);
-    blake2b_chunk(&G.u.inp.input_state.index, sizeof(G.u.inp.input_state.index));
+    blake2b_chunk((uint8_t *) &G.u.inp.input_state.index, sizeof(G.u.inp.input_state.index));
     explicit_bzero(&G.u.inp.input_state, sizeof(G.u.inp.input_state));
 }
 
@@ -653,6 +653,8 @@ void finalize_raw_transaction(void) {
     switch(G.maybe_transaction.v.tag) {
         case OPERATION_TAG_NONE:
             break;
+        case OPERATION_TAG_MULTI_INPUT_TRANSFER:
+            REJECT("This is a tag just for rendering, and should just be set below");
         case OPERATION_TAG_NOT_SET:
         case OPERATION_TAG_PLAIN_TRANSFER:
             if (G.distinct_input_sources > 1) {
@@ -1266,6 +1268,7 @@ static size_t handle_apdu_sign_message_hash_impl(void) {
 }
 
 size_t handle_apdu_sign_message_hash(uint8_t instruction) {
+  (void)instruction; // intentionally unused
   if(N_data.sign_hash_type == SIGN_HASH_ON)
     return handle_apdu_sign_message_hash_impl();
   else

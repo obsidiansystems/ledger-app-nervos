@@ -240,6 +240,7 @@ void update_baking_idle_screens(void);
 
 void switch_network();
 void switch_sign_hash();
+void switch_contract_data();
 
 #ifdef NERVOS_DEBUG
 // Aid for tracking down app crashes

@@ -51,7 +51,7 @@ unsigned char io_event(__attribute__((unused)) unsigned char channel) {
         break;
 
     case SEPROXYHAL_TAG_TICKER_EVENT:
-	UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {});
+        UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {});
 
         break;
     }
@@ -116,10 +116,10 @@ UX_STEP_CB(
       ""
     });
 UX_FLOW(ux_cfg_flow,
-		&ux_cfg_flow_1_step,
-		&ux_cfg_flow_2_step,
-		&ux_cfg_flow_3_step,
-		&ux_cfg_flow_4_step
+        &ux_cfg_flow_1_step,
+        &ux_cfg_flow_2_step,
+        &ux_cfg_flow_3_step,
+        &ux_cfg_flow_4_step
        );
 
 UX_STEP_NOCB(
@@ -160,7 +160,7 @@ UX_FLOW(ux_idle_flow,
     EVAL(UX_STEP_NOCB_INIT BLANK() ( \
         PROMPT_SCREEN_NAME(idx), \
         bnnn_paging, \
-	G.switch_screen(idx-G.prompt.offset),\
+        G.switch_screen(idx-G.prompt.offset),\
         { \
             .title = G.prompt.active_prompt, \
             .text = G.prompt.active_value, \
@@ -265,13 +265,10 @@ void ui_prompt(const char *const *labels, ui_callback_t ok_c, ui_callback_t cxl_
         i;
     });
 
-    G.switch_screen=switch_screen;
+    G.switch_screen = switch_screen;
     // We fill the destination buffers at the end instead of the beginning so we can
     // use the same array for any number of screens.
-    size_t const offset = MAX_SCREEN_COUNT - screen_count;
-
-    G.switch_screen=switch_screen;
-    G.prompt.offset=MAX_SCREEN_COUNT-screen_count;
+    G.prompt.offset= MAX_SCREEN_COUNT - screen_count;
 
     ui_prompt_debug(screen_count);
 
