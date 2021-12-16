@@ -230,7 +230,7 @@ void* alignment_fix(void* in) {
 	struct type ## _state *substate = STATE_PUSH(s, field) \
 	mol_rv rv = MolReader_ ## type ## _parse(substate, chunk, (cb?MOL_PIC_STRUCT(struct type ## _callbacks, cb->field):NULL), size); \
 	if(rv != COMPLETE) { \
-		if(rv == REJECT) mol_printf("Subparser for " #field " rejected; rejecting.");\
+		if(rv == REJECT) mol_printf("Subparser for " #field " rejected; rejecting.\n");\
 		if(cb && cb->chunk) MOL_PIC(cb->chunk)(chunk->ptr + start_idx, chunk->consumed - start_idx); \
 		return rv; \
 	} \

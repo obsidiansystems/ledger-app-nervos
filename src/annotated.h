@@ -57,7 +57,7 @@ struct AnnotatedCellInputVec_callbacks {
     void (*start)();
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
-    void (*size)(mol_num_t);
+    bool (*size)(mol_num_t);
     void (*length)(mol_num_t);
     void (*index)(mol_num_t);
     void (*offset)(mol_num_t);
@@ -106,7 +106,7 @@ struct Bip32_callbacks {
     void (*start)();
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
-    void (*size)(mol_num_t);
+    bool (*size)(mol_num_t);
     void (*index)(mol_num_t);
     const struct Uint32_callbacks *item;
 };
@@ -248,7 +248,11 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_AnnotatedCellInputVec_parse   
         case 0:
             MOL_CALL_NUM(s->total_size);
             MOL_INIT_NUM();
-            if(cb && cb->size) MOL_PIC(cb->size)(s->total_size);
+            if (cb && cb->size) {
+                if (!MOL_PIC(cb->size)(s->total_size)) {
+                    return REJECT;
+                }
+            }
             if(s->total_size==4) {
     if(cb && cb->chunk) MOL_PIC(cb->chunk)(chunk->ptr + start_idx, chunk->consumed - start_idx);
     if(cb && cb->end) MOL_PIC(cb->end)();
@@ -387,9 +391,13 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Bip32_parse                   
         mol_num_t length_with_prefix_in_bytes;
         if (__builtin_add_overflow(length_in_bytes, sizeof(mol_num_t), &length_with_prefix_in_bytes))
             return REJECT;
-        if(size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
+        if (size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
             return REJECT;
-        if(cb && cb->size) MOL_PIC(cb->size)(length_with_prefix_in_bytes);
+        if (cb && cb->size) {
+            if (!MOL_PIC(cb->size)(length_with_prefix_in_bytes)) {
+                return REJECT;
+            }
+        }
         MOL_INIT_SUBPARSER(item, Uint32);
         if(cb && cb->index) MOL_PIC(cb->index)(s->state_num-1);
     }
