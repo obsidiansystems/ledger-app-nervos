@@ -60,21 +60,32 @@ let
 
   gitIgnoredSrc = gitignoreSource ./.;
 
-  src0 = lib.sources.cleanSourceWith {
+  makeFilterPass0 = dirs: bad: lib.sources.cleanSourceWith {
     src = gitIgnoredSrc;
     filter = p: _: let
       p' = baseNameOf p;
       srcStr = builtins.toString ./.;
     in p' != "glyphs.c" && p' != "glyphs.h"
       && (p == (srcStr + "/Makefile")
-          || lib.hasPrefix (srcStr + "/src") p
-          || lib.hasPrefix (srcStr + "/glyphs") p
-          || lib.hasPrefix (srcStr + "/tests") p
+          || lib.any (dir: lib.hasPrefix (srcStr + "/" + dir) p) dirs
+          && bad srcStr p
          );
   };
 
+  src0 = makeFilterPass0
+    ["src" "glyphs" "tests"]
+    (_: _: true);
+
   src = lib.sources.sourceFilesBySuffices src0 [
     ".c" ".h" ".gif" "Makefile" ".sh" ".json" ".js" ".bats" ".txt" ".der"
+  ];
+
+  src0-fuzzing = makeFilterPass0
+    ["fuzzing"]
+    (srcStr: p: !lib.hasPrefix (srcStr + "/fuzzing/build") p);
+
+  src-fuzzing = lib.sources.sourceFilesBySuffices src0-fuzzing [
+    ".c" ".txt" ".sh"
   ];
 
   tests = import ./tests { inherit pkgs; };
@@ -85,7 +96,6 @@ let
         name = "ledger-app-nervos-nano-${bolos.name}";
         inherit src;
         postConfigure = ''
-          PATH="$BOLOS_ENV/clang-arm-fropi/bin:$PATH"
           # hack to get around no tests for cross logic
           doCheck=${toString (if runTest then bolos.test else false)};
         '';
@@ -123,6 +133,21 @@ let
         checkTarget = "test";
         enableParallelBuilding = true;
       };
+      fuzzing = pkgs.clangStdenv.mkDerivation {
+        name = "ledger-app-nervos-nano-${bolos.name}-fuzzing";
+        inherit src;
+        postUnpack = ''
+          set -x
+          sourceRoot+=/fuzzing
+          cp -R --no-preserve=mode "${src-fuzzing}/fuzzing" "$sourceRoot"
+          set +x
+        '';
+        nativeBuildInputs = with pkgs.buildPackages; [
+          cmake
+        ];
+        BOLOS_SDK = bolos.sdk;
+      };
+      ## Note: This has been known to change between sdk upgrades. Make sure to consult
       ## Note: This has been known to change between sdk upgrades. Make sure to consult
       ## the $COMMON_LOAD_PARAMS in the Makefile.defines of both SDKs
         nvramDataSize = appDir: deviceName:
@@ -155,7 +180,7 @@ let
 
       ledgerApp = app;
     in {
-      inherit app;
+      inherit app fuzzing;
 
       release = rec {
         app = mkRelease "nervos" "Nervos" ledgerApp;
