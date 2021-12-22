@@ -380,8 +380,16 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Bip32_parse                   
     if(s->state_num == 0) {
         MOL_CALL_NUM(s->length);
         s->state_num++;
-        if(size != MOL_NUM_MAX && (s->length * 4 + 4) != size) return REJECT;
-        if(cb && cb->size) MOL_PIC(cb->size)(s->length * 4 + 4);
+        // sizeof(length prefix) + length in items * bytes/item
+        mol_num_t length_in_bytes;
+        if (__builtin_mul_overflow(s->length, 4 /* item size */, &length_in_bytes))
+            return REJECT;
+        mol_num_t length_with_prefix_in_bytes;
+        if (__builtin_add_overflow(length_in_bytes, sizeof(mol_num_t), &length_with_prefix_in_bytes))
+            return REJECT;
+        if(size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
+            return REJECT;
+        if(cb && cb->size) MOL_PIC(cb->size)(length_with_prefix_in_bytes);
         MOL_INIT_SUBPARSER(item, Uint32);
         if(cb && cb->index) MOL_PIC(cb->index)(s->state_num-1);
     }
