@@ -10,6 +10,8 @@ add_compile_definitions(
         IO_HID_EP_LENGTH=64
         OS_IO_SEPROXYHAL
         HAVE_BAGL
+        BAGL_WIDTH=128
+        BAGL_HEIGHT=32
         IO_SEPROXYHAL_BUFFER_SIZE_B=128
         HAVE_UX_FLOW
 )
