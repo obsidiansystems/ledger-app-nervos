@@ -156,6 +156,7 @@ let
           set +x
         '';
         nativeBuildInputs = with pkgs.buildPackages; [
+          (pkgs.python3.withPackages (ps: [ps.pillow]))
           cmake
         ];
         BOLOS_SDK = bolos.sdk;

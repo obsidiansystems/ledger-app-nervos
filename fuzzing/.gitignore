@@ -1,4 +1,4 @@
-
+/build/
 /cmake-build-fuzz/
 /cmake-build-fuzz-coverage/
 /corpus/

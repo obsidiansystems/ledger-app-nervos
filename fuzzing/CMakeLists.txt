@@ -50,18 +50,45 @@ if(CODE_COVERAGE)
 endif()
 
 # Fuzzer target
-set(APP_SRC_DIR "../src")
+set(APP_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../src")
+set(GLYPH_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../glyphs")
+
+set(GLYPH_FILES
+        "${GLYPH_SRC_DIR}/icon_crossmark.gif"
+        "${GLYPH_SRC_DIR}/icon_warning.gif"
+        "${GLYPH_SRC_DIR}/icon_dashboard_x.gif"
+        "${GLYPH_SRC_DIR}/icon_validate_14.gif"
+        "${BOLOS_SDK}/lib_ux/glyphs/icon_down.gif"
+        "${BOLOS_SDK}/lib_ux/glyphs/icon_warning.gif"
+        "${BOLOS_SDK}/lib_ux/glyphs/icon_left.gif"
+        "${BOLOS_SDK}/lib_ux/glyphs/icon_up.gif"
+        "${BOLOS_SDK}/lib_ux/glyphs/icon_right.gif"
+)
+
+set(ICON_SCRIPT "${BOLOS_SDK}/icon3.py")
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/glyphs.h"
+    COMMAND python3 "${ICON_SCRIPT}" --glyphcheader ${GLYPH_FILES} ">" "${CMAKE_CURRENT_BINARY_DIR}/glyphs.h"
+)
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/glyphs.c"
+    COMMAND python3 "${ICON_SCRIPT}" --glyphcfile ${GLYPH_FILES} ">" "${CMAKE_CURRENT_BINARY_DIR}/glyphs.c"
+)
 
 set(APP_SOURCES
-        ${APP_SRC_DIR}/apdu_sign.c
-        ${APP_SRC_DIR}/apdu.c
-        ${APP_SRC_DIR}/apdu_pubkey.c
-        ${APP_SRC_DIR}/globals.c
-        ${APP_SRC_DIR}/keys.c
-        ${APP_SRC_DIR}/segwit_addr.c
-        ${APP_SRC_DIR}/to_string.c
-        ${APP_SRC_DIR}/ui_common.c
-        ${APP_SRC_DIR}/version.h
+        "${APP_SRC_DIR}/apdu_sign.c"
+        "${APP_SRC_DIR}/apdu.c"
+        "${APP_SRC_DIR}/apdu_pubkey.c"
+        "${APP_SRC_DIR}/globals.c"
+        "${APP_SRC_DIR}/keys.c"
+        "${APP_SRC_DIR}/segwit_addr.c"
+        "${APP_SRC_DIR}/to_string.c"
+        "${APP_SRC_DIR}/ui_common.c"
+        "${APP_SRC_DIR}/version.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/glyphs.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/glyphs.c"
 )
 
 add_executable(fuzz
@@ -71,7 +98,7 @@ add_executable(fuzz
         ${APP_SOURCES}
 )
 
-target_include_directories(fuzz PRIVATE ../src/)
+target_include_directories(fuzz PRIVATE ../src/ "${CMAKE_CURRENT_BINARY_DIR}")
 
 target_compile_definitions(fuzz PRIVATE
         APPVERSION_M=${CMAKE_PROJECT_VERSION_MAJOR}
@@ -80,7 +107,9 @@ target_compile_definitions(fuzz PRIVATE
         PRINTF=printf
         COMMIT="xxx"  # fake commit value
 )
-target_link_libraries(fuzz PRIVATE bsd)
+#target_link_libraries(fuzz PRIVATE bsd)
 
 target_compile_options(fuzz PRIVATE -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined)
 target_link_options(fuzz PRIVATE -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined)
+
+install(TARGETS fuzz)
