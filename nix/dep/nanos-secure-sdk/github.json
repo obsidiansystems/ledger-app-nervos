@@ -1,8 +1,8 @@
 {
   "owner": "obsidiansystems",
   "repo": "nanos-secure-sdk",
-  "branch": "more-tool-defs",
+  "branch": "no-newlib-nano",
   "private": false,
-  "rev": "5d3cf61b638ec9ab313f24c419aca0f7ddedc1de",
-  "sha256": "09ry89ikycn172glwr6lp09qyb7228i0d5n5baz0rnixvqwmpw5i"
+  "rev": "77ccb74f522e647e4aa7c968c91a73f29deab072",
+  "sha256": "0d0kwnqlwx35mp834xrzpmrz0kxknnc1scb699f78sglfv7rqgkx"
 }
