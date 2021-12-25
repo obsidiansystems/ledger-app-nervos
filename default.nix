@@ -79,7 +79,7 @@ let
     ".c" ".h" ".gif" "Makefile" ".sh" ".json" ".js" ".bats" ".txt" ".der"
   ];
 
-  tests = import ./tests { inherit pkgs; };
+  tests = import ./tests { inherit ledger-platform; };
 
   build = bolos:
     let

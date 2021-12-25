@@ -3599,8 +3599,8 @@ human-signals@^1.1.1:
   integrity sha512-SEQu7vl8KjNL2eoGBLF3+wAjpsNfA9XMlXAYj/3EdaNfAlxKthD1xjEQfGOUhllCGGJVNY34bRr6lPINhNjyZw==
 
 "hw-app-ckb@https://github.com/obsidiansystems/hw-app-ckb.git":
-  version "0.1.1"
-  resolved "https://github.com/obsidiansystems/hw-app-ckb.git#ea340f322905c0b2e09628b0562138fb5ab0adca"
+  version "0.1.2"
+  resolved "https://github.com/obsidiansystems/hw-app-ckb.git#d348841af4e2a023f760356e98059a45b1d6d6b7"
   dependencies:
     "@ledgerhq/hw-transport" "^5.9.0"
     bech32 "1.1.4"
