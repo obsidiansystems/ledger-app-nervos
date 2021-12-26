@@ -3,6 +3,36 @@
 This project's release branch is `master`.
 This log is written from the perspective of the release branch: when changes hit `master`, they are considered released.
 
+## Unreleased
+
+- Security improvements:
+
+  - Incorporate fuzzer for better testings
+
+  - Harden parsing based on fuzzer results
+
+- Bump ledger nanos SDK to 2.1
+
+### Release Notes
+
+This release has been tested with:
+- CKB-CLI: [babc52ae593474f7fddb80f7c229374203310d6a](https://github.com/nervosnetwork/ckb-cli/tree/ledger-support)
+- CKB-Plugin-Ledger: [v0.2.1 - f03d7f3a2d696d3a48b8be78211452b5679165cb](https://github.com/obsidiansystems/ckb-plugin-ledger/releases/tag/v0.2.1)
+- hw-app-ckb: [v0.1.2 - d348841af4e2a023f760356e98059a45b1d6d6b7](https://github.com/obsidiansystems/hw-app-ckb/releases/tag/v0.1.2)
+
+## v0.5.3 - 2021-12-14
+
+### Release Notes
+
+- Fix potential for overflows when parsing invalid data.
+
+- Behind the scenes dev changes: now uses [Ledger Platform](https://github.com/obsidiansystems/ledger-platform)
+
+This release has been tested with:
+- CKB-CLI: [babc52ae593474f7fddb80f7c229374203310d6a](https://github.com/nervosnetwork/ckb-cli/tree/ledger-support)
+- CKB-Plugin-Ledger: [v0.2.1 - f03d7f3a2d696d3a48b8be78211452b5679165cb](https://github.com/obsidiansystems/ckb-plugin-ledger/releases/tag/v0.2.1)
+- hw-app-ckb: [v0.1.2 - d348841af4e2a023f760356e98059a45b1d6d6b7](https://github.com/obsidiansystems/hw-app-ckb/releases/tag/v0.1.2)
+
 ## v0.5.2 - 2020-11-18
 
 ### Release Notes
