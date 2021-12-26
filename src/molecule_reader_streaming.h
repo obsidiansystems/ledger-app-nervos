@@ -99,6 +99,8 @@ typedef struct {
 
 /* Utilities. */
 
+#define MOL_NULL_BIND(x, k) ((x) ? (k) : NULL)
+
 MOLECULE_API_DECORATOR mol_num_t mol_unpack_number(const uint8_t *src) {
     if (is_le()) {
         uint32_t as_num;
@@ -248,7 +250,7 @@ void* alignment_fix(void* in) {
     mol_rv rv = MolReader_ ## type ## _parse( \
         substate, \
         chunk, \
-        (cb ? MOL_PIC_STRUCT(struct type ## _callbacks, cb->field) : NULL), \
+        MOL_NULL_BIND(cb, MOL_PIC_STRUCT(struct type ## _callbacks, cb->field)), \
         size \
     ); \
     if(rv != COMPLETE) { \
@@ -267,7 +269,7 @@ void* alignment_fix(void* in) {
     struct type ## _state *nextstate = STATE_PUSH(s, field); \
     MolReader_ ## type ## _init_state( \
         nextstate, \
-        (cb ? MOL_PIC_STRUCT(struct type ## _callbacks, cb->field) : NULL) \
+        MOL_NULL_BIND(cb, MOL_PIC_STRUCT(struct type ## _callbacks, cb->field)) \
     ); \
 }
 
