@@ -484,7 +484,7 @@ const struct byte_callbacks hash_type_cb = { cell_script_hash_type };
 const AnnotatedCellInput_cb annotatedCellInput_callbacks = {
     .start = input_start,
     .input = &(CellInput_cb) {
-    .since = &(Uint64_cb) { { blake2b_chunk } },
+        .since = &(Uint64_cb) { { blake2b_chunk } },
         .previous_output = &(OutPoint_cb) {
             .index = &(Uint32_cb) { { input_save_index } }
         }
