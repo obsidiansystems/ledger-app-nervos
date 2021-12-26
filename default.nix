@@ -10,7 +10,7 @@ let
   fetchThunk = ledger-platform.thunkSource;
 
   inherit (ledger-platform)
-    pkgs
+    pkgs ledgerPkgs
     gitignoreNix gitignoreSource
     usbtool
     speculos;
@@ -21,7 +21,7 @@ let
 
   patchSDKBinBash = name: sdk: pkgs.stdenv.mkDerivation {
     # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
-    name =  name + "_patched_bin_bash";
+    name = name + "_patched_bin_bash";
     src = sdk;
     dontBuild = true;
     installPhase = ''
@@ -35,7 +35,6 @@ let
       s = rec {
         name = "s";
         sdk = patchSDKBinBash "nanos-secure-sdk" (fetchThunk ./nix/dep/nanos-secure-sdk);
-        env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 4; };
         target = "TARGET_NANOS";
         targetId = "0x31100004";
         test = true;
@@ -48,7 +47,6 @@ let
       x = rec {
         name = "x";
         sdk = patchSDKBinBash "ledger-nanox-sdk" (fetchThunk ./nix/dep/ledger-nanox-sdk);
-        env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 7; };
         target = "TARGET_NANOX";
         targetId = "0x33000004";
         test = false;
@@ -83,18 +81,19 @@ let
 
   build = bolos:
     let
-      app = pkgs.stdenv.mkDerivation {
+      app = ledgerPkgs.lldClangStdenv.mkDerivation {
         name = "ledger-app-nervos-nano-${bolos.name}";
         inherit src;
         postConfigure = ''
           PATH="$BOLOS_ENV/clang-arm-fropi/bin:$PATH"
+          # hack to get around no tests for cross logic
+          doCheck=${toString (if runTest then bolos.test else false)};
         '';
         nativeBuildInputs = [
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
           pkgs.jq
           speculos.speculos
           usbtool
-          bolos.env.clang
 
           # Test harness
           tests
@@ -103,10 +102,13 @@ let
           pkgs.entr
           pkgs.yarn
         ];
+        makeFlags = [ "USE_NIX=1" ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
         BOLOS_SDK = bolos.sdk;
-        BOLOS_ENV = bolos.env;
+        # note trailing slash
+        CLANGPATH = "${ledgerPkgs.lldClangStdenv.cc}/bin/";
+        GCCPATH = "${ledgerPkgs.stdenv.cc}/bin/";
         DEBUG=if debug then "1" else "0";
         installPhase = ''
           mkdir -p $out
@@ -115,11 +117,11 @@ let
 
           echo
           echo ">>>> Application size: <<<<"
-          size $out/bin/app.elf
+          $SIZE $out/bin/app.elf
         '';
 
-        doCheck = if runTest then bolos.test else false;
         checkTarget = "test";
+        enableParallelBuilding = true;
       };
       ## Note: This has been known to change between sdk upgrades. Make sure to consult
       ## the $COMMON_LOAD_PARAMS in the Makefile.defines of both SDKs
@@ -219,10 +221,10 @@ let
        CCC_ANALYZER_HTML = "${placeholder "out"}";
        CCC_ANALYZER_OUTPUT_FORMAT = "html";
        CCC_ANALYZER_ANALYSIS = analysisOptions;
-       CCC_CC = "${bolos.env}/clang-arm-fropi/bin/clang";
-       CLANG = "${bolos.env}/clang-arm-fropi/bin/clang";
        preBuild = ''
          mkdir -p $out
+         export CCC_CC=$CC
+         export CCC_CXX=$CXX
        '';
        makeFlags = old.makeFlags or []
          ++ [ "CC=${pkgs.clangAnalyzer}/libexec/ccc-analyzer" ];
@@ -280,7 +282,6 @@ in rec {
       };
     };
 
-    inherit (bolos.env) clang gcc;
     inherit (bolos) sdk;
   });
   inherit speculos;

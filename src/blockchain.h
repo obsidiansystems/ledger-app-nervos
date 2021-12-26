@@ -496,8 +496,16 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Bytes_parse                   
     if(s->state_num == 0) {
         MOL_CALL_NUM(s->length);
         s->state_num++;
-        if(size != MOL_NUM_MAX && (s->length * 1 + 4) != size) return REJECT;
-        if(cb && cb->size) MOL_PIC(cb->size)(s->length * 1 + 4);
+        // sizeof(length prefix) + length in items * bytes/item
+        mol_num_t length_in_bytes;
+        if (__builtin_mul_overflow(s->length, 1 /* item size */, &length_in_bytes))
+            return REJECT;
+        mol_num_t length_with_prefix_in_bytes;
+        if (__builtin_add_overflow(length_in_bytes, sizeof(mol_num_t), &length_with_prefix_in_bytes))
+            return REJECT;
+        if(size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
+            return REJECT;
+        if(cb && cb->size) MOL_PIC(cb->size)(length_with_prefix_in_bytes);
     }
     mol_num_t needed=s->length+1-s->state_num;
     mol_num_t available=chunk->length-chunk->consumed;
@@ -583,8 +591,16 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Byte32Vec_parse               
     if(s->state_num == 0) {
         MOL_CALL_NUM(s->length);
         s->state_num++;
-        if(size != MOL_NUM_MAX && (s->length * 32 + 4) != size) return REJECT;
-        if(cb && cb->size) MOL_PIC(cb->size)(s->length * 32 + 4);
+        // sizeof(length prefix) + length in items * bytes/item
+        mol_num_t length_in_bytes;
+        if (__builtin_mul_overflow(s->length, 32 /* item size */, &length_in_bytes))
+            return REJECT;
+        mol_num_t length_with_prefix_in_bytes;
+        if (__builtin_add_overflow(length_in_bytes, sizeof(mol_num_t), &length_with_prefix_in_bytes))
+            return REJECT;
+        if(size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
+            return REJECT;
+        if(cb && cb->size) MOL_PIC(cb->size)(length_with_prefix_in_bytes);
         MOL_INIT_SUBPARSER(item, Byte32);
         if(cb && cb->index) MOL_PIC(cb->index)(s->state_num-1);
     }
@@ -729,8 +745,16 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInputVec_parse            
     if(s->state_num == 0) {
         MOL_CALL_NUM(s->length);
         s->state_num++;
-        if(size != MOL_NUM_MAX && (s->length * 44 + 4) != size) return REJECT;
-        if(cb && cb->size) MOL_PIC(cb->size)(s->length * 44 + 4);
+        // sizeof(length prefix) + length in items * bytes/item
+        mol_num_t length_in_bytes;
+        if (__builtin_mul_overflow(s->length, 44 /* item size */, &length_in_bytes))
+            return REJECT;
+        mol_num_t length_with_prefix_in_bytes;
+        if (__builtin_add_overflow(length_in_bytes, sizeof(mol_num_t), &length_with_prefix_in_bytes))
+            return REJECT;
+        if(size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
+            return REJECT;
+        if(cb && cb->size) MOL_PIC(cb->size)(length_with_prefix_in_bytes);
         MOL_INIT_SUBPARSER(item, CellInput);
         if(cb && cb->index) MOL_PIC(cb->index)(s->state_num-1);
     }
@@ -884,8 +908,16 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDepVec_parse              
     if(s->state_num == 0) {
         MOL_CALL_NUM(s->length);
         s->state_num++;
-        if(size != MOL_NUM_MAX && (s->length * 37 + 4) != size) return REJECT;
-        if(cb && cb->size) MOL_PIC(cb->size)(s->length * 37 + 4);
+        // sizeof(length prefix) + length in items * bytes/item
+        mol_num_t length_in_bytes;
+        if (__builtin_mul_overflow(s->length, 37 /* item size */, &length_in_bytes))
+            return REJECT;
+        mol_num_t length_with_prefix_in_bytes;
+        if (__builtin_add_overflow(length_in_bytes, sizeof(mol_num_t), &length_with_prefix_in_bytes))
+            return REJECT;
+        if(size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
+            return REJECT;
+        if(cb && cb->size) MOL_PIC(cb->size)(length_with_prefix_in_bytes);
         MOL_INIT_SUBPARSER(item, CellDep);
         if(cb && cb->index) MOL_PIC(cb->index)(s->state_num-1);
     }

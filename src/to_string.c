@@ -247,6 +247,7 @@ void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock
 
 // (x, h) -> "x of y"
 void uint64_tuple_to_string(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple) {
+    (void)buff_size; // unused for now
     check_null(dest);
     check_null(tuple);
     size_t out_len = 0;
