@@ -52,7 +52,7 @@ struct Bytes_callbacks {
     void (*start)();
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
-    void (*size)(mol_num_t);
+    bool (*size)(mol_num_t);
     void (*body_chunk)(uint8_t*, mol_num_t);
 };
 
@@ -82,7 +82,7 @@ struct BytesVec_callbacks {
     void (*start)();
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
-    void (*size)(mol_num_t);
+    bool (*size)(mol_num_t);
     void (*length)(mol_num_t);
     void (*index)(mol_num_t);
     void (*offset)(mol_num_t);
@@ -98,7 +98,7 @@ struct Byte32Vec_callbacks {
     void (*start)();
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
-    void (*size)(mol_num_t);
+    bool (*size)(mol_num_t);
     void (*index)(mol_num_t);
     const struct Byte32_callbacks *item;
 };
@@ -183,7 +183,7 @@ struct CellInputVec_callbacks {
     void (*start)();
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
-    void (*size)(mol_num_t);
+    bool (*size)(mol_num_t);
     void (*index)(mol_num_t);
     const struct CellInput_callbacks *item;
 };
@@ -228,7 +228,7 @@ struct CellOutputVec_callbacks {
     void (*start)();
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
-    void (*size)(mol_num_t);
+    bool (*size)(mol_num_t);
     void (*length)(mol_num_t);
     void (*index)(mol_num_t);
     void (*offset)(mol_num_t);
@@ -260,7 +260,7 @@ struct CellDepVec_callbacks {
     void (*start)();
     void (*chunk)(uint8_t*, mol_num_t);
     void (*end)();
-    void (*size)(mol_num_t);
+    bool (*size)(mol_num_t);
     void (*index)(mol_num_t);
     const struct CellDep_callbacks *item;
 };
@@ -503,9 +503,13 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Bytes_parse                   
         mol_num_t length_with_prefix_in_bytes;
         if (__builtin_add_overflow(length_in_bytes, sizeof(mol_num_t), &length_with_prefix_in_bytes))
             return REJECT;
-        if(size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
+        if (size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
             return REJECT;
-        if(cb && cb->size) MOL_PIC(cb->size)(length_with_prefix_in_bytes);
+        if (cb && cb->size) {
+            if (!MOL_PIC(cb->size)(length_with_prefix_in_bytes)) {
+                return REJECT;
+            }
+        }
     }
     mol_num_t needed=s->length+1-s->state_num;
     mol_num_t available=chunk->length-chunk->consumed;
@@ -549,7 +553,11 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_BytesVec_parse                
         case 0:
             MOL_CALL_NUM(s->total_size);
             MOL_INIT_NUM();
-            if(cb && cb->size) MOL_PIC(cb->size)(s->total_size);
+            if (cb && cb->size) {
+                if (!MOL_PIC(cb->size)(s->total_size)) {
+                    return REJECT;
+                }
+            }
             if(s->total_size==4) {
     if(cb && cb->chunk) MOL_PIC(cb->chunk)(chunk->ptr + start_idx, chunk->consumed - start_idx);
     if(cb && cb->end) MOL_PIC(cb->end)();
@@ -598,9 +606,13 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_Byte32Vec_parse               
         mol_num_t length_with_prefix_in_bytes;
         if (__builtin_add_overflow(length_in_bytes, sizeof(mol_num_t), &length_with_prefix_in_bytes))
             return REJECT;
-        if(size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
+        if (size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
             return REJECT;
-        if(cb && cb->size) MOL_PIC(cb->size)(length_with_prefix_in_bytes);
+        if (cb && cb->size) {
+            if (!MOL_PIC(cb->size)(length_with_prefix_in_bytes)) {
+                return REJECT;
+            }
+        }
         MOL_INIT_SUBPARSER(item, Byte32);
         if(cb && cb->index) MOL_PIC(cb->index)(s->state_num-1);
     }
@@ -752,9 +764,13 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellInputVec_parse            
         mol_num_t length_with_prefix_in_bytes;
         if (__builtin_add_overflow(length_in_bytes, sizeof(mol_num_t), &length_with_prefix_in_bytes))
             return REJECT;
-        if(size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
+        if (size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
             return REJECT;
-        if(cb && cb->size) MOL_PIC(cb->size)(length_with_prefix_in_bytes);
+        if (cb && cb->size) {
+            if (!MOL_PIC(cb->size)(length_with_prefix_in_bytes)) {
+                return REJECT;
+            }
+        }
         MOL_INIT_SUBPARSER(item, CellInput);
         if(cb && cb->index) MOL_PIC(cb->index)(s->state_num-1);
     }
@@ -841,7 +857,11 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellOutputVec_parse           
         case 0:
             MOL_CALL_NUM(s->total_size);
             MOL_INIT_NUM();
-            if(cb && cb->size) MOL_PIC(cb->size)(s->total_size);
+            if (cb && cb->size) {
+                if (!MOL_PIC(cb->size)(s->total_size)) {
+                    return REJECT;
+                }
+            }
             if(s->total_size==4) {
     if(cb && cb->chunk) MOL_PIC(cb->chunk)(chunk->ptr + start_idx, chunk->consumed - start_idx);
     if(cb && cb->end) MOL_PIC(cb->end)();
@@ -915,9 +935,13 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_CellDepVec_parse              
         mol_num_t length_with_prefix_in_bytes;
         if (__builtin_add_overflow(length_in_bytes, sizeof(mol_num_t), &length_with_prefix_in_bytes))
             return REJECT;
-        if(size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
+        if (size != MOL_NUM_MAX && (length_with_prefix_in_bytes != size))
             return REJECT;
-        if(cb && cb->size) MOL_PIC(cb->size)(length_with_prefix_in_bytes);
+        if (cb && cb->size) {
+            if (!MOL_PIC(cb->size)(length_with_prefix_in_bytes)) {
+                return REJECT;
+            }
+        }
         MOL_INIT_SUBPARSER(item, CellDep);
         if(cb && cb->index) MOL_PIC(cb->index)(s->state_num-1);
     }
