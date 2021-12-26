@@ -1,13 +1,15 @@
-{ pkgs ? import (import ../nix/dep/ledger-platform/thunk.nix + "/dep/nixpkgs") {} }:
+{ ledger-platform ? import ../nix/dep/ledger-platform {}
+, pkgs ? ledger-platform.pkgs
+}:
 let
   yarn2nix = import deps/yarn2nix { inherit pkgs; };
-  getThunkSrc = (import ./deps/reflex-platform { }).hackGet;
+  getThunkSrc = ledger-platform.thunkSource;
   npmDepsNix = pkgs.runCommand "npm-deps.nix" {} ''
     ${yarn2nix}/bin/yarn2nix --offline ${./yarn.lock} > $out
   '';
   npmPackageNix = pkgs.runCommand "npm-package.nix" {} ''
     # We sed hw-app-ckb to a constant here, so that the package.json can be whatever; we're overriding it anyways.
-    ${yarn2nix}/bin/yarn2nix --template <(sed 's/hw-app-ckb".*$/hw-app-ckb": "0.1.0",/' ${./package.json}) > $out
+    ${yarn2nix}/bin/yarn2nix --template <(sed 's/hw-app-ckb".*$/hw-app-ckb": "0.1.2",/' ${./package.json}) > $out
   '';
   nixLib = yarn2nix.nixLib;
 
@@ -36,9 +38,9 @@ let
           ];
         };
 
-        "usb@1.6.3" = {
-          key = super."usb@1.6.3".key;
-          drv = super."usb@1.6.3".drv.overrideAttrs (attrs: {
+        "usb@1.9.1" = {
+          key = super."usb@1.9.1".key;
+          drv = super."usb@1.9.1".drv.overrideAttrs (attrs: {
             nativeBuildInputs = [ pkgs.python3 pkgs.systemd pkgs.v8_5_x pkgs.nodejs pkgs.libusb1 ];
             dontBuild = false;
             buildPhase = ''
@@ -48,9 +50,9 @@ let
           });
         };
 
-        "node-hid@1.3.0" = {
-          key = super."node-hid@1.3.0".key;
-          drv = super."node-hid@1.3.0".drv.overrideAttrs (attrs: {
+        "node-hid@2.1.1" = {
+          key = super."node-hid@2.1.1".key;
+          drv = super."node-hid@2.1.1".drv.overrideAttrs (attrs: {
             nativeBuildInputs = [ pkgs.python3 pkgs.systemd pkgs.v8_5_x pkgs.nodejs pkgs.libusb1 pkgs.pkg-config ];
             dontBuild = false;
             buildPhase = ''
@@ -60,22 +62,10 @@ let
           });
         };
 
-        "node-hid@1.3.1" = {
-          key = super."node-hid@1.3.1".key;
-          drv = super."node-hid@1.3.1".drv.overrideAttrs (attrs: {
-            nativeBuildInputs = [ pkgs.python3 pkgs.systemd pkgs.v8_5_x pkgs.nodejs pkgs.libusb1 pkgs.pkg-config ];
-            dontBuild = false;
-            buildPhase = ''
-              ln -s ${nixLib.linkNodeDeps { name=attrs.name; dependencies=attrs.passthru.nodeBuildInputs; }} node_modules
-              ${pkgs.nodePackages.node-gyp}/bin/node-gyp rebuild --nodedir=${pkgs.lib.getDev pkgs.nodejs} # /include/node
-            '';
-          });
-        };
-
-        "hw-app-ckb@0.1.0" = super._buildNodePackage rec {
+        "hw-app-ckb@0.1.2" = super._buildNodePackage rec {
           key = "hw-app-ckb";
-          version = "0.1.0";
-          src = getThunkSrc ./hw-app-ckb;
+          version = "0.1.2";
+          src = getThunkSrc ./deps/hw-app-ckb;
           buildPhase = ''
             echo "NODE_GYP TYME"
             echo $nodeModules

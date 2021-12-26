@@ -88,7 +88,7 @@ let
     ".c" ".txt" ".sh"
   ];
 
-  tests = import ./tests { inherit pkgs; };
+  tests = import ./tests { inherit ledger-platform; };
 
   build = bolos:
     let

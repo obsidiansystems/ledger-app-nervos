@@ -7,7 +7,7 @@
 	},
 	"bin": "run-tests.js",
 	"devDependencies": {
-    "flow-bin": "^0.109.0",
+		"flow-bin": "^0.109.0",
 		"babel-cli": "^6.26.0",
 		"babel-eslint": "^8.0.2",
 		"babel-preset-env": "^1.7.0",
@@ -32,8 +32,8 @@
 	},
 	"dependencies": {
 		"hw-app-ckb": "https://github.com/obsidiansystems/hw-app-ckb.git",
-    "@ledgerhq/hw-transport": "^6.11.2",
-    "bech32": "1.1.4",
+		"@ledgerhq/hw-transport": "^6.11.2",
+		"bech32": "1.1.4",
 		"@ledgerhq/hw-transport-node-speculos": "6.11.2",
 		"@ledgerhq/hw-transport-node-hid": "6.11.2",
 		"bip32-path": "^0.4.2",
