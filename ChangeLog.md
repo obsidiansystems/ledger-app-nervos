@@ -11,6 +11,8 @@ This log is written from the perspective of the release branch: when changes hit
 
   - Harden parsing based on fuzzer results
 
+- Bump ledger nanos SDK to 2.1
+
 ### Release Notes
 
 This release has been tested with:
