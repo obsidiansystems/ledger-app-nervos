@@ -635,7 +635,9 @@ void outputs_end(void) {
 
 
 void validate_output_data_start(mol_num_t idx) {
-    G.cell_state.is_dao = !((G.u.tx.dao_bitmask & 1<<idx) == 0);
+    typeof(G.u.tx.dao_bitmask) bit =
+        ((typeof(G.u.tx.dao_bitmask))1) << idx;
+    G.cell_state.is_dao = (G.u.tx.dao_bitmask & bit) != 0;
 }
 
 void finish_output_cell_data(void) {
