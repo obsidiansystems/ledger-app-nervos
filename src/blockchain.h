@@ -481,16 +481,96 @@ MOLECULE_API_DECORATOR  mol_rv          MolReader_WitnessArgs_parse             
  * Reader Functions
  */
 
-#define                                 MolReader_Uint32_init_state(g, cbs)             mol_bytes_init_state(&(g->state), &((cbs)->cb))
-#define                                 MolReader_Uint32_parse(g, c, cbs, sz)           mol_parse_bytes(&(g->state), c, &((cbs)->cb), 4)
-#define                                 MolReader_Uint64_init_state(g, cbs)             mol_bytes_init_state(&(g->state), &((cbs)->cb))
-#define                                 MolReader_Uint64_parse(g, c, cbs, sz)           mol_parse_bytes(&(g->state), c, &((cbs)->cb), 8)
-#define                                 MolReader_Uint128_init_state(g, cbs)            mol_bytes_init_state(&(g->state), &((cbs)->cb))
-#define                                 MolReader_Uint128_parse(g, c, cbs, sz)          mol_parse_bytes(&(g->state), c, &((cbs)->cb), 16)
-#define                                 MolReader_Byte32_init_state(g, cbs)             mol_bytes_init_state(&(g->state), &((cbs)->cb))
-#define                                 MolReader_Byte32_parse(g, c, cbs, sz)           mol_parse_bytes(&(g->state), c, &((cbs)->cb), 32)
-#define                                 MolReader_Uint256_init_state(g, cbs)            mol_bytes_init_state(&(g->state), &((cbs)->cb))
-#define                                 MolReader_Uint256_parse(g, c, cbs, sz)          mol_parse_bytes(&(g->state), c, &((cbs)->cb), 32)
+#define                                 MolReader_Uint32_init_state(g, cbs)             \
+mol_bytes_init_state( \
+    &(g->state), \
+    ({ \
+        Uint32_cb *__cbs = cbs; \
+        MOL_NULL_BIND(__cbs, &__cbs->cb); \
+    }))
+
+#define                                 MolReader_Uint32_parse(g, c, cbs, sz)           \
+mol_parse_bytes( \
+    &(g->state), \
+    c, \
+    ({ \
+        Uint32_cb *__cbs = cbs; \
+        MOL_NULL_BIND(__cbs, &__cbs->cb); \
+    }), \
+    4)
+
+#define                                 MolReader_Uint64_init_state(g, cbs)             \
+mol_bytes_init_state( \
+    &(g->state), \
+    ({ \
+        Uint64_cb *__cbs = cbs; \
+        MOL_NULL_BIND(__cbs, &__cbs->cb); \
+    }))
+
+#define                                 MolReader_Uint64_parse(g, c, cbs, sz)           \
+mol_parse_bytes( \
+    &(g->state), \
+    c, \
+    ({ \
+        Uint64_cb *__cbs = cbs; \
+        MOL_NULL_BIND(__cbs, &__cbs->cb); \
+    }), \
+    8)
+
+#define                                 MolReader_Uint128_init_state(g, cbs)            \
+mol_bytes_init_state( \
+    &(g->state), \
+    ({ \
+        Uint128_cb *__cbs = cbs; \
+        MOL_NULL_BIND(__cbs, &__cbs->cb); \
+    }))
+
+#define                                 MolReader_Uint128_parse(g, c, cbs, sz)          \
+mol_parse_bytes( \
+    &(g->state), \
+    c, \
+    ({ \
+        Uint128_cb *__cbs = cbs; \
+        MOL_NULL_BIND(__cbs, &__cbs->cb); \
+    }), \
+    16)
+
+#define                                 MolReader_Byte32_init_state(g, cbs)             \
+mol_bytes_init_state( \
+    &(g->state), \
+    ({ \
+        Byte32_cb *__cbs = cbs; \
+        MOL_NULL_BIND(__cbs, &__cbs->cb); \
+    }))
+
+#define                                 MolReader_Byte32_parse(g, c, cbs, sz)           \
+mol_parse_bytes( \
+    &(g->state), \
+    c, \
+    ({ \
+        Byte32_cb *__cbs = cbs; \
+        MOL_NULL_BIND(__cbs, &__cbs->cb); \
+    }), \
+    32)
+
+#define                                 MolReader_Uint256_init_state(g, cbs)            \
+mol_bytes_init_state( \
+    &(g->state), \
+    ({ \
+        Uint256_cb *__cbs = cbs; \
+        MOL_NULL_BIND(__cbs, &__cbs->cb); \
+    }))
+
+#define                                 MolReader_Uint256_parse(g, c, cbs, sz)          \
+mol_parse_bytes( \
+    &(g->state), \
+    c, \
+    ({ \
+        Uint256_cb *__cbs = cbs; \
+        MOL_NULL_BIND(__cbs, &__cbs->cb); \
+    }), \
+    32)
+
 MOLECULE_API_DECORATOR  mol_rv          MolReader_Bytes_parse                           (struct Bytes_state *s, struct mol_chunk *chunk, const struct Bytes_callbacks *cb, mol_num_t size) {
     mol_num_t start_idx = chunk->consumed;
     if(s->state_num == 0) {
