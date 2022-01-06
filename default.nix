@@ -107,6 +107,7 @@ let
         postConfigure = ''
           # hack to get around no tests for cross logic
           doCheck=${toString (if runTest then bolos.test else false)};
+          export USE_NIX=1
         '';
         nativeBuildInputs = [
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
@@ -121,7 +122,6 @@ let
           pkgs.entr
           pkgs.yarn
         ];
-        makeFlags = [ "USE_NIX=1" ];
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
         BOLOS_SDK = bolos.sdk;
@@ -131,7 +131,9 @@ let
 
         # Do both ways, so nix builds and users running make both work.
         preBuild = setAssembler;
-        shellHook = setAssembler;
+        shellHook = ''
+          export USE_NIX=1
+        '' + setAssembler;
 
         installPhase = ''
           mkdir -p $out
