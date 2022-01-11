@@ -3,7 +3,9 @@
 This project's release branch is `master`.
 This log is written from the perspective of the release branch: when changes hit `master`, they are considered released.
 
-## Unreleased
+## v0.5.4 - 2021-12-14
+
+### Release Notes
 
 - Security improvements:
 
@@ -12,8 +14,6 @@ This log is written from the perspective of the release branch: when changes hit
   - Harden parsing based on fuzzer results
 
 - Bump ledger nanos SDK to 2.1
-
-### Release Notes
 
 This release has been tested with:
 - CKB-CLI: [babc52ae593474f7fddb80f7c229374203310d6a](https://github.com/nervosnetwork/ckb-cli/tree/ledger-support)
