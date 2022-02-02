@@ -1,0 +1,90 @@
+name: Building app
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  nanoS_build:
+    name: Nano S build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    container:
+      image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+
+    steps:
+    - name: Clone
+      uses: actions/checkout@v2
+
+    - name: Build
+      run: |
+        make clean
+        make
+
+    - name: Upload app binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: nanoS-app
+        path: bin
+
+  nanoX_build:
+    name: Nano X build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    container:
+      image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+
+    steps:
+    - name: Clone
+      uses: actions/checkout@v2
+
+    - name: Build
+      run: |
+        make clean
+        make BOLOS_SDK=$NANOX_SDK
+
+  tests:
+    name: Functional tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - nanoS_build
+
+    steps:
+    - name: Clone
+      uses: actions/checkout@v2
+
+    - name: Download app binary
+      uses: actions/download-artifact@v2
+      with:
+        name: nanoS-app
+        path: bin
+
+    - name: Install Speculos
+      run: |
+        sudo apt-get update && sudo apt-get install -y qemu-user-static
+        pip install --extra-index-url https://test.pypi.org/simple/ speculos
+
+    - name: Setup node
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16
+
+    - name: Installing JS dependencies
+      run: |
+        cd tests
+        npm install
+
+    - name: Running tests
+      run: ./tests/node_modules/.bin/mocha tests/ --exit --require tests/hooks.js --config tests/.mocharc.js "$@"
+      env:
+        LEDGER_APP: bin/app.elf
