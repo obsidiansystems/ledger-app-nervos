@@ -3,6 +3,7 @@
 /dep
 /obj
 
+node_modules/
 src/glyphs.h
 src/glyphs.c
 result*
