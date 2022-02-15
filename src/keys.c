@@ -111,8 +111,8 @@ size_t sign(uint8_t *const out, size_t const out_size, key_pair_t const *const p
     int const s_size_sat = (s_size > 32) ? 32 : s_size;
     uint8_t const *const s = sig + 4 + r_size + 2 + (s_size > 32 ? 1 : 0);
 
-    os_memmove(out + 32 - r_size_sat, r, r_size_sat);
-    os_memmove(out + 64 - s_size_sat, s, s_size_sat);
+    memcpy(out + 32 - r_size_sat, r, r_size_sat);
+    memcpy(out + 64 - s_size_sat, s, s_size_sat);
 
     out[64] = 0;
     if (info & CX_ECCINFO_PARITY_ODD) {

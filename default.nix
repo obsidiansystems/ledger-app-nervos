@@ -10,7 +10,7 @@ let
   fetchThunk = ledger-platform.thunkSource;
 
   inherit (ledger-platform)
-    pkgs
+    pkgs ledgerPkgs
     gitignoreNix gitignoreSource
     usbtool
     speculos;
@@ -21,7 +21,7 @@ let
 
   patchSDKBinBash = name: sdk: pkgs.stdenv.mkDerivation {
     # Replaces SDK's Makefile instances of /bin/bash with /bin/sh
-    name =  name + "_patched_bin_bash";
+    name = name + "_patched_bin_bash";
     src = sdk;
     dontBuild = true;
     installPhase = ''
@@ -35,7 +35,6 @@ let
       s = rec {
         name = "s";
         sdk = patchSDKBinBash "nanos-secure-sdk" (fetchThunk ./nix/dep/nanos-secure-sdk);
-        env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 4; };
         target = "TARGET_NANOS";
         targetId = "0x31100004";
         test = true;
@@ -48,7 +47,6 @@ let
       x = rec {
         name = "x";
         sdk = patchSDKBinBash "ledger-nanox-sdk" (fetchThunk ./nix/dep/ledger-nanox-sdk);
-        env = pkgs.callPackage ./nix/bolos-env.nix { clangVersion = 7; };
         target = "TARGET_NANOX";
         targetId = "0x33000004";
         test = false;
@@ -62,39 +60,60 @@ let
 
   gitIgnoredSrc = gitignoreSource ./.;
 
-  src0 = lib.sources.cleanSourceWith {
+  makeFilterPass0 = dirs: bad: lib.sources.cleanSourceWith {
     src = gitIgnoredSrc;
     filter = p: _: let
       p' = baseNameOf p;
       srcStr = builtins.toString ./.;
     in p' != "glyphs.c" && p' != "glyphs.h"
       && (p == (srcStr + "/Makefile")
-          || lib.hasPrefix (srcStr + "/src") p
-          || lib.hasPrefix (srcStr + "/glyphs") p
-          || lib.hasPrefix (srcStr + "/tests") p
+          || lib.any (dir: lib.hasPrefix (srcStr + "/" + dir) p) dirs
+          && bad srcStr p
          );
   };
+
+  src0 = makeFilterPass0
+    ["src" "glyphs" "tests"]
+    (_: _: true);
 
   src = lib.sources.sourceFilesBySuffices src0 [
     ".c" ".h" ".gif" "Makefile" ".sh" ".json" ".js" ".bats" ".txt" ".der"
   ];
 
-  tests = import ./tests { inherit pkgs; };
+  src0-fuzzing = makeFilterPass0
+    ["fuzzing"]
+    (srcStr: p: !lib.hasPrefix (srcStr + "/fuzzing/build") p);
+
+  src-fuzzing = lib.sources.sourceFilesBySuffices src0-fuzzing [
+    ".c" ".txt" ".sh"
+  ];
+
+  tests = import ./tests { inherit ledger-platform; };
 
   build = bolos:
     let
-      app = pkgs.stdenv.mkDerivation {
+      # We want GNU as not LLVM as, which doesn't something completely
+      # different, or Clang's internal assembler which doesn't take quite the
+      # same syntax. It also expects a C compiler to not complain about extra
+      # args, do C pre-processing, etc. We could get clang to use GNU as, but
+      # we'll just use GCC as they presumably do for this.
+      setAssembler = ''
+        export AS=${ledgerPkgs.gccStdenv.cc}/bin/${ledgerPkgs.clangStdenv.cc.targetPrefix}gcc
+      '';
+
+      app = ledgerPkgs.lldClangStdenv.mkDerivation {
         name = "ledger-app-nervos-nano-${bolos.name}";
         inherit src;
         postConfigure = ''
-          PATH="$BOLOS_ENV/clang-arm-fropi/bin:$PATH"
+          # hack to get around no tests for cross logic
+          doCheck=${toString (if runTest then bolos.test else false)};
+          export USE_NIX=1
         '';
         nativeBuildInputs = [
           (pkgs.python3.withPackages (ps: [ps.pillow ps.ledgerblue]))
           pkgs.jq
           speculos.speculos
           usbtool
-          bolos.env.clang
 
           # Test harness
           tests
@@ -106,8 +125,16 @@ let
         TARGET = bolos.target;
         GIT_DESCRIBE = gitDescribe;
         BOLOS_SDK = bolos.sdk;
-        BOLOS_ENV = bolos.env;
+        # note trailing slash
+        GCCPATH = "${ledgerPkgs.stdenv.cc}/bin/";
         DEBUG=if debug then "1" else "0";
+
+        # Do both ways, so nix builds and users running make both work.
+        preBuild = setAssembler;
+        shellHook = ''
+          export USE_NIX=1
+        '' + setAssembler;
+
         installPhase = ''
           mkdir -p $out
           cp -R bin $out
@@ -115,12 +142,28 @@ let
 
           echo
           echo ">>>> Application size: <<<<"
-          size $out/bin/app.elf
+          $SIZE $out/bin/app.elf
         '';
 
-        doCheck = if runTest then bolos.test else false;
         checkTarget = "test";
+        enableParallelBuilding = true;
       };
+      fuzzing = pkgs.clangStdenv.mkDerivation {
+        name = "ledger-app-nervos-nano-${bolos.name}-fuzzing";
+        inherit src;
+        postUnpack = ''
+          set -x
+          sourceRoot+=/fuzzing
+          cp -R --no-preserve=mode "${src-fuzzing}/fuzzing" "$sourceRoot"
+          set +x
+        '';
+        nativeBuildInputs = with pkgs.buildPackages; [
+          (pkgs.python3.withPackages (ps: [ps.pillow]))
+          cmake
+        ];
+        BOLOS_SDK = bolos.sdk;
+      };
+      ## Note: This has been known to change between sdk upgrades. Make sure to consult
       ## Note: This has been known to change between sdk upgrades. Make sure to consult
       ## the $COMMON_LOAD_PARAMS in the Makefile.defines of both SDKs
         nvramDataSize = appDir: deviceName:
@@ -153,7 +196,7 @@ let
 
       ledgerApp = app;
     in {
-      inherit app;
+      inherit app fuzzing;
 
       release = rec {
         app = mkRelease "nervos" "Nervos" ledgerApp;
@@ -219,10 +262,10 @@ let
        CCC_ANALYZER_HTML = "${placeholder "out"}";
        CCC_ANALYZER_OUTPUT_FORMAT = "html";
        CCC_ANALYZER_ANALYSIS = analysisOptions;
-       CCC_CC = "${bolos.env}/clang-arm-fropi/bin/clang";
-       CLANG = "${bolos.env}/clang-arm-fropi/bin/clang";
-       preBuild = ''
+       preBuild = (old.preBuild or "") + ''
          mkdir -p $out
+         export CCC_CC=$CC
+         export CCC_CXX=$CXX
        '';
        makeFlags = old.makeFlags or []
          ++ [ "CC=${pkgs.clangAnalyzer}/libexec/ccc-analyzer" ];
@@ -280,7 +323,6 @@ in rec {
       };
     };
 
-    inherit (bolos.env) clang gcc;
     inherit (bolos) sdk;
   });
   inherit speculos;

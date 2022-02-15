@@ -13,7 +13,7 @@ GIT_DESCRIBE ?= $(shell git describe --tags --abbrev=8 --always --long --dirty 2
 VERSION_TAG ?= $(shell echo "$(GIT_DESCRIBE)" | cut -f1 -d-)
 APPVERSION_M=0
 APPVERSION_N=5
-APPVERSION_P=2
+APPVERSION_P=4
 APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
 
 # Only warn about version tags if specified/inferred
@@ -103,6 +103,7 @@ endif
 ##############
 # Compiler #
 ##############
+
 ifneq ($(BOLOS_ENV),)
 $(info BOLOS_ENV=$(BOLOS_ENV))
 CLANGPATH := $(BOLOS_ENV)/clang-arm-fropi/bin/
@@ -111,21 +112,38 @@ CFLAGS += -idirafter $(BOLOS_ENV)/gcc-arm-none-eabi-5_3-2016q1/arm-none-eabi/inc
 else
 $(info BOLOS_ENV is not set: falling back to CLANGPATH and GCCPATH)
 endif
+
 ifeq ($(CLANGPATH),)
 $(info CLANGPATH is not set: clang will be used from PATH)
 endif
 ifeq ($(GCCPATH),)
-$(info GCCPATH is not set: arm-none-eabi-* will be used from PATH)
+$(info GCCPATH is not set: $(TOOL_PREFIX)* will be used from PATH)
 endif
 
+ifneq ($(USE_NIX),)
+## asssume Nix toolchain for now
+# More specific toolchain prefix
+TOOL_PREFIX = armv6m-unknown-none-eabi-
+# no sysroots with Nix, empty on purpose
+USE_SYSROOT =
+else
+# Will not be defined if using SDK without our PR.
+TOOL_PREFIX ?= arm-none-eabi-
+# Need to override defaults harder, ?= will not work here.
 CC       := $(CLANGPATH)clang
+AS       := $(GCCPATH)$(TOOL_PREFIX)gcc
+endif
 
 CFLAGS   += -O3 -Os -Wall -Wextra
+ifneq ($(USE_NIX),)
+CFLAGS   += -mcpu=sc000
+endif
 
-AS     := $(GCCPATH)arm-none-eabi-gcc
-
-LD       := $(GCCPATH)arm-none-eabi-gcc
+LD       := $(GCCPATH)$(TOOL_PREFIX)gcc
 LDFLAGS  += -O3 -Os
+ifneq ($(USE_NIX),)
+LDFLAGS  += -mcpu=sc000
+endif
 LDLIBS   += -lm -lgcc -lc
 
 # import rules to compile glyphs(/pone)

@@ -9,7 +9,7 @@
 #include "protocol.h"
 #include "ui.h"
 
-#define MOL_PIC(x) ((void (*)()) PIC(x))
+#define MOL_PIC(x) ((typeof(x)) PIC(x))
 #define MOL_PIC_STRUCT(t,x) (x?((t*) PIC(x)):NULL)
 #define mol_printf(...) PRINTF(__VA_ARGS__)
 #define mol_emerg_reject THROW(EXC_MEMORY_ERROR)
@@ -264,19 +264,23 @@ unsafe:
 
 /***********************************************************/
 
-#define REJECT(msg, ...)                                                                                               \
-    {                                                                                                                  \
+#define REJECT_RETURN(ret_val, msg, ...)                                                                               \
+    do {                                                                                                               \
         PRINTF("Rejecting: " msg "\n", ##__VA_ARGS__);                                                                 \
         G.maybe_transaction.unsafe = true;                                                                             \
-        return;                                                                                                        \
-    }
+        return ret_val;                                                                                                \
+    } while(false)
 
-#define REJECT_HARD(msg, ...)                                                                                          \
-    {                                                                                                                  \
-        PRINTF("Can't sign: " msg "\n", ##__VA_ARGS__);                                                                   \
+#define REJECT(msg, ...) REJECT_RETURN((void)0, msg, ##__VA_ARGS__)
+
+#define REJECT_HARD_RETURN(ret_val, msg, ...)                                                                          \
+    do {                                                                                                               \
+        PRINTF("Can't sign: " msg "\n", ##__VA_ARGS__);                                                                \
         G.maybe_transaction.hard_reject = true;                                                                        \
-        return;                                                                                                        \
-    }
+        return ret_val;                                                                                                \
+    } while(false)
+
+#define REJECT_HARD(msg, ...) REJECT_HARD_RETURN((void)0, msg, ##__VA_ARGS__)
 
 void prep_lock_arg(bip32_path_t *key, standard_lock_arg_t *destination) {
     cx_ecfp_public_key_t public_key;
@@ -313,7 +317,7 @@ void finish_context_txn(void) {
     uint8_t tx_hash[32];
     blake2b_finish_hash(tx_hash, 32, &G.u.inp.input_state.hash_state);
     blake2b_chunk(tx_hash, 32);
-    blake2b_chunk(&G.u.inp.input_state.index, sizeof(G.u.inp.input_state.index));
+    blake2b_chunk((uint8_t *) &G.u.inp.input_state.index, sizeof(G.u.inp.input_state.index));
     explicit_bzero(&G.u.inp.input_state, sizeof(G.u.inp.input_state));
 }
 
@@ -421,18 +425,22 @@ void cell_type_code_hash(uint8_t* buf, mol_num_t len) {
         REJECT("Only the DAO type script is supported with contract data by default; allow contract data in settings to sign this");
 }
 
-void cell_type_arg_length(mol_num_t length) {
-    if(!G.cell_state.active) return;
+bool cell_type_arg_length(mol_num_t length) {
+    if(!G.cell_state.active) return true;
     // DAO is empty.
     if(length != 4 && G.cell_state.is_dao)
-        REJECT("DAO cell has nonempty args");
+        REJECT_RETURN(true, "DAO cell has nonempty args");
     if(length != 4 && N_data.contract_data_type == DISALLOW_CONTRACT_DATA)
-        REJECT("Cannot handle cell arguments");
+        REJECT_RETURN(true, "Cannot handle cell arguments");
+    return true;
 }
 
-void set_cell_data_size(mol_num_t size) {
-    if(!G.cell_state.active) return;
-    G.cell_state.data_size = MIN(15, size-4); // size includes the 4-byte size header in Bytes
+bool set_cell_data_size(mol_num_t size) {
+    if (!G.cell_state.active) true;
+    if (size < 4)
+        REJECT_HARD_RETURN(false, "Can't sign: Size too small for expected length prefix.\n");
+    G.cell_state.data_size = MIN(15, size - 4); // size includes the 4-byte size header in Bytes
+    return true;
 }
 
 void check_cell_data_data_chunk(uint8_t *buf, mol_num_t length) {
@@ -476,7 +484,7 @@ const struct byte_callbacks hash_type_cb = { cell_script_hash_type };
 const AnnotatedCellInput_cb annotatedCellInput_callbacks = {
     .start = input_start,
     .input = &(CellInput_cb) {
-    .since = &(Uint64_cb) { { blake2b_chunk } },
+        .since = &(Uint64_cb) { { blake2b_chunk } },
         .previous_output = &(OutPoint_cb) {
             .index = &(Uint32_cb) { { input_save_index } }
         }
@@ -627,7 +635,9 @@ void outputs_end(void) {
 
 
 void validate_output_data_start(mol_num_t idx) {
-    G.cell_state.is_dao = !((G.u.tx.dao_bitmask & 1<<idx) == 0);
+    typeof(G.u.tx.dao_bitmask) bit =
+        ((typeof(G.u.tx.dao_bitmask))1) << idx;
+    G.cell_state.is_dao = (G.u.tx.dao_bitmask & bit) != 0;
 }
 
 void finish_output_cell_data(void) {
@@ -653,6 +663,8 @@ void finalize_raw_transaction(void) {
     switch(G.maybe_transaction.v.tag) {
         case OPERATION_TAG_NONE:
             break;
+        case OPERATION_TAG_MULTI_INPUT_TRANSFER:
+            REJECT("This is a tag just for rendering, and should just be set below");
         case OPERATION_TAG_NOT_SET:
         case OPERATION_TAG_PLAIN_TRANSFER:
             if (G.distinct_input_sources > 1) {
@@ -747,9 +759,13 @@ const struct AnnotatedRawTransaction_callbacks AnnotatedRawTransaction_callbacks
     .end = finalize_raw_transaction
 };
 
-void init_bip32(mol_num_t size) {
-    if(size-4 > sizeof(G.u.temp_key.components)) REJECT_HARD("Too many components in bip32 path");
+bool init_bip32(mol_num_t size) {
+    if (size < 4)
+        REJECT_HARD_RETURN(false, "Can't sign: Size too small for expected length prefix.\n");
+    if (size - 4 > sizeof(G.u.temp_key.components))
+        REJECT_HARD_RETURN(false, "Can't sign: Too many components in bip32 path");
     G.u.temp_key.length=0;
+    return true;
 }
 
 void bip32_component(uint8_t* buf, mol_num_t len) {
@@ -808,10 +824,14 @@ void witness_offsets(struct WitnessArgs_state *state) {
     }
 }
 
-void witness_lock_arg_size(mol_num_t size) {
-    if (!G.signing_multisig_input) return;
-    uint32_t size_adjusted = size-4;
-    blake2b_incremental_hash((void*) &size_adjusted, 4, &G.hash_state);
+bool witness_lock_arg_size(mol_num_t size) {
+    if (!G.signing_multisig_input) return true;
+    if (size < 4) {
+        REJECT_HARD_RETURN(false, "Can't sign: Size too small for expected length prefix.\n");
+    }
+    uint32_t size_adjusted = size - 4;
+    blake2b_incremental_hash((void*) &size_adjusted, sizeof(uint32_t), &G.hash_state);
+    return true;
 }
 
 // multisig_script | Signature1 | Signature2 | ...
@@ -883,11 +903,16 @@ void begin_witness(mol_num_t index) {
     }
 }
 
-void hash_witness_length(mol_num_t size) {
-    if(!(G.u.tx.is_first_witness)) {
-        uint64_t size_as_64 = size-4;
-        blake2b_incremental_hash((void*) &size_as_64, 8, &G.hash_state);
+bool hash_witness_length(mol_num_t size) {
+    if (size < 4) {
+        PRINTF("Can't sign: Size too small for expected length prefix.\n");
+        return false;
     }
+    if (!(G.u.tx.is_first_witness)) {
+        uint64_t size_as_64 = size - 4;
+        blake2b_incremental_hash((void*) &size_as_64, sizeof(uint64_t), &G.hash_state);
+    }
+    return true;
 }
 
 void process_witness(uint8_t *buff, mol_num_t buff_size) {
@@ -1266,6 +1291,7 @@ static size_t handle_apdu_sign_message_hash_impl(void) {
 }
 
 size_t handle_apdu_sign_message_hash(uint8_t instruction) {
+  (void)instruction; // intentionally unused
   if(N_data.sign_hash_type == SIGN_HASH_ON)
     return handle_apdu_sign_message_hash_impl();
   else
