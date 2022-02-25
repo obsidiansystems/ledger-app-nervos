@@ -29,7 +29,7 @@ void require_pin(void) {
 
 __attribute__((noreturn)) bool exit_app(void) {
 #ifdef BAKING_APP
-#ifndef TARGET_NANOX
+#if !defined(TARGET_NANOX) && !defined(TARGET_NANOS2)
     require_pin();
 #endif
 #endif

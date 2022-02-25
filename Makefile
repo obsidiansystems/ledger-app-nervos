@@ -31,10 +31,10 @@ else
   $(info COMMIT=$(COMMIT))
 endif
 
-ifeq ($(TARGET_NAME),TARGET_NANOX)
-ICONNAME=icons/nano-x-nervos.gif
-else
+ifeq ($(TARGET_NAME),TARGET_NANOS)
 ICONNAME=icons/nano-s-nervos.gif
+else
+ICONNAME=icons/nano-x-nervos.gif
 endif
 
 ################
@@ -62,23 +62,22 @@ DEFINES   += COMMIT=\"$(COMMIT)\" APPVERSION_N=$(APPVERSION_N) APPVERSION_P=$(AP
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 APP_LOAD_PARAMS += --appFlags 0x240 # with BLE support
-DEFINES   += IO_SEPROXYHAL_BUFFER_SIZE_B=300
 DEFINES   += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000
 DEFINES   += HAVE_BLE_APDU # basic ledger apdu transport over BLE
+SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
+endif
 
+ifeq ($(TARGET_NAME),TARGET_NANOS)
+DEFINES   += IO_SEPROXYHAL_BUFFER_SIZE_B=128
+DEFINES   += HAVE_UX_FLOW
+else
+DEFINES   += IO_SEPROXYHAL_BUFFER_SIZE_B=300
 DEFINES   += HAVE_GLO096 HAVE_UX_FLOW
 DEFINES   += HAVE_BAGL BAGL_WIDTH=128 BAGL_HEIGHT=64
 DEFINES   += HAVE_BAGL_ELLIPSIS # long label truncation feature
 DEFINES   += HAVE_BAGL_FONT_OPEN_SANS_REGULAR_11PX
 DEFINES   += HAVE_BAGL_FONT_OPEN_SANS_EXTRABOLD_11PX
 DEFINES   += HAVE_BAGL_FONT_OPEN_SANS_LIGHT_16PX
-
-SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
-SDK_SOURCE_PATH  += lib_ux
-else
-DEFINES   += IO_SEPROXYHAL_BUFFER_SIZE_B=128
-DEFINES   += HAVE_UX_FLOW
-SDK_SOURCE_PATH  += lib_ux
 endif
 
 # Enabling debug PRINTF
@@ -88,10 +87,10 @@ ifneq ($(DEBUG),0)
         DEFINES += NERVOS_DEBUG
         DEFINES += STACK_MEASURE
 
-        ifeq ($(TARGET_NAME),TARGET_NANOX)
-                DEFINES   += HAVE_PRINTF PRINTF=mcu_usb_printf
-        else
+        ifeq ($(TARGET_NAME),TARGET_NANOS)
                 DEFINES   += HAVE_PRINTF PRINTF=screen_printf
+        else
+                DEFINES   += HAVE_PRINTF PRINTF=mcu_usb_printf
         endif
 else
         DEFINES   += PRINTF\(...\)=
@@ -150,10 +149,10 @@ include $(BOLOS_SDK)/Makefile.glyphs
 
 ### computed variables
 APP_SOURCE_PATH  += src
-SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl
+SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_ux
 
 ### U2F support (wallet app only)
-SDK_SOURCE_PATH  += lib_u2f lib_stusb_impl
+SDK_SOURCE_PATH  += lib_u2f
 
 DEFINES   += USB_SEGMENT_SIZE=64
 
