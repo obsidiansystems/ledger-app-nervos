@@ -52,6 +52,23 @@ jobs:
         make clean
         make BOLOS_SDK=$NANOX_SDK
 
+  nanoSP_build:
+    name: Nano S+ build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    container:
+      image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+
+    steps:
+    - name: Clone
+      uses: actions/checkout@v2
+
+    - name: Build
+      run: |
+        make clean
+        make BOLOS_SDK=$NANOSP_SDK
+
   tests:
     name: Functional tests
     runs-on: ubuntu-latest
