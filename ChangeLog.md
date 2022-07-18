@@ -3,6 +3,12 @@
 This project's release branch is `master`.
 This log is written from the perspective of the release branch: when changes hit `master`, they are considered released.
 
+## v0.5.5 - 2022-07-18
+
+### Release Notes
+
+- Version bump to align with LNS+ compilation support
+
 ## v0.5.4 - 2021-12-14
 
 ### Release Notes
