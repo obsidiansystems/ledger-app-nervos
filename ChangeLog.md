@@ -32,7 +32,7 @@ This release has been tested with:
 
 - Fix potential for overflows when parsing invalid data.
 
-- Behind the scenes dev changes: now uses [Ledger Platform](https://github.com/obsidiansystems/ledger-platform)
+- Behind the scenes dev changes: now uses [Ledger Platform](https://github.com/obsidiansystems/alamgu)
 
 This release has been tested with:
 - CKB-CLI: [babc52ae593474f7fddb80f7c229374203310d6a](https://github.com/nervosnetwork/ckb-cli/tree/ledger-support)

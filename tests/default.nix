@@ -1,9 +1,9 @@
-{ ledger-platform ? import ../nix/dep/ledger-platform {}
-, pkgs ? ledger-platform.pkgs
+{ alamgu ? import ../nix/dep/alamgu {}
+, pkgs ? alamgu.pkgs
 }:
 let
   yarn2nix = import deps/yarn2nix { inherit pkgs; };
-  getThunkSrc = ledger-platform.thunkSource;
+  getThunkSrc = alamgu.thunkSource;
   npmDepsNix = pkgs.runCommand "npm-deps.nix" {} ''
     ${yarn2nix}/bin/yarn2nix --offline ${./yarn.lock} > $out
   '';

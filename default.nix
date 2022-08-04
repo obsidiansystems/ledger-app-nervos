@@ -1,4 +1,4 @@
-{ ledger-platform ? import ./nix/dep/ledger-platform {}
+{ alamgu ? import ./nix/dep/alamgu {}
 , gitDescribe ? "TEST-dirty"
 , debug ? false
 , runTest ? true
@@ -7,9 +7,9 @@
 
 let
   # TODO: Rename
-  fetchThunk = ledger-platform.thunkSource;
+  fetchThunk = alamgu.thunkSource;
 
-  inherit (ledger-platform)
+  inherit (alamgu)
     pkgs ledgerPkgs
     gitignoreNix gitignoreSource
     usbtool
@@ -88,7 +88,7 @@ let
     ".c" ".txt" ".sh"
   ];
 
-  tests = import ./tests { inherit ledger-platform; };
+  tests = import ./tests { inherit alamgu; };
 
   build = bolos:
     let
